@@ -19,6 +19,13 @@ const publicRoute = [
   "/(\\w{2}/)?blog(.*)",
   "/(\\w{2}/)?pricing(.*)",
   "^/\\w{2}$", // root with locale
+  "/([a-zA-Z-]{2,5}/)?signin(.*)",
+  "/([a-zA-Z-]{2,5}/)?terms(.*)",
+  "/([a-zA-Z-]{2,5}/)?privacy(.*)",
+  "/([a-zA-Z-]{2,5}/)?docs(.*)",
+  "/([a-zA-Z-]{2,5}/)?blog(.*)",
+  "/([a-zA-Z-]{2,5}/)?pricing(.*)",
+  "^/[a-zA-Z-]{2,5}$", // root with locale
 ];
 
 function getLocale(request: NextRequest): string | undefined {
@@ -92,7 +99,7 @@ const authMiddleware = withAuth(
     const token = await getToken({ req });
     const isAuth = !!token;
     const isAdmin = token?.isAdmin;
-    const isAuthPage = /^\/[a-zA-Z]{2,}\/(login|register)/.test(
+    const isAuthPage = /^\/[a-zA-Z-]{2,5}\/(login|register)/.test(
       req.nextUrl.pathname,
     );
     const isAuthRoute = /^\/api\/trpc\//.test(req.nextUrl.pathname);

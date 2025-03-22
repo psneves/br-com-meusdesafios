@@ -7,12 +7,10 @@ import type { Locale } from "~/config/i18n-config";
 const dictionaries = {
   en: () =>
     import("~/config/dictionaries/en.json").then((module) => module.default),
-  zh: () =>
-    import("~/config/dictionaries/zh.json").then((module) => module.default),
-  ko: () =>
-    import("~/config/dictionaries/ko.json").then((module) => module.default),
-  ja: () =>
-    import("~/config/dictionaries/ja.json").then((module) => module.default),
+  "pt-br": () =>
+    import("~/config/dictionaries/pt-br.json").then((module) => module.default),
+  es: () =>
+    import("~/config/dictionaries/es.json").then((module) => module.default),
 };
 
 export const getDictionary = async (locale: Locale) =>

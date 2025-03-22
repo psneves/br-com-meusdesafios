@@ -1,0 +1,83 @@
+{
+  "price": {
+    "title": "Preços acessíveis e transparentes!",
+    "pricing": "Planos",
+    "slogan": "Comece sua jornada com tudo!",
+    "monthly_bill": "Cobrança Mensal",
+    "annual_bill": "Cobrança Anual",
+    "annual_info": "cobrança feita uma vez ao ano",
+    "monthly_info": "cobrança mensal recorrente",
+    "mo": "/mês",
+    "contact": "para falar com nossa equipe de suporte.",
+    "contact_2": "Você pode testar os planos gratuitamente e não será cobrado.",
+    "faq": "Perguntas Frequentes",
+    "faq_detail": "Consulte nossas perguntas frequentes para tirar dúvidas rapidamente. Caso precise de ajuda adicional, estamos à disposição.",
+    "signup": "Criar conta",
+    "upgrade": "Atualizar plano",
+    "manage_subscription": "Gerenciar Assinatura",
+    "go_to_dashboard": "Ir para o painel"
+  },
+  "marketing": {
+    "introducing": "Apresentando o Meus Desafios",
+    "title": "Meus Desafios: alcance suas metas com motivação e propósito.",
+    "sub_title": "Plataforma para criação de hábitos, produtividade e bem-estar através de desafios.",
+    "get_started": "Começar agora",
+    "view_on_github": "Ver no GitHub",
+    "explore_product": "Explorar Plataforma",
+    "features": "Funcionalidades",
+    "sub_features": "Foco em saúde, finanças e produtividade pessoal.",
+    "k8s_features": "Interface simples e intuitiva",
+    "devops_features": "Atualizações constantes e melhorias contínuas",
+    "price_features": "Planos acessíveis para todos os perfis.",
+    "main_nav_features": "Funcionalidades",
+    "main_nav_pricing": "Planos",
+    "main_nav_products": "Recursos",
+    "main_nav_blog": "Blog",
+    "main_nav_documentation": "Ajuda",
+    "login": "Entrar",
+    "signup": "Criar conta"
+  },
+  "login": {
+    "back": "Voltar",
+    "welcome_back": "Bem-vindo de volta",
+    "signin_title": "Digite seu e-mail para acessar sua conta",
+    "singup_title": "Não tem uma conta? Cadastre-se agora.",
+    "signin_email": "Entrar com e-mail",
+    "signin_others": "Ou continue com",
+    "signup": "Criar conta",
+    "privacy": "apenas seu e-mail e foto de perfil serão armazenados.",
+    "signup_github": "Entrar com o Github"
+  },
+  "common": {
+    "copyright": "Copyright © ${currentYear} Meus Desafios. Todos os direitos reservados.",
+    "dashboard": {
+      "main_nav_documentation": "Ajuda",
+      "main_nav_support": "Suporte",
+      "sidebar_nav_clusters": "Desafios",
+      "sidebar_nav_billing": "Cobrança",
+      "sidebar_nav_settings": "Configurações",
+      "title_text": "Gerencie seus desafios e acompanhe seu progresso."
+    }
+  },
+  "business": {
+    "k8s": {
+      "new_cluster": "Novo Desafio",
+      "no_cluster_title": "Nenhum desafio criado",
+      "no_cluster_content": "Você ainda não criou desafios. Comece agora!"
+    },
+    "billing": {
+      "billing": "Cobrança",
+      "content": "Gerencie seus dados de cobrança e assinatura",
+      "noSubscription": "Você ainda não possui um plano ativo.",
+      "subscriptionInfo": "Seu plano atual é <strong>{plan}</strong>. A renovação será em <strong>{date}</strong>.",
+      "manage_subscription": "Gerenciar Assinatura",
+      "upgrade": "Atualizar plano"
+    }
+  },
+  "dropdown": {
+    "dashboard": "Painel",
+    "billing": "Cobrança",
+    "settings": "Configurações",
+    "sign_out": "Sair"
+  }
+}
