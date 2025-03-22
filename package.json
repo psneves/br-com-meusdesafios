@@ -1,7 +1,7 @@
 {
   "name": "nextjs-template",
   "private": true,
-  "packageManager": "bun@1.1.10",
+  "packageManager": "bun@1.2.5",
   "scripts": {
     "build": "turbo build ",
     "clean": "git clean -xdf node_modules",
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@turbo/gen": "1.13.3",
     "check-dependency-version-consistency": "4.1.0",
-    "dotenv-cli": "^8.0.0",
+    "dotenv-cli": "7.3.0",
     "prettier": "3.2.5",
     "tailwind-config-viewer": "^2.0.4",
     "turbo": "1.13.3",
