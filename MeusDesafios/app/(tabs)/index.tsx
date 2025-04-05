@@ -2,27 +2,28 @@
  * index.tsx
  *
  * Desafios Screen: Displays active challenges, daily progress tracking,
- * full visible history (scrollable), deadlines, and navigation to create new challenges.
+ * full visible history (scrollable), deadlines, and a FAB to find new challenges.
  * Theme-aware styling.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import {
   Image,
   StyleSheet,
   View,
-  Text,
   TouchableOpacity,
   Alert,
   ImageSourcePropType,
   ScrollView,
-  useColorScheme, // Import useColorScheme
-  SafeAreaView, // Import SafeAreaView
+  useColorScheme,
+  SafeAreaView,
+  // Text, // No longer needed for FAB text
 } from 'react-native';
 
 // --- Icon Library Imports ---
+// Using Ionicons for the FAB 'search' icon as an example
 import { Ionicons } from '@expo/vector-icons';
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // --- Custom Component Imports ---
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -122,7 +123,7 @@ const initialChallengesData: ChallengeData[] = [
 ];
 
 // --- Asset Imports ---
-const headerImageSource: ImageSourcePropType = require('@/assets/images/desafios-header.png');
+const headerImageSource: ImageSourcePropType = require('@/assets/images/desafios-header.png'); // ** Replace **
 
 // --- Main Screen Component ---
 export default function DesafiosScreen() {
@@ -155,11 +156,12 @@ export default function DesafiosScreen() {
     });
   }, []);
 
-  const handleNavigateToCreate = () => {
-      console.log("NAVIGATION: Navigate to Create Challenge Screen");
-      Alert.alert("Navegação (Placeholder)", "Ir para a tela de criação de desafio.");
+  // Renamed handler for finding/assigning challenges
+  const handleNavigateToFindChallenges = () => {
+      console.log("NAVIGATION: Navigate to Find/Assign Challenges Screen");
+      Alert.alert("Navegação (Placeholder)", "Ir para a tela de busca de desafios.");
       // --- TODO: Navigation Implementation ---
-      // Example: router.push('/create-challenge');
+      // Example: router.push('/find-challenges'); // Navigate to the discovery screen
   };
 
   // --- Helper to get static data ---
@@ -188,17 +190,10 @@ export default function DesafiosScreen() {
           <Image source={headerImageSource} style={styles.headerImage} resizeMode="cover" />
         }>
         {/* Screen Title */}
-        <View style={[styles.titleContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View style={styles.titleContainer}>
           <ThemedText type="title" style={[styles.pageTitle, { color: primaryTextColor }]}>
-            Meus Desafios
+              Meus Desafios
           </ThemedText>
-          <TouchableOpacity
-            style={[styles.headerFab, { backgroundColor: fabBackgroundColor }]}
-            onPress={() => Alert.alert("Buscar Desafios", "Ir para tela de descobrir novos desafios.")}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="search" size={22} color={fabIconColor} />
-          </TouchableOpacity>
         </View>
 
         {/* Map through challenge IDs */}
@@ -215,30 +210,20 @@ export default function DesafiosScreen() {
             <View key={challengeId} style={[styles.challengeCard, { backgroundColor: cardBackgroundColor }]}>
               {/* Section: Challenge Information */}
               <View style={styles.challengeInfo}>
-                <ThemedText type="subtitle" style={[styles.challengeTitle, { color: primaryTextColor }]}>
-                  {staticData.title}
-                </ThemedText>
-                <ThemedText style={[styles.challengeDescription, { color: secondaryTextColor }]}>
-                  {staticData.description}
-                </ThemedText>
-                <View style={styles.metadataContainer}>
-                   <ThemedText style={[styles.challengeProgress, { color: primaryTextColor }]}>
-                      Progresso: {staticData.currentProgress} / {staticData.goalDuration} {staticData.unit}
-                   </ThemedText>
-                   <ThemedText style={[styles.challengeStartDate, { color: tertiaryTextColor }]}>
-                      Iniciado há {daysAgo} {daysAgo === 1 ? 'dia' : 'dias'}
-                   </ThemedText>
-                </View>
+                 {/* ... (Title, Description, Metadata - Keep As Is) ... */}
+                 <ThemedText type="subtitle" style={[styles.challengeTitle, { color: primaryTextColor }]}>{staticData.title}</ThemedText>
+                 <ThemedText style={[styles.challengeDescription, { color: secondaryTextColor }]}>{staticData.description}</ThemedText>
+                 <View style={styles.metadataContainer}>
+                    <ThemedText style={[styles.challengeProgress, { color: primaryTextColor }]}>Progresso: {staticData.currentProgress} / {staticData.goalDuration} {staticData.unit}</ThemedText>
+                    <ThemedText style={[styles.challengeStartDate, { color: tertiaryTextColor }]}>Iniciado há {daysAgo} {daysAgo === 1 ? 'dia' : 'dias'}</ThemedText>
+                 </View>
                  <View style={styles.deadlineContainer}>
-                   <ThemedText style={[styles.challengeDeadline, { color: tertiaryTextColor }]}>
-                      Prazo: {formattedDeadline}
-                   </ThemedText>
-                </View>
+                    <ThemedText style={[styles.challengeDeadline, { color: tertiaryTextColor }]}>Prazo: {formattedDeadline}</ThemedText>
+                 </View>
               </View>
 
               {/* Section: History Visualization & Interaction */}
               <View style={[styles.historyContainer, { borderTopColor: separatorColor }]}>
-                {/* "Histórico:" Title Removed */}
                 <ScrollView
                   horizontal={true}
                   showsHorizontalScrollIndicator={false}
@@ -282,15 +267,14 @@ export default function DesafiosScreen() {
         <View style={styles.scrollPaddingBottom} />
       </ParallaxScrollView>
 
-      {/* Floating Action Button (FAB) for Creating Challenge */}
+      {/* Floating Action Button (FAB) for Finding/Assigning Challenges */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: fabBackgroundColor }]}
-        onPress={handleNavigateToCreate}
+        onPress={handleNavigateToFindChallenges} // Updated handler
         activeOpacity={0.8}
+        accessibilityLabel="Encontrar novos desafios" // Added accessibility label
       >
-        {/* Use an Icon component here */}
-        <Ionicons name="add" size={28} color={fabIconColor} />
-      </TouchableOpacity>
+        {/* Updated Icon */}<IconSymbol size={28} name="chart.bar.fill" color={fabIconColor} />      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -299,8 +283,7 @@ export default function DesafiosScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff', // Set a default background or use theme
-    // Note: ThemedView could potentially be used here if needed globally
+    // Use theme background color if needed, e.g., backgroundColor: isDarkMode ? '#000' : '#f0f0f0',
   },
   headerImage: { width: '100%', height: 250 },
   titleContainer: {
@@ -323,14 +306,8 @@ const styles = StyleSheet.create({
   challengeDeadline: { fontSize: 12, fontStyle: 'italic' },
 
   // History Section Styles
-  historyContainer: {
-      marginTop: 15, // Increased margin slightly as title is removed
-      paddingTop: 5, // Reduced padding as title is removed
-      borderTopWidth: 1
-      // Border color set dynamically
-  },
-  // Removed historyTitle style
-  historyDotsScrollViewContent: { paddingVertical: 10, paddingHorizontal: 2 }, // Added padding for better spacing
+  historyContainer: { marginTop: 15, paddingTop: 5, borderTopWidth: 1 },
+  historyDotsScrollViewContent: { paddingVertical: 10, paddingHorizontal: 2 },
   historyDotsContainer: { flexDirection: 'row', gap: 12 },
   historyDayItem: { alignItems: 'center', width: 45 },
   historyDotTouchable: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 1, marginBottom: 4 },
@@ -340,7 +317,7 @@ const styles = StyleSheet.create({
   historyDotMissedMark: { color: '#FFF', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
   historyDateText: { fontSize: 11, textAlign: 'center' },
 
-  // FAB Styles
+  // FAB Styles (No visual changes needed, just icon/handler)
   fab: {
     position: 'absolute',
     bottom: 25,
@@ -357,10 +334,10 @@ const styles = StyleSheet.create({
     elevation: 8,
     // Background color set dynamically
   },
-  // Removed fabIcon style (was for text '+')
+  // fabIcon style removed as we use Ionicons now
 
   // Padding at the bottom of the scroll view content
   scrollPaddingBottom: {
-      height: 80, // Adjust height to be more than FAB height + bottom margin
+      height: 80, // Ensure content scrolls above FAB
   },
 });

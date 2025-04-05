@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug apps/nextjs (only)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "bun",
+      "cwd": "${workspaceFolder}/apps/nextjs",
+      "runtimeArgs": [
+        "with-env",
+        "--inspect-brk",
+        "next",
+        "dev"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"],
+      "outFiles": ["${workspaceFolder}/apps/nextjs/.next/**/*.js"]
+    }
+  ]
+}
