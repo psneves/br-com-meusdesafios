@@ -1,5 +1,5 @@
 /**
- * index.tsx
+ * challenges.tsx
  *
  * Desafios Screen: Displays user performance KPIs, active challenges,
  * daily progress tracking, full visible history (scrollable), deadlines,

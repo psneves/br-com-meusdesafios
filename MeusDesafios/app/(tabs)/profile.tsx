@@ -96,7 +96,7 @@ export default function ProfileScreen() {
   const shareButtonBgColor = themeColors.tint; // Use theme tint for primary action
   const shareButtonTextColor = isDarkMode ? '#000000' : '#FFFFFF';
 
-  
+
 
   return (
     <ParallaxScrollView
@@ -122,7 +122,7 @@ export default function ProfileScreen() {
             )}
             {userProfile.tiktokHandle && (
               <View style={styles.socialMediaItem}>
-                 <Ionicons name="logo-tiktok" size={18} color={headerSecondaryTextColor} style={styles.socialMediaIcon} />
+                <Ionicons name="logo-tiktok" size={18} color={headerSecondaryTextColor} style={styles.socialMediaIcon} />
                 <ThemedText style={[styles.socialMediaHandle, { color: headerSecondaryTextColor }]}>{userProfile.tiktokHandle}</ThemedText>
               </View>
             )}
@@ -193,20 +193,7 @@ export default function ProfileScreen() {
           <ThemedText style={styles.noItemsText}>Complete desafios para ganhar conquistas!</ThemedText>
         )}
       </ThemedView>
-
-      {/* Settings CTA Button */}
-      <ThemedView style={[styles.contentBlock, styles.ctaBlock]}>
-        <TouchableOpacity
-          onPress={handleNavigateToSettings}
-          style={[styles.settingsButton, { backgroundColor: settingsButtonBgColor }]}
-          accessibilityLabel="Gerenciar Conta e Configurações"
-          accessibilityRole="button"
-        >
-          <Ionicons name="settings-outline" size={18} color={settingsButtonTextColor} style={styles.buttonIcon} />
-          <ThemedText style={[styles.settingsButtonText, { color: settingsButtonTextColor }]}>Gerenciar Conta e Configurações</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-
+      
       {/* Share Button */}
       <ThemedView style={[styles.contentBlock, styles.ctaBlock, styles.shareBlock]}>
         <TouchableOpacity
@@ -220,6 +207,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </ThemedView>
 
+      {/* Settings CTA Button */}
+      <ThemedView style={[styles.contentBlock, styles.ctaBlock]}>
+        <TouchableOpacity
+          onPress={handleNavigateToSettings}
+          style={[styles.settingsButton, { backgroundColor: settingsButtonBgColor }]}
+          accessibilityLabel="Gerenciar Conta e Configurações"
+          accessibilityRole="button"
+        >
+          <Ionicons name="settings-outline" size={18} color={settingsButtonTextColor} style={styles.buttonIcon} />
+          <ThemedText style={[styles.settingsButtonText, { color: settingsButtonTextColor }]}>Gerenciar Conta e Configurações</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
     </ParallaxScrollView>
   );
 }
@@ -228,6 +227,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   // Header Styles
   profileHeaderContainer: {
+    paddingTop: 20,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',

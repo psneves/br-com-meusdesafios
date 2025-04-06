@@ -1,26 +1,39 @@
-// --- Example Snippet for login.tsx ---
-
 import React, { useState } from 'react';
 import {
   StyleSheet, TextInput, TouchableOpacity, View, Alert, Image,
   KeyboardAvoidingView, Platform, Text, // Use standard Text
-  useColorScheme, ActivityIndicator
+  useColorScheme, ActivityIndicator, ScrollView // Added ScrollView based on original snippet
 } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+// import { useRouter } from 'expo-router'; // Uncomment if needed for navigation
+
 // import Icon from 'react-native-vector-icons/FontAwesome'; // Example for social icons
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
-  // ... (useState for email, password, isLoading)
+  const [email, setEmail] = useState(''); // Added state example
+  const [password, setPassword] = useState(''); // Added state example
+  const [isLoading, setIsLoading] = useState(false);
+  // const router = useRouter(); // Uncomment if needed
 
-  const handleLogin = () => { /* ... */ };
+  const handleLogin = () => {
+      setIsLoading(true);
+      Alert.alert('Login (Placeholder)', `Email: ${email}, Senha: ${password}`);
+      // TODO: Implement actual login logic
+      // On success: router.replace('/(tabs)/challenges'); // or '/(tabs)' to land on the first tab
+      setTimeout(() => setIsLoading(false), 1000); // Simulate loading
+  };
+
   const handleSignUp = () => {
       Alert.alert('Navegação', 'Ir para a tela de Inscrição.');
-      // router.push('/signup');
+      // router.push('/signup'); // Make sure '/signup' route exists
   };
-  const handleForgotPassword = () => { /* ... */ };
+  const handleForgotPassword = () => {
+      Alert.alert('Navegação', 'Ir para a tela Esqueci a Senha.');
+      // router.push('/forgot-password'); // Make sure '/forgot-password' route exists
+   };
   const handleSocialLogin = (provider: string) => {
       Alert.alert('Login Social (Placeholder)', `Tentando login com ${provider}`);
       // Implement actual social login logic
@@ -44,10 +57,26 @@ export default function LoginScreen() {
         style={styles.keyboardAvoidingContainer}
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* ... (Optional Logo, Title, Subtitle) ... */}
+          {/* Optional: Add Logo/Title */}
+          <ThemedText type="title" style={{ marginBottom: 30, textAlign: 'center' }}>Bem-vindo!</ThemedText>
 
-          <TextInput /* ... Email Input ... */ />
-          <TextInput /* ... Password Input ... */ />
+          <TextInput
+            style={[styles.input, { backgroundColor: inputBackgroundColor, color: inputTextColor, borderColor: socialButtonBorder }]}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholderTextColor={inputPlaceholderColor}
+          />
+          <TextInput
+            style={[styles.input, { backgroundColor: inputBackgroundColor, color: inputTextColor, borderColor: socialButtonBorder }]}
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={inputPlaceholderColor}
+          />
 
           {/* --- Modernized Login/Primary Button --- */}
           <TouchableOpacity
@@ -119,19 +148,17 @@ export default function LoginScreen() {
   );
 }
 
-// --- Styles for Login Screen ---
+// --- Styles for Login Screen (Copied from challenge-accepted.tsx) ---
 const styles = StyleSheet.create({
     container: { flex: 1 },
     keyboardAvoidingContainer: { flex: 1 },
     scrollContainer: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingBottom: 20 },
-    // ... (logo, title, subtitle, input styles - adapt colors based on theme)
-    input: { height: 50, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15, fontSize: 16, borderWidth: 1, borderColor: 'rgba(128, 128, 128, 0.3)' },
+    input: { height: 50, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15, fontSize: 16, borderWidth: 1, /* borderColor set dynamically */ },
     primaryButton: {
-        paddingVertical: 16, // Slightly more padding
-        borderRadius: 12, // More rounded
+        paddingVertical: 16,
+        borderRadius: 12,
         alignItems: 'center',
         marginTop: 15,
-        // Shadow for depth
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
@@ -139,10 +166,10 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     primaryButtonText: {
-        fontSize: 17, // Slightly larger text
-        fontWeight: '600', // Semi-bold
+        fontSize: 17,
+        fontWeight: '600',
     },
-    secondaryButton: { // Style for Sign Up link/button
+    secondaryButton: {
         marginTop: 15,
         paddingVertical: 10,
         alignItems: 'center',
@@ -154,7 +181,7 @@ const styles = StyleSheet.create({
     dividerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 25, // More space around divider
+        marginVertical: 25,
     },
     dividerLine: {
         flex: 1,
@@ -168,7 +195,7 @@ const styles = StyleSheet.create({
         // color set dynamically
     },
     socialLoginContainer: {
-        gap: 15, // Space between social buttons
+        gap: 15,
         marginBottom: 20,
     },
     socialButton: {
@@ -197,5 +224,3 @@ const styles = StyleSheet.create({
         // color set dynamically
     },
 });
-
-// --- End Example Snippet for login.tsx ---
