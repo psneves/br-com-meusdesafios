@@ -148,15 +148,15 @@ export default function CommunityScreen() {
       </ThemedText>
       {/* Display the 3 KPIs */}
       <View style={styles.kpiContainer}>
-        {/* KPI 1: Sequência */}
-        <View style={styles.kpiItem}>
-          <ThemedText style={styles.kpiValue}>{item.kpi1Value}</ThemedText>
-          <ThemedText style={styles.kpiLabel}>{item.kpi1Label}</ThemedText>
-        </View>
-        {/* KPI 2: Pontos */}
+        {/* KPI 1: Pontos */}
         <View style={styles.kpiItem}>
           <ThemedText style={styles.kpiValue}>{item.kpi2Value}</ThemedText>
           <ThemedText style={styles.kpiLabel}>{item.kpi2Label}</ThemedText>
+        </View>
+        {/* KPI 2: Sequência */}
+        <View style={styles.kpiItem}>
+          <ThemedText style={styles.kpiValue}>{item.kpi1Value}</ThemedText>
+          <ThemedText style={styles.kpiLabel}>{item.kpi1Label}</ThemedText>
         </View>
       </View>
     </View>

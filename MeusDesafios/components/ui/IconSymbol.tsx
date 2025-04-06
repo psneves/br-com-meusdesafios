@@ -1,4 +1,4 @@
-// This file is a fallback for using MaterialIcons on Android and web.
+// FILE: /Users/psneves/dev/br-com-meusdesafios/MeusDesafios/components/ui/IconSymbol.tsx
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SymbolWeight } from 'expo-symbols';
@@ -13,6 +13,11 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  // --- ADD THESE LINES ---
+  'chart.bar.fill': 'bar-chart',
+  'person.2.fill': 'people',
+  'person.crop.circle.fill': 'account-circle',
+  // -----------------------
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],
@@ -37,7 +42,15 @@ export function IconSymbol({
   size?: number;
   color: string | OpaqueColorValue;
   style?: StyleProp<ViewStyle>;
-  weight?: SymbolWeight;
+  weight?: SymbolWeight; // Note: weight is ignored by MaterialIcons
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const iconName = MAPPING[name];
+
+  if (!iconName) {
+    console.warn(`IconSymbol: No mapping found for SF Symbol name "${name}". Rendering default icon.`);
+    // Optionally render a default fallback icon like 'help-outline'
+    return <MaterialIcons name="help-outline" size={size} color={color} style={style} />;
+  }
+
+  return <MaterialIcons color={color} size={size} name={iconName} style={style} />;
 }

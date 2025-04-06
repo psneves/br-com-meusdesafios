@@ -1,13 +1,13 @@
 /**
  * index.tsx
  *
- * Desafios Screen: Displays active challenges, daily progress tracking,
- * full visible history (scrollable), deadlines, and a FAB to find new challenges.
+ * Desafios Screen: Displays user performance KPIs, active challenges,
+ * daily progress tracking, full visible history (scrollable), deadlines,
+ * and actions to find or create new challenges.
  * Theme-aware styling.
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import {
   Image,
   StyleSheet,
@@ -18,20 +18,18 @@ import {
   ScrollView,
   useColorScheme,
   SafeAreaView,
-  // Text, // No longer needed for FAB text
+  Text, // Using standard Text for the new button
 } from 'react-native';
 
 // --- Icon Library Imports ---
-// Using Ionicons for the FAB 'search' icon as an example
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // Using Ionicons for KPIs and FAB
 
 // --- Custom Component Imports ---
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-
-// --- Navigation Hook ---
-// import { useRouter } from 'expo-router';
+import { router } from 'expo-router'; // Import router for navigation
+import { Colors } from '@/constants/Colors'; // Import Colors for theme access
 
 // --- Type Definition for Challenge Data ---
 interface ChallengeData {
@@ -46,46 +44,7 @@ interface ChallengeData {
   history: (boolean | null)[]; // Full history to display. Index 0 is Today.
 }
 
-// --- Helper Functions ---
-
-/** Calculates days passed since start date. */
-const calculateDaysAgo = (startDateString: string): number => {
-  try {
-    const startDate = new Date(startDateString);
-    const today = new Date();
-    startDate.setUTCHours(0, 0, 0, 0);
-    today.setUTCHours(0, 0, 0, 0);
-    const differenceInTime = today.getTime() - startDate.getTime();
-    const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
-    return Math.max(0, differenceInDays);
-  } catch (error) { console.error("Error calculating days ago:", error); return 0; }
-};
-
-/** Formats date as "DD-Mês" (e.g., "02-Abr"). */
-const formatDate = (date: Date): string => {
-  try {
-    const day = date.toLocaleDateString('pt-BR', { day: '2-digit' });
-    const month = date.toLocaleDateString('pt-BR', { month: 'short' })
-                      .replace('.', '').replace(/^\w/, (c) => c.toUpperCase());
-    return `${day}-${month}`;
-  } catch (error) { console.error("Error formatting date:", error); return '??-???'; }
-};
-
-/** Calculates the deadline date based on start date, duration, and multiplier. */
-const calculateDeadlineDate = (startDateString: string, goalDuration: number, multiplier: number): Date | null => {
-    try {
-        const startDate = new Date(startDateString);
-        const totalAllowedDays = Math.ceil(goalDuration * multiplier); // Calculate total days allowed
-        const deadlineDate = new Date(startDate);
-        deadlineDate.setDate(startDate.getDate() + totalAllowedDays - 1); // Add allowed days (minus 1 as start day counts)
-        return deadlineDate;
-    } catch (error) {
-        console.error("Error calculating deadline date:", error);
-        return null;
-    }
-};
-
-// --- Initial Static Challenge Data (with deadlineMultiplier) ---
+// --- Initial Static Challenge Data (Keep existing data) ---
 const initialChallengesData: ChallengeData[] = [
   {
     id: 'run',
@@ -95,8 +54,8 @@ const initialChallengesData: ChallengeData[] = [
     currentProgress: 12,
     unit: 'dias',
     startDate: '2024-07-20T00:00:00.000Z',
-    deadlineMultiplier: 1.5, // Example: 30 * 1.5 = 45 days total allowed
-    history: [false, false, true, true, false, true, true, false, true, true], // Example longer history
+    deadlineMultiplier: 1.5,
+    history: [false, false, true, true, false, true, true, false, true, true],
   },
   {
     id: 'meditate',
@@ -106,7 +65,7 @@ const initialChallengesData: ChallengeData[] = [
     currentProgress: 18,
     unit: 'dias',
     startDate: '2024-07-15T00:00:00.000Z',
-    deadlineMultiplier: 2, // Example: 21 * 2 = 42 days total allowed
+    deadlineMultiplier: 2,
     history: [true, true, true, false, true, true, true, true, false, true, true],
   },
   {
@@ -117,10 +76,18 @@ const initialChallengesData: ChallengeData[] = [
     currentProgress: 45,
     unit: 'dias',
     startDate: '2024-06-01T00:00:00.000Z',
-    deadlineMultiplier: 1.25, // Example: 90 * 1.25 = 112.5 -> 113 days allowed
+    deadlineMultiplier: 1.25,
     history: [false, true, true, true, true, false, true, true, true, false],
   },
 ];
+
+// --- Mock User Stats Data (Similar to profile.tsx) ---
+// TODO: Replace with dynamic data fetching
+const userStats = {
+  totalPoints: 250,
+  currentStreak: 8, // days
+  challengesCompleted: 12,
+};
 
 // --- Asset Imports ---
 const headerImageSource: ImageSourcePropType = require('@/assets/images/desafios-header.png'); // ** Replace **
@@ -128,7 +95,8 @@ const headerImageSource: ImageSourcePropType = require('@/assets/images/desafios
 // --- Main Screen Component ---
 export default function DesafiosScreen() {
   // --- Theme Hook ---
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? 'light';
+  const themeColors = Colors[colorScheme]; // Get theme colors
 
   // --- State ---
   const [challengeHistory, setChallengeHistory] = useState<{ [key: string]: (boolean | null)[] }>(
@@ -138,9 +106,6 @@ export default function DesafiosScreen() {
     }, {} as { [key: string]: (boolean | null)[] })
   );
 
-  // --- Navigation ---
-  // const router = useRouter();
-
   // --- Callbacks ---
   const handleToggleDayCompletion = useCallback((challengeId: string, dayIndex: number) => {
     setChallengeHistory(prevHistory => {
@@ -149,19 +114,22 @@ export default function DesafiosScreen() {
       const currentStatus = currentChallengeHist[dayIndex];
       const newStatus = currentStatus === null ? false : !currentStatus;
       currentChallengeHist[dayIndex] = newStatus;
-      // --- TODO: Backend Integration ---
       console.log(`PERSISTENCE: Challenge ${challengeId}, Day Index ${dayIndex} status updated to ${newStatus}`);
       Alert.alert('Progresso Salvo!', `Status do dia ${dayIndex === 0 ? 'de hoje' : `${dayIndex} dia(s) atrás`} atualizado.`);
       return { ...prevHistory, [challengeId]: currentChallengeHist };
     });
   }, []);
 
-  // Renamed handler for finding/assigning challenges
+  // Handler for navigating to the Assign Challenge screen
   const handleNavigateToFindChallenges = () => {
-      console.log("NAVIGATION: Navigate to Find/Assign Challenges Screen");
-      Alert.alert("Navegação (Placeholder)", "Ir para a tela de busca de desafios.");
-      // --- TODO: Navigation Implementation ---
-      // Example: router.push('/find-challenges'); // Navigate to the discovery screen
+    console.log("NAVIGATION: Navigate to Find/Assign Challenges Screen");
+    router.push('/challenge-assign'); // Navigate to the assignment screen
+  };
+
+  // Handler for navigating to the Create Challenge screen
+  const handleNavigateToCreateChallenge = () => {
+    console.log("NAVIGATION: Navigate to Create Challenge Screen");
+    router.push('/challenge-create'); // Navigate to the creation screen
   };
 
   // --- Helper to get static data ---
@@ -180,6 +148,8 @@ export default function DesafiosScreen() {
   const dotDefaultBorder = isDarkMode ? '#777' : '#d0d0d0';
   const fabBackgroundColor = isDarkMode ? '#0A84FF' : '#007AFF'; // Primary action blue
   const fabIconColor = '#FFFFFF'; // White icon on blue background
+  const createButtonBgColor = isDarkMode ? '#0A84FF' : '#007AFF'; // Use theme tint for create button
+  const createButtonTextColor = '#FFFFFF'; // White text on primary color
 
   // --- Render Logic ---
   return (
@@ -189,12 +159,74 @@ export default function DesafiosScreen() {
         headerImage={
           <Image source={headerImageSource} style={styles.headerImage} resizeMode="cover" />
         }>
+
+
+        {/* --- User Performance KPI Section --- */}
+        <ThemedView style={styles.contentBlock}>
+          <ThemedView style={[
+            styles.statsContainer,
+            {
+              backgroundColor: themeColors.card, // Use theme card color
+              borderColor: themeColors.border,   // Use theme border color
+            }
+          ]}>
+            {/* KPI 1: Pontos */}
+            <View style={styles.statItem}>
+              <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+                {userStats.totalPoints} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>pontos</ThemedText>
+              </ThemedText>
+              <View style={styles.labelContainer}>
+                <Ionicons name="star-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+                <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Pontos</ThemedText>
+              </View>
+            </View>
+
+            {/* KPI 2: Sequência */}
+            <View style={styles.statItem}>
+              <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+                {userStats.currentStreak} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>dias</ThemedText>
+              </ThemedText>
+              <View style={styles.labelContainer}>
+                <Ionicons name="flame-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+                <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Sequência</ThemedText>
+              </View>
+            </View>
+
+            {/* KPI 3: Desafios Concluídos */}
+            <View style={styles.statItem}>
+              <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+                {userStats.challengesCompleted} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>desafios</ThemedText>
+              </ThemedText>
+              <View style={styles.labelContainer}>
+                <Ionicons name="trophy-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+                <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Concluídos</ThemedText>
+              </View>
+            </View>
+          </ThemedView>
+        </ThemedView>
         {/* Screen Title */}
         <View style={styles.titleContainer}>
           <ThemedText type="title" style={[styles.pageTitle, { color: primaryTextColor }]}>
-              Meus Desafios
+            Meus Desafios
           </ThemedText>
         </View>
+        {
+          /* --- Create New Challenge Button --- 
+          <ThemedView style={[styles.contentBlock, styles.createButtonContainer]}>
+              <TouchableOpacity
+                  onPress={handleNavigateToCreateChallenge}
+                  style={[styles.createButton, { backgroundColor: createButtonBgColor }]}
+                  accessibilityLabel="Criar novo desafio personalizado"
+                  accessibilityRole="button"
+              >
+                  <Ionicons name="add-circle-outline" size={20} color={createButtonTextColor} style={styles.buttonIcon} />
+                  <Text style={[styles.createButtonText, { color: createButtonTextColor }]}>Criar Novo Desafio</Text>
+              </TouchableOpacity>
+          </ThemedView>
+          */
+        }
+        {/* --- Active Challenges Section Title --- */}
+       
 
         {/* Map through challenge IDs */}
         {Object.keys(challengeHistory).map((challengeId) => {
@@ -210,16 +242,15 @@ export default function DesafiosScreen() {
             <View key={challengeId} style={[styles.challengeCard, { backgroundColor: cardBackgroundColor }]}>
               {/* Section: Challenge Information */}
               <View style={styles.challengeInfo}>
-                 {/* ... (Title, Description, Metadata - Keep As Is) ... */}
-                 <ThemedText type="subtitle" style={[styles.challengeTitle, { color: primaryTextColor }]}>{staticData.title}</ThemedText>
-                 <ThemedText style={[styles.challengeDescription, { color: secondaryTextColor }]}>{staticData.description}</ThemedText>
-                 <View style={styles.metadataContainer}>
-                    <ThemedText style={[styles.challengeProgress, { color: primaryTextColor }]}>Progresso: {staticData.currentProgress} / {staticData.goalDuration} {staticData.unit}</ThemedText>
-                    <ThemedText style={[styles.challengeStartDate, { color: tertiaryTextColor }]}>Iniciado há {daysAgo} {daysAgo === 1 ? 'dia' : 'dias'}</ThemedText>
-                 </View>
-                 <View style={styles.deadlineContainer}>
-                    <ThemedText style={[styles.challengeDeadline, { color: tertiaryTextColor }]}>Prazo: {formattedDeadline}</ThemedText>
-                 </View>
+                <ThemedText type="subtitle" style={[styles.challengeTitle, { color: primaryTextColor }]}>{staticData.title}</ThemedText>
+                <ThemedText style={[styles.challengeDescription, { color: secondaryTextColor }]}>{staticData.description}</ThemedText>
+                <View style={styles.metadataContainer}>
+                  <ThemedText style={[styles.challengeProgress, { color: primaryTextColor }]}>Progresso: {staticData.currentProgress} / {staticData.goalDuration} {staticData.unit}</ThemedText>
+                  <ThemedText style={[styles.challengeStartDate, { color: tertiaryTextColor }]}>Iniciado há {daysAgo} {daysAgo === 1 ? 'dia' : 'dias'}</ThemedText>
+                </View>
+                <View style={styles.deadlineContainer}>
+                  <ThemedText style={[styles.challengeDeadline, { color: tertiaryTextColor }]}>Prazo: {formattedDeadline}</ThemedText>
+                </View>
               </View>
 
               {/* Section: History Visualization & Interaction */}
@@ -248,11 +279,11 @@ export default function DesafiosScreen() {
                               dayStatus === false && styles.historyDotMissed,
                             ]}
                           >
-                            {dayStatus === true && ( <ThemedText style={styles.historyDotCheckmark}>✓</ThemedText> )}
-                            {dayStatus === false && ( <ThemedText style={styles.historyDotMissedMark}>✕</ThemedText> )}
+                            {dayStatus === true && (<ThemedText style={styles.historyDotCheckmark}>✓</ThemedText>)}
+                            {dayStatus === false && (<ThemedText style={styles.historyDotMissedMark}>✕</ThemedText>)}
                           </TouchableOpacity>
                           <ThemedText style={[styles.historyDateText, { color: tertiaryTextColor }]}>
-                              {dateString}
+                            {dateString}
                           </ThemedText>
                         </View>
                       );
@@ -270,11 +301,12 @@ export default function DesafiosScreen() {
       {/* Floating Action Button (FAB) for Finding/Assigning Challenges */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: fabBackgroundColor }]}
-        onPress={handleNavigateToFindChallenges} // Updated handler
+        onPress={handleNavigateToFindChallenges} // Navigate to assign screen
         activeOpacity={0.8}
-        accessibilityLabel="Encontrar novos desafios" // Added accessibility label
+        accessibilityLabel="Encontrar novos desafios"
       >
-        {/* Updated Icon */}<IconSymbol size={28} name="chart.bar.fill" color={fabIconColor} />      </TouchableOpacity>
+        <Ionicons name="search-outline" size={28} color={fabIconColor} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -283,18 +315,91 @@ export default function DesafiosScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    // Use theme background color if needed, e.g., backgroundColor: isDarkMode ? '#000' : '#f0f0f0',
   },
   headerImage: { width: '100%', height: 250 },
   titleContainer: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    marginBottom: 15,
+    marginBottom: 5, // Reduced margin
   },
   pageTitle: {
     // Color set dynamically
   },
-  // Challenge Card Styles
+  // Content Block Styles (Copied from profile.tsx)
+  contentBlock: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '600',
+    // Color from ThemedText
+  },
+  // Stats Styles (Copied from profile.tsx)
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    paddingVertical: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    // Background and border color set dynamically via themeColors
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 5,
+  },
+  statValue: {
+    fontSize: 22,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    // Color set dynamically via themeColors
+  },
+  labelContainer: { // Container for icon + label
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  statIcon: {
+    marginRight: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    textAlign: 'center',
+    // Color set dynamically via themeColors
+  },
+  statUnit: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    // Color set dynamically via themeColors
+  },
+  // Create Button Styles
+  createButtonContainer: {
+    paddingVertical: 0, // Reduce vertical padding
+    marginTop: -5, // Pull closer to KPIs
+    marginBottom: 15, // Space before challenge list title
+  },
+  createButton: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    width: '100%',
+    // Background color set dynamically
+  },
+  createButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    // Color set dynamically
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  // Challenge Card Styles (Keep existing)
   challengeCard: { borderRadius: 12, padding: 15, marginBottom: 16, marginHorizontal: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   challengeInfo: { marginBottom: 15 },
   challengeTitle: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
@@ -305,7 +410,7 @@ const styles = StyleSheet.create({
   deadlineContainer: { marginTop: 6 },
   challengeDeadline: { fontSize: 12, fontStyle: 'italic' },
 
-  // History Section Styles
+  // History Section Styles (Keep existing)
   historyContainer: { marginTop: 15, paddingTop: 5, borderTopWidth: 1 },
   historyDotsScrollViewContent: { paddingVertical: 10, paddingHorizontal: 2 },
   historyDotsContainer: { flexDirection: 'row', gap: 12 },
@@ -317,7 +422,7 @@ const styles = StyleSheet.create({
   historyDotMissedMark: { color: '#FFF', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
   historyDateText: { fontSize: 11, textAlign: 'center' },
 
-  // FAB Styles (No visual changes needed, just icon/handler)
+  // FAB Styles (Keep existing, updated icon)
   fab: {
     position: 'absolute',
     bottom: 25,
@@ -334,10 +439,43 @@ const styles = StyleSheet.create({
     elevation: 8,
     // Background color set dynamically
   },
-  // fabIcon style removed as we use Ionicons now
-
   // Padding at the bottom of the scroll view content
   scrollPaddingBottom: {
-      height: 80, // Ensure content scrolls above FAB
+    height: 80, // Ensure content scrolls above FAB
   },
 });
+
+// --- Helper Functions Implementation (Keep existing implementations) ---
+function calculateDaysAgo(startDateString: string): number {
+  try {
+    const startDate = new Date(startDateString);
+    const today = new Date();
+    startDate.setUTCHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
+    const differenceInTime = today.getTime() - startDate.getTime();
+    const differenceInDays = Math.floor(differenceInTime / (1000 * 3600 * 24));
+    return Math.max(0, differenceInDays);
+  } catch (error) { console.error("Error calculating days ago:", error); return 0; }
+};
+
+function formatDate(date: Date): string {
+  try {
+    const day = date.toLocaleDateString('pt-BR', { day: '2-digit' });
+    const month = date.toLocaleDateString('pt-BR', { month: 'short' })
+      .replace('.', '').replace(/^\w/, (c) => c.toUpperCase());
+    return `${day}-${month}`;
+  } catch (error) { console.error("Error formatting date:", error); return '??-???'; }
+};
+
+function calculateDeadlineDate(startDateString: string, goalDuration: number, multiplier: number): Date | null {
+  try {
+    const startDate = new Date(startDateString);
+    const totalAllowedDays = Math.ceil(goalDuration * multiplier); // Calculate total days allowed
+    const deadlineDate = new Date(startDate);
+    deadlineDate.setDate(startDate.getDate() + totalAllowedDays - 1); // Add allowed days (minus 1 as start day counts)
+    return deadlineDate;
+  } catch (error) {
+    console.error("Error calculating deadline date:", error);
+    return null;
+  }
+};

@@ -31,7 +31,15 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* Add this line to set the title for challenge-assign */}
+        <Stack.Screen
+          name="challenge-assign"
+          options={{ title: 'Adicionar desafio' }} // <--- Set the desired title here
+        />
         <Stack.Screen name="+not-found" />
+        {/* You might have other Stack.Screen entries here too */}
+        {/* e.g., for challenge-create if you want to customize its title */}
+        {/* <Stack.Screen name="challenge-create" options={{ title: 'Criar Desafio' }} /> */}
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

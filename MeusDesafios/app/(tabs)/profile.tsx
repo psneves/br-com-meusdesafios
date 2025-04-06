@@ -1,5 +1,3 @@
-// Assuming this file is saved as app/(tabs)/profile.tsx
-
 import React from 'react';
 import {
   Image,
@@ -10,21 +8,17 @@ import {
   Share, // Import Share API
   Alert, // For feedback
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons'; // Using Ionicons as used elsewhere
+import { useRouter } from 'expo-router'; // Import useRouter for navigation
 
-// --- IMPORTANT ---
-// You'll need an icon library for actual social media icons.
-// Example using react-native-vector-icons (install it first: npm install react-native-vector-icons)
-// import Icon from 'react-native-vector-icons/FontAwesome5'; // Or FontAwesome, MaterialIcons etc.
-// Placeholder for a settings icon, replace with actual icon component later
-// import { SettingsIcon } from '@/components/SettingsIcon';
-
+// --- Custom Component Imports ---
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-// Placeholder for navigation hook if using expo-router
-// import { useRouter } from 'expo-router';
+import { Colors } from '@/constants/Colors'; // Assuming Colors constant exists
+import { useColorScheme } from '@/hooks/useColorScheme'; // Make sure this is imported
 
-// --- Placeholder user data - replace with actual data fetched from API ---
+// --- TODO: Replace with dynamic data fetching (API, state management, etc.) ---
 const userProfile = {
   name: 'Paulo Neves',
   username: '@psneves', // Main app username
@@ -52,12 +46,12 @@ const userProfile = {
 const defaultProfileImage = require('@/assets/images/profile.jpeg'); // ** Make sure this default image exists **
 
 export default function ProfileScreen() {
-  // const router = useRouter(); // Uncomment when navigation is set up
+  const colorScheme = useColorScheme() ?? 'light';
+  const router = useRouter(); // Use router for navigation
 
   const handleNavigateToSettings = () => {
     console.log('Navigate to Settings');
-    // router.push('/settings'); // Example navigation
-    Alert.alert('Navegação', 'Ir para a tela de Configurações.'); // Placeholder feedback
+    router.push('/settings'); // Navigate to settings screen (ensure '/settings' route exists)
   };
 
   // --- Share Functionality ---
@@ -90,9 +84,23 @@ export default function ProfileScreen() {
     }
   };
 
+  // --- Dynamic Colors ---
+  const isDarkMode = colorScheme === 'dark';
+  const themeColors = Colors[colorScheme];
+  const headerTextColor = '#FFFFFF'; // Assuming dark header background from ParallaxScrollView
+  const headerSecondaryTextColor = '#DDD'; // Assuming dark header background
+  const badgeBackgroundColor = themeColors.card;
+  const badgeTextColor = themeColors.textSecondary;
+  const settingsButtonBgColor = themeColors.card; // Use card color for secondary button
+  const settingsButtonTextColor = themeColors.text;
+  const shareButtonBgColor = themeColors.tint; // Use theme tint for primary action
+  const shareButtonTextColor = isDarkMode ? '#000000' : '#FFFFFF';
+
+  
+
   return (
-    // Use a standard ScrollView or View if Parallax is not desired for Profile
     <ParallaxScrollView
+      // Define header background colors consistent with other screens or design
       headerBackgroundColor={{ light: '#E0E0E0', dark: '#212121' }}
       headerImage={
         <View style={styles.profileHeaderContainer}>
@@ -100,33 +108,22 @@ export default function ProfileScreen() {
             source={userProfile.profileImageUrl ? { uri: userProfile.profileImageUrl } : defaultProfileImage}
             style={styles.profileImage}
           />
-          <ThemedText style={styles.profileName} type="title">{userProfile.name}</ThemedText>
-          <ThemedText style={styles.profileUsername} type="subtitle">{userProfile.username}</ThemedText>
+          {/* Header text colors kept simple assuming a contrasting header background */}
+          <ThemedText style={[styles.profileName, { color: headerTextColor }]} type="title">{userProfile.name}</ThemedText>
+          <ThemedText style={[styles.profileUsername, { color: headerSecondaryTextColor }]} type="subtitle">{userProfile.username}</ThemedText>
 
           {/* --- Social Media Handles --- */}
           <View style={styles.socialMediaContainer}>
             {userProfile.instagramHandle && (
               <View style={styles.socialMediaItem}>
-                {/* Replace Text with actual Icon component */}
-                <ThemedText style={styles.socialMediaIcon}>
-                  <Image
-                    source={require('@/assets/images/instagram.png')} // Keeping placeholder image source // Mantendo a fonte da imagem de placeholder
-                    style={styles.socialMediaIcon}
-                  />
-                </ThemedText>
-                {/* <Icon name="instagram" size={16} color="#DDD" /> */}
-                <ThemedText style={styles.socialMediaHandle}>{userProfile.instagramHandle}</ThemedText>
+                <Ionicons name="logo-instagram" size={18} color={headerSecondaryTextColor} style={styles.socialMediaIcon} />
+                <ThemedText style={[styles.socialMediaHandle, { color: headerSecondaryTextColor }]}>{userProfile.instagramHandle}</ThemedText>
               </View>
             )}
             {userProfile.tiktokHandle && (
               <View style={styles.socialMediaItem}>
-                {/* Replace Text with actual Icon component */}
-                <ThemedText style={styles.socialMediaIcon}><Image
-                  source={require('@/assets/images/tiktok.png')} // Keeping placeholder image source // Mantendo a fonte da imagem de placeholder
-                  style={styles.socialMediaIcon}
-                /></ThemedText>
-                {/* <Icon name="tiktok" size={16} color="#DDD" /> */}
-                <ThemedText style={styles.socialMediaHandle}>{userProfile.tiktokHandle}</ThemedText>
+                 <Ionicons name="logo-tiktok" size={18} color={headerSecondaryTextColor} style={styles.socialMediaIcon} />
+                <ThemedText style={[styles.socialMediaHandle, { color: headerSecondaryTextColor }]}>{userProfile.tiktokHandle}</ThemedText>
               </View>
             )}
           </View>
@@ -135,27 +132,49 @@ export default function ProfileScreen() {
 
       {/* --- Main Content Area --- */}
 
-      {/* Stats Section - Consider adding more relevant KPIs */}
+      {/* --- Stats Section - Updated KPIs & Visuals --- */}
       <ThemedView style={styles.contentBlock}>
         <ThemedText type="subtitle" style={styles.sectionTitle}>Meu Desempenho</ThemedText>
-
-        <View style={styles.statsContainer}>
+        <ThemedView style={[
+          styles.statsContainer,
+          {
+            backgroundColor: themeColors.card, // Use theme card color
+            borderColor: themeColors.border,   // Use theme border color
+          }
+        ]}>
+          {/* KPI 1: Pontos */}
           <View style={styles.statItem}>
-            <ThemedText type="title" style={styles.statValue}>{userProfile.stats.totalPoints} <ThemedText style={styles.statUnit}>pontos</ThemedText></ThemedText>
-            <ThemedText style={styles.statLabel}>Últimos 30 dias</ThemedText>
+            <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+              {userProfile.stats.totalPoints} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>pontos</ThemedText>
+            </ThemedText>
+            <View style={styles.labelContainer}>
+              <Ionicons name="star-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+              <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Pontos</ThemedText>
+            </View>
           </View>
 
+          {/* KPI 2: Sequência */}
           <View style={styles.statItem}>
-            <ThemedText type="title" style={styles.statValue}>{userProfile.stats.currentStreak} <ThemedText style={styles.statUnit}>dias</ThemedText></ThemedText>
-            <ThemedText style={styles.statLabel}>Sequência Atual</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type="title" style={styles.statValue}>{userProfile.stats.challengesCompleted} <ThemedText style={styles.statUnit}>dias</ThemedText></ThemedText>
-            <ThemedText style={styles.statLabel}>Sequência Máxima</ThemedText>
+            <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+              {userProfile.stats.currentStreak} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>dias</ThemedText>
+            </ThemedText>
+            <View style={styles.labelContainer}>
+              <Ionicons name="flame-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+              <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Sequência</ThemedText>
+            </View>
           </View>
 
-          {/* Add more statItems here if needed */}
-        </View>
+          {/* KPI 3: Desafios Concluídos */}
+          <View style={styles.statItem}>
+            <ThemedText type="title" style={[styles.statValue, { color: themeColors.text }]}>
+              {userProfile.stats.challengesCompleted} <ThemedText style={[styles.statUnit, { color: themeColors.text }]}>desafios</ThemedText>
+            </ThemedText>
+            <View style={styles.labelContainer}>
+              <Ionicons name="trophy-outline" size={16} color={themeColors.icon} style={styles.statIcon} />
+              <ThemedText style={[styles.statLabel, { color: themeColors.textSecondary }]}>Concluídos</ThemedText>
+            </View>
+          </View>
+        </ThemedView>
       </ThemedView>
 
       {/* Badges/Achievements Section - Now showing name */}
@@ -164,11 +183,10 @@ export default function ProfileScreen() {
         {userProfile.badges.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesContainer}>
             {userProfile.badges.map((badge) => (
-              <View key={badge.id} style={styles.badgeItem}>
+              <ThemedView key={badge.id} style={[styles.badgeItem, { backgroundColor: badgeBackgroundColor }]}>
                 <ThemedText style={styles.badgeIcon}>{badge.icon}</ThemedText>
-                {/* Added badge name back */}
-                <ThemedText style={styles.badgeName} numberOfLines={2}>{badge.name}</ThemedText>
-              </View>
+                <ThemedText style={[styles.badgeName, { color: badgeTextColor }]} numberOfLines={2}>{badge.name}</ThemedText>
+              </ThemedView>
             ))}
           </ScrollView>
         ) : (
@@ -178,19 +196,27 @@ export default function ProfileScreen() {
 
       {/* Settings CTA Button */}
       <ThemedView style={[styles.contentBlock, styles.ctaBlock]}>
-        <TouchableOpacity onPress={handleNavigateToSettings} style={styles.settingsButton}>
-          {/* Optional: Add Settings Icon here */}
-          {/* <SettingsIcon color="#FFF" style={styles.settingsIcon} /> */}
-          <ThemedText style={styles.settingsButtonText}>Gerenciar Conta e Configurações</ThemedText>
+        <TouchableOpacity
+          onPress={handleNavigateToSettings}
+          style={[styles.settingsButton, { backgroundColor: settingsButtonBgColor }]}
+          accessibilityLabel="Gerenciar Conta e Configurações"
+          accessibilityRole="button"
+        >
+          <Ionicons name="settings-outline" size={18} color={settingsButtonTextColor} style={styles.buttonIcon} />
+          <ThemedText style={[styles.settingsButtonText, { color: settingsButtonTextColor }]}>Gerenciar Conta e Configurações</ThemedText>
         </TouchableOpacity>
       </ThemedView>
 
       {/* Share Button */}
       <ThemedView style={[styles.contentBlock, styles.ctaBlock, styles.shareBlock]}>
-        <TouchableOpacity onPress={handleShareProfile} style={styles.shareButton}>
-          {/* Optional: Add Share Icon here */}
-          {/* <Icon name="share-alt" size={18} color="#FFF" style={styles.buttonIcon} /> */}
-          <ThemedText style={styles.shareButtonText}>Compartilhar Meu Perfil</ThemedText>
+        <TouchableOpacity
+          onPress={handleShareProfile}
+          style={[styles.shareButton, { backgroundColor: shareButtonBgColor }]}
+          accessibilityLabel="Compartilhar Meu Perfil"
+          accessibilityRole="button"
+        >
+          <Ionicons name="share-social-outline" size={18} color={shareButtonTextColor} style={styles.buttonIcon} />
+          <ThemedText style={[styles.shareButtonText, { color: shareButtonTextColor }]}>Compartilhar Meu Perfil</ThemedText>
         </TouchableOpacity>
       </ThemedView>
 
@@ -205,50 +231,48 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 20, // Add some padding below header content
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: '#FFF',
+    borderColor: '#FFF', // Keep white border for contrast on potentially varied backgrounds
     marginBottom: 10,
-    backgroundColor: '#ccc',
+    backgroundColor: '#ccc', // Placeholder background
   },
   profileName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
     textAlign: 'center',
-    marginBottom: 2, // Added margin
+    marginBottom: 2,
+    // Color set dynamically based on header background
   },
   profileUsername: {
     fontSize: 16,
-    color: '#DDD',
     textAlign: 'center',
-    marginBottom: 8, // Added margin below username
+    marginBottom: 12, // Increased margin below username
+    // Color set dynamically based on header background
   },
   // Social Media Styles
   socialMediaContainer: {
-    flexDirection: 'row', // Changed to column to stack items vertically
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 15, // Space between social media items
+    gap: 20, // Increased space between social media items
   },
   socialMediaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // Space between icon and handle
+    gap: 5, // Space between icon and handle
   },
-  socialMediaIcon: { // Placeholder style for text icon
-    height: 20,
-    width: 20,
-    fontSize: 16,
-    color: '#DDD',
+  socialMediaIcon: {
+    // Size/Color set dynamically
   },
   socialMediaHandle: {
     fontSize: 14,
-    color: '#DDD',
+    // Color set dynamically based on header background
   },
 
   // Content Block Styles
@@ -261,122 +285,121 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 18,
     fontWeight: '600',
+    // Color from ThemedText
   },
 
   // Stats Styles
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'flex-start', // Align items top for potentially different text lengths
-    backgroundColor: '#f9f9f9', // Subtle background for stats section
+    alignItems: 'flex-start',
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 12, // More rounded corners
     borderWidth: 1,
-    borderColor: '#eee',
+    // Background and border color set dynamically
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
-    paddingHorizontal: 5, // Add padding to prevent text collision
+    paddingHorizontal: 5,
   },
   statValue: {
     fontSize: 22,
+    textAlign: 'center',
     fontWeight: 'bold',
-    color: '#333', // Darker color for value
+    // Color set dynamically
+  },
+  labelContainer: { // Container for icon + label
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6, // Increased space
+  },
+  statIcon: {
+    marginRight: 4, // Space between icon and label
   },
   statLabel: {
-    fontSize: 11, // Slightly smaller label
-    color: '#555', // Darker grey for label
-    marginTop: 4, // Increased space
+    fontSize: 11,
     textAlign: 'center',
+    // Color set dynamically
   },
   statUnit: {
     fontSize: 14,
     fontWeight: 'normal',
-    color: '#333',
+    // Color set dynamically
   },
 
   // Badges Styles
   badgesContainer: {
     paddingTop: 8,
-    paddingBottom: 12, // Added bottom padding
+    paddingBottom: 12,
   },
   badgeItem: {
     alignItems: 'center',
-    justifyContent: 'flex-start', // Align content top
-    marginRight: 12, // Reduced margin
-    padding: 8, // Reduced padding
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    width: 85, // Fixed width
-    height: 85, // Fixed height to make them square-ish
+    justifyContent: 'center', // Center content vertically too
+    marginRight: 12,
+    padding: 8,
+    borderRadius: 10, // Slightly more rounded
+    width: 85,
+    height: 85,
+    // Background color set dynamically
   },
   badgeIcon: {
-    marginTop: 5,
-    fontSize: 20, // Slightly larger icon
+    fontSize: 24, // Slightly larger icon
+    marginBottom: 4, // Space between icon and name
   },
   badgeName: {
     fontSize: 10,
     textAlign: 'center',
-    color: '#444', // Darker text for name
-    lineHeight: 15,
+    lineHeight: 14, // Adjusted line height
     fontWeight: '500',
+    // Color set dynamically
   },
   noItemsText: {
     fontStyle: 'italic',
-    color: '#888',
     textAlign: 'center',
     paddingVertical: 10,
+    // Color from ThemedText, consider using secondary color
   },
 
-  // CTA Block Styles (for buttons)
+  // CTA Block Styles
   ctaBlock: {
-    paddingVertical: 5, // Reduced vertical padding for button blocks
+    paddingVertical: 5,
   },
-  // Settings Button Styles (CTA Style)
+  // Settings Button Styles
   settingsButton: {
-    backgroundColor: '#555', // Darker grey for settings button
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14, // Consistent padding
+    borderRadius: 10, // Consistent radius
     alignItems: 'center',
-    justifyContent: 'center', // Center content
-    flexDirection: 'row', // Allow icon placement
+    justifyContent: 'center',
+    flexDirection: 'row',
     width: '100%',
+    // Background color set dynamically
   },
   settingsButtonText: {
-    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5, // Space text from potential icon
+    fontWeight: '600', // Semi-bold
+    // Color set dynamically
   },
-  settingsIcon: { // Style for potential icon
-    marginRight: 8,
-  },
-
   // Share Button Styles
   shareBlock: {
-    marginTop: 5, // Add some space above share button
-    marginBottom: 20, // Add space at the very bottom
+    marginTop: 10, // Add some space above share button
+    marginBottom: 20,
   },
   shareButton: {
-    backgroundColor: '#007AFF', // Primary blue color
-    paddingVertical: 14, // Slightly larger padding
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center', // Center content
-    flexDirection: 'row', // Allow icon placement
+    justifyContent: 'center',
+    flexDirection: 'row',
     width: '100%',
+    // Background color set dynamically
   },
   shareButtonText: {
-    color: '#ffffff',
+    color: '#ffffff', // Usually white text on primary color
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5, // Space text from potential icon
+    fontWeight: '600', // Semi-bold
   },
-  buttonIcon: { // Style for potential icon in buttons
-    marginRight: 8,
+  buttonIcon: {
+    marginRight: 8, // Space between icon and text in buttons
   },
-
-  // Removed unused styles from previous version
-  // settingsLink, settingsText, settingsArrow
 });
