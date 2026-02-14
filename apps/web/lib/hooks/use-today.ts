@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { TodayCard, TodayResponse, LogFeedback } from "../types/today";
 import { getMockTodayResponse } from "../mock/today-data";
 
@@ -18,24 +18,33 @@ interface UseTodayResult {
 // Flag to switch between mock and real API
 const USE_MOCK = true;
 
-export function useToday(): UseTodayResult {
+export function useToday(selectedDate?: Date): UseTodayResult {
   const [data, setData] = useState<TodayResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [feedback, setFeedback] = useState<LogFeedback | null>(null);
+  const initialLoadDone = useRef(false);
 
   const fetchToday = useCallback(async () => {
-    setIsLoading(true);
+    const isInitial = !initialLoadDone.current;
+    if (isInitial) setIsLoading(true);
     setError(null);
 
     try {
       if (USE_MOCK) {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        const response = getMockTodayResponse();
+        if (isInitial) {
+          // Simulate network delay on first load only
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          initialLoadDone.current = true;
+        }
+        const response = getMockTodayResponse(selectedDate);
         setData(response);
       } else {
-        const response = await fetch("/api/trackables/today");
+        setIsLoading(true);
+        const params = selectedDate
+          ? `?date=${selectedDate.toISOString().slice(0, 10)}`
+          : "";
+        const response = await fetch(`/api/trackables/today${params}`);
         if (!response.ok) throw new Error("Failed to fetch today data");
         const json = await response.json();
         setData(json.data);
@@ -45,7 +54,7 @@ export function useToday(): UseTodayResult {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedDate]);
 
   // Helper to update a card with new value
   const updateCardWithValue = useCallback(
@@ -62,23 +71,11 @@ export function useToday(): UseTodayResult {
         newPoints = 10;
         const newStreak = card.streak.current + 1;
 
-        // Check milestones
-        let bonus = 0;
-        if (newStreak === 3) bonus = 5;
-        else if (newStreak === 7) bonus = 10;
-        else if (newStreak === 14) bonus = 20;
-        else if (newStreak === 30) bonus = 50;
-
-        newPoints += bonus;
-
         feedbackData = {
           goalMet: true,
           pointsEarned: newPoints,
           streakUpdated: { from: card.streak.current, to: newStreak },
-          milestone: bonus > 0 ? { day: newStreak, bonus } : undefined,
-          message: bonus > 0
-            ? `Meta cumprida! +10 pts. Sequência dia ${newStreak}: +${bonus} pts!`
-            : `Meta cumprida! +10 pts`,
+          message: `Meta cumprida! +10 pts`,
         };
 
         return {
@@ -135,6 +132,8 @@ export function useToday(): UseTodayResult {
           setData({
             ...data,
             totalPoints: newTotal,
+            pointsWeek: Math.max(data.pointsWeek, newTotal),
+            pointsMonth: Math.max(data.pointsMonth, newTotal),
             cards: updatedCards,
           });
 
@@ -200,6 +199,16 @@ export function useToday(): UseTodayResult {
         }
       }
 
+      // exercise-{MODALITY}-{minutes} from ExerciseCompactActions
+      if (actionId.startsWith("exercise-")) {
+        const parts = actionId.split("-");
+        const minutes = parseFloat(parts[parts.length - 1]);
+        if (!isNaN(minutes)) {
+          await logValue(cardId, minutes);
+          return;
+        }
+      }
+
       if (actionId === "sleep-log") {
         // For sleep, just mark as completed
         await logValue(cardId, 1);
@@ -231,22 +240,11 @@ export function useToday(): UseTodayResult {
                 newPoints = 10;
                 const newStreak = c.streak.current + 1;
 
-                let bonus = 0;
-                if (newStreak === 3) bonus = 5;
-                else if (newStreak === 7) bonus = 10;
-                else if (newStreak === 14) bonus = 20;
-                else if (newStreak === 30) bonus = 50;
-
-                newPoints += bonus;
-
                 setFeedback({
                   goalMet: true,
                   pointsEarned: newPoints,
                   streakUpdated: { from: c.streak.current, to: newStreak },
-                  milestone: bonus > 0 ? { day: newStreak, bonus } : undefined,
-                  message: bonus > 0
-                    ? `Meta cumprida! +10 pts. Sequência dia ${newStreak}: +${bonus} pts!`
-                    : `Meta cumprida! +10 pts`,
+                  message: `Meta cumprida! +10 pts`,
                 });
 
                 return {
@@ -272,6 +270,8 @@ export function useToday(): UseTodayResult {
           setData({
             ...data,
             totalPoints: newTotal,
+            pointsWeek: Math.max(data.pointsWeek, newTotal),
+            pointsMonth: Math.max(data.pointsMonth, newTotal),
             cards: updatedCards,
           });
         } else {

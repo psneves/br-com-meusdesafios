@@ -75,7 +75,7 @@ export function StreakBadge({
       >
         <Flame className={cn("h-3 w-3", iconClass)} />
         <span>{current}</span>
-        <span className="text-[10px]">dias</span>
+        <span className="text-[10px]">{current === 1 ? "dia" : "dias"}</span>
       </span>
       {showBest && best !== undefined && best > current && (
         <span className="text-xs text-gray-400 dark:text-gray-500">

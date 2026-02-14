@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, X, ChevronRight, AlertCircle, Plus, Minus, Loader2 } from "lucide-react";
 import { StreakBadge } from "./StreakBadge";
 import { PointsChip } from "./PointsChip";
@@ -65,7 +65,7 @@ export function TrackableCard({
               />
             )}
           </div>
-          <p className="text-[11px] leading-tight text-gray-400 dark:text-gray-500">
+          <p className="text-[11px] leading-tight text-gray-500 dark:text-gray-400">
             {goalLabel}
           </p>
         </div>
@@ -148,7 +148,7 @@ function CompactProgress({
 }) {
   const fmt = (v: number) => {
     if (isSleep) return formatMinAsHours(v);
-    return v >= 1000 ? v.toLocaleString() : v % 1 !== 0 ? v.toFixed(1) : v.toString();
+    return v >= 1000 ? v.toLocaleString("pt-BR") : v % 1 !== 0 ? v.toFixed(1) : v.toString();
   };
 
   const displayUnit = isSleep ? "" : unit;
@@ -168,7 +168,7 @@ function CompactProgress({
             met ? metTextClass : "text-gray-500 dark:text-gray-400"
           )}
         >
-          {fmt(value)}/{fmt(target)}{displayUnit ? ` ${displayUnit}` : ""}
+          {fmt(value)} / {fmt(target)}{displayUnit ? ` ${displayUnit}` : ""}
         </span>
       </div>
     </div>
@@ -224,6 +224,7 @@ function CompactActions({
     case "PHYSICAL_EXERCISE":
       return (
         <ExerciseCompactActions
+          card={card}
           cfg={cfg}
           loadingActionId={loadingActionId}
           onAction={onAction}
@@ -258,10 +259,12 @@ function AddChipActions({
           key={action.id}
           onClick={() => onAction(action.id)}
           disabled={isAnyLoading}
+          aria-label={`Adicionar ${action.amount} ${action.unit || "ml"}`}
           className={cn(
-            "flex-1 rounded-lg border py-2 text-center text-xs font-medium transition-colors",
+            "flex-1 rounded-lg border py-1.5 text-center text-xs font-medium transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             "disabled:pointer-events-none disabled:opacity-50",
+            "active:scale-[0.97]",
             cfg.activeBg,
             cfg.activeBgDark,
             cfg.metText,
@@ -297,12 +300,26 @@ function DietMealActions({
   loadingActionId: string | null;
   onAction: (id: string) => void;
 }) {
-  const [meals, setMeals] = useState<MealState[]>(() => {
+  const breakdownToMeals = (card: TodayCard): MealState[] => {
+    if (card.breakdown?.length === 5) {
+      return card.breakdown.map((b) => {
+        if (b.value === 1) return "success" as MealState;
+        if (b.value === -1) return "fail" as MealState;
+        return "neutral" as MealState;
+      });
+    }
     const successCount = Math.min(Math.max(0, card.progress.value), 5);
     return Array.from({ length: 5 }, (_, i) =>
       i < successCount ? "success" as MealState : "neutral" as MealState
     );
-  });
+  };
+
+  const [meals, setMeals] = useState<MealState[]>(() => breakdownToMeals(card));
+
+  // Sync when card data changes (date navigation)
+  useEffect(() => {
+    setMeals(breakdownToMeals(card));
+  }, [card.breakdown, card.progress.value]);
 
   const isAnyLoading = !!loadingActionId;
 
@@ -348,7 +365,7 @@ function DietMealActions({
         >
           <div
             className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-full transition-all",
+              "flex h-9 w-9 items-center justify-center rounded-full transition-all",
               state === "neutral" &&
                 "border-2 border-dashed border-gray-300 bg-white text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-500",
               state === "success" &&
@@ -363,7 +380,7 @@ function DietMealActions({
             {state === "success" && <Check className="h-4 w-4" strokeWidth={2.5} />}
             {state === "fail" && <X className="h-4 w-4" strokeWidth={2.5} />}
           </div>
-          <span className="text-[9px] leading-none text-gray-400 dark:text-gray-500">
+          <span className="text-[9px] leading-none text-gray-500 dark:text-gray-400">
             {MEAL_LABELS[i]}
           </span>
         </button>
@@ -398,10 +415,12 @@ function SleepCompactActions({
           key={action.id}
           onClick={() => onAction(action.id)}
           disabled={isAnyLoading}
+          aria-label={`Registrar ${action.label} horas de sono`}
           className={cn(
-            "flex-1 rounded-lg border py-2 text-center text-xs font-medium transition-colors",
+            "flex-1 rounded-lg border py-1.5 text-center text-xs font-medium transition-all",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             "disabled:pointer-events-none disabled:opacity-50",
+            "active:scale-[0.97]",
             cfg.activeBg,
             cfg.activeBgDark,
             cfg.metText,
@@ -421,7 +440,7 @@ function SleepCompactActions({
           onClick={() => onAction(minusAction.id)}
           disabled={isAnyLoading}
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             "disabled:pointer-events-none disabled:opacity-50",
             "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
@@ -441,7 +460,7 @@ function SleepCompactActions({
           onClick={() => onAction(plusAction.id)}
           disabled={isAnyLoading}
           className={cn(
-            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             "disabled:pointer-events-none disabled:opacity-50",
             "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
@@ -463,33 +482,70 @@ function SleepCompactActions({
 // ── Exercise Compact Actions ────────────────────────────
 
 const EXERCISE_MODALITIES = [
-  { id: "SWIM", label: "Nata\u00e7\u00e3o" },
-  { id: "GYM", label: "Muscula\u00e7\u00e3o" },
-  { id: "RUN", label: "Corrida" },
   { id: "CYCLING", label: "Bike" },
+  { id: "RUN", label: "Corrida" },
+  { id: "GYM", label: "Muscula\u00e7\u00e3o" },
+  { id: "SWIM", label: "Nata\u00e7\u00e3o" },
 ] as const;
 
-const MIN_EXERCISE_MINUTES = 15;
+const MIN_EXERCISE_MINUTES = 5;
 const MAX_EXERCISE_MINUTES = 120;
-const EXERCISE_STEP = 15;
+const EXERCISE_STEP = 5;
+
+interface ExerciseLogEntry {
+  modality: string;
+  label: string;
+  minutes: number;
+}
 
 function ExerciseCompactActions({
+  card,
   cfg,
   loadingActionId,
   onAction,
 }: {
+  card: TodayCard;
   cfg: ReturnType<typeof getCategoryConfig>;
   loadingActionId: string | null;
   onAction: (id: string) => void;
 }) {
+  const ACTION_TO_MODALITY: Record<string, { id: string; label: string }> = {
+    "exercise-gym": { id: "GYM", label: "Muscula\u00e7\u00e3o" },
+    "exercise-run": { id: "RUN", label: "Corrida" },
+    "exercise-cycling": { id: "CYCLING", label: "Bike" },
+    "exercise-swim": { id: "SWIM", label: "Nata\u00e7\u00e3o" },
+  };
+
   const [selectedModality, setSelectedModality] = useState<string | null>(null);
   const [selectedMinutes, setSelectedMinutes] = useState<number>(30);
+  const breakdownToLogs = (breakdown?: typeof card.breakdown): ExerciseLogEntry[] => {
+    if (!breakdown?.length) return [];
+    return breakdown.map((b) => {
+      const mod = ACTION_TO_MODALITY[b.actionId];
+      return {
+        modality: mod?.id ?? b.actionId,
+        label: mod?.label ?? b.label,
+        minutes: b.value,
+      };
+    });
+  };
+
+  const [logs, setLogs] = useState<ExerciseLogEntry[]>(() => breakdownToLogs(card.breakdown));
+
+  // Sync logs when card data changes (date navigation)
+  useEffect(() => {
+    setLogs(breakdownToLogs(card.breakdown));
+  }, [card.breakdown]);
 
   const isAnyLoading = !!loadingActionId;
   const actionId = `exercise-${selectedModality}-${selectedMinutes}`;
 
   const handleRegister = () => {
     if (!selectedModality) return;
+    const mod = EXERCISE_MODALITIES.find((m) => m.id === selectedModality);
+    if (mod) {
+      setLogs((prev) => [...prev, { modality: mod.id, label: mod.label, minutes: selectedMinutes }]);
+    }
     onAction(actionId);
   };
 
@@ -498,9 +554,26 @@ function ExerciseCompactActions({
 
   return (
     <div className="space-y-1">
+      {/* Logged entries */}
+      {logs.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {logs.map((entry, i) => (
+            <span
+              key={`${entry.modality}-${entry.minutes}-${i}`}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                cfg.activeBg, cfg.activeBgDark, cfg.metText, cfg.metTextDark
+              )}
+            >
+              {entry.label} {entry.minutes} min
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Modality selector */}
       <div>
-        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Modalidade
         </p>
         <div className="flex gap-1">
@@ -509,10 +582,13 @@ function ExerciseCompactActions({
               key={m.id}
               onClick={() => setSelectedModality(m.id)}
               disabled={isAnyLoading}
+              aria-label={`Selecionar ${m.label}`}
+              aria-pressed={selectedModality === m.id}
               className={cn(
-                "flex-1 rounded-md py-1.5 text-center text-[10px] font-medium transition-colors",
+                "flex-1 rounded-md py-1.5 text-center text-[10px] font-medium transition-all",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
                 "disabled:pointer-events-none disabled:opacity-50",
+                "active:scale-[0.97]",
                 selectedModality === m.id
                   ? cn("text-white", cfg.btnBg, cfg.btnBgDark)
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -526,7 +602,7 @@ function ExerciseCompactActions({
 
       {/* Duration stepper + Registrar */}
       <div>
-        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Duração
         </p>
         <div className="flex items-center gap-1.5">
@@ -534,7 +610,7 @@ function ExerciseCompactActions({
             onClick={() => setSelectedMinutes((v) => Math.max(MIN_EXERCISE_MINUTES, v - EXERCISE_STEP))}
             disabled={isAnyLoading || !canDecrement}
             className={cn(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
               "disabled:pointer-events-none disabled:opacity-40",
               "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
@@ -544,14 +620,14 @@ function ExerciseCompactActions({
           >
             <Minus className="h-3 w-3" />
           </button>
-          <span className="min-w-[3.5rem] text-center text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+          <span className="min-w-[3rem] text-center text-xs font-semibold tabular-nums text-gray-900 dark:text-white">
             {selectedMinutes} min
           </span>
           <button
             onClick={() => setSelectedMinutes((v) => Math.min(MAX_EXERCISE_MINUTES, v + EXERCISE_STEP))}
             disabled={isAnyLoading || !canIncrement}
             className={cn(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
               "disabled:pointer-events-none disabled:opacity-40",
               "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
@@ -565,7 +641,7 @@ function ExerciseCompactActions({
             onClick={handleRegister}
             disabled={!selectedModality || isAnyLoading}
             className={cn(
-              "ml-auto shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-white transition-colors",
+              "ml-auto shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all active:scale-[0.97]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
               "disabled:pointer-events-none disabled:opacity-50",
               cfg.btnBg,
@@ -589,11 +665,11 @@ function ExerciseCompactActions({
 // ── Helpers ──────────────────────────────────────────────
 
 function formatMinAsHours(min: number): string {
-  if (min <= 0) return "0h";
+  if (min <= 0) return "0 h";
   const h = Math.floor(min / 60);
   const m = min % 60;
-  if (m === 0) return `${h}h`;
-  return `${h}h${m.toString().padStart(2, "0")}`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m.toString().padStart(2, "0")}`;
 }
 
 function getGoalLabel(card: TodayCard): string {
@@ -613,14 +689,14 @@ function getGoalLabel(card: TodayCard): string {
   const unit = goal.unit || "";
 
   if (category === "SLEEP" && unit === "min") {
-    return `Meta: ${formatMinAsHours(target)} por noite`;
+    return `Noite passada \u00b7 Meta: ${formatMinAsHours(target)}`;
   }
 
   if (category === "DIET_CONTROL") {
     return `Meta: ${target} ${unit}/dia`;
   }
 
-  const formatted = target >= 1000 ? target.toLocaleString() : target.toString();
+  const formatted = target >= 1000 ? target.toLocaleString("pt-BR") : target.toString();
   return `Meta: ${formatted} ${unit}`;
 }
 

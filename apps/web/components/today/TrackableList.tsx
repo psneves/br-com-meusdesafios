@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 
 const CATEGORY_ORDER: Record<string, number> = {
   WATER: 0,
-  DIET_CONTROL: 1,
-  SLEEP: 2,
-  PHYSICAL_EXERCISE: 3,
+  PHYSICAL_EXERCISE: 1,
+  DIET_CONTROL: 2,
+  SLEEP: 3,
 };
 
 interface TrackableListProps {

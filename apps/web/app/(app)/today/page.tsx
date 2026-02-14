@@ -27,6 +27,8 @@ function formatWeekday(date: Date): string {
 }
 
 export default function TodayPage() {
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
+
   const {
     data,
     isLoading,
@@ -35,9 +37,7 @@ export default function TodayPage() {
     logQuickAction,
     clearFeedback,
     refresh,
-  } = useToday();
-
-  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
+  } = useToday(selectedDate);
 
   const today = useMemo(() => startOfDay(new Date()), []);
   const isToday = selectedDate.getTime() === today.getTime();

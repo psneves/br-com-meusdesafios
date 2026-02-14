@@ -87,40 +87,38 @@ export function TodayHeader({
 
   return (
     <header className={cn("space-y-1.5", className)}>
-      {/* Line 1: weekday + day nav */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          {onPrevDay && (
-            <button
-              onClick={onPrevDay}
-              className="flex h-11 w-11 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-              aria-label="Dia anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+      {/* Day navigation */}
+      <div className="flex items-center justify-center gap-1">
+        {onPrevDay && (
+          <button
+            onClick={onPrevDay}
+            className="flex h-11 w-11 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            aria-label="Dia anterior"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+        <div className="text-center">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
             {greeting}
           </h1>
-        </div>
-        <div className="flex items-center gap-1">
           <p className="text-xs text-gray-400 dark:text-gray-500">{date}</p>
-          {onNextDay && (
-            <button
-              onClick={onNextDay}
-              disabled={isToday}
-              className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-                isToday
-                  ? "cursor-not-allowed text-gray-200 dark:text-gray-700"
-                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-              )}
-              aria-label="Dia seguinte"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          )}
         </div>
+        {onNextDay && (
+          <button
+            onClick={onNextDay}
+            disabled={isToday}
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+              isToday
+                ? "cursor-not-allowed text-gray-200 dark:text-gray-700"
+                : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            )}
+            aria-label="Dia seguinte"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Line 2: KPI columns with vertical dividers */}
@@ -128,7 +126,7 @@ export function TodayHeader({
         <Kpi
           icon={Trophy}
           value={totalPoints}
-          label={dayLabel}
+          label={`Pontos ${dayLabel.toLowerCase()}`}
           tooltip={dayTooltip}
           variant="primary"
         />
@@ -147,6 +145,11 @@ export function TodayHeader({
           border
         />
       </div>
+
+      {/* Helper text */}
+      <p className="text-center text-[10px] text-gray-400 dark:text-gray-500">
+        Pontos vêm de metas concluídas (+10) e bônus de sequência.
+      </p>
     </header>
   );
 }
@@ -194,7 +197,7 @@ function Kpi({
             : "text-gray-900 dark:text-white"
         )}
       >
-        {value}
+        {value === 0 ? "—" : value}
       </span>
       <span
         className={cn(

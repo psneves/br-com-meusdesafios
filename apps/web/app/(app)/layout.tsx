@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { BottomTabBar } from "@/components/navigation/BottomTabBar";
 
 export default function AppLayout({
@@ -25,7 +24,7 @@ export default function AppLayout({
     <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a]">
       {/* Top app bar */}
       <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800/60 dark:bg-black/90">
-        <div className="mx-auto flex h-12 max-w-5xl items-center justify-between px-4 md:h-14">
+        <div className="mx-auto flex h-12 max-w-5xl items-center px-4 md:h-14">
           <Link href="/today" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-lg">
             <Image
               src={logoSrc}
@@ -39,8 +38,6 @@ export default function AppLayout({
               Meus Desafios
             </span>
           </Link>
-
-          <ThemeToggle />
         </div>
       </nav>
 
