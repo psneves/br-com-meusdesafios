@@ -1,0 +1,63 @@
+"use client";
+
+import { TrackableCard, TrackableCardSkeleton } from "@/components/trackables/TrackableCard";
+import { EmptyState } from "./EmptyState";
+import type { TodayCard } from "@/lib/types/today";
+import { cn } from "@/lib/utils";
+
+const CATEGORY_ORDER: Record<string, number> = {
+  WATER: 0,
+  DIET: 1,
+  SLEEP: 2,
+  GYM: 3,
+  RUN: 4,
+  BIKE: 5,
+  SWIM: 6,
+};
+
+interface TrackableListProps {
+  cards: TodayCard[];
+  onQuickAction: (cardId: string, actionId: string) => Promise<void> | void;
+  className?: string;
+}
+
+export function TrackableList({
+  cards,
+  onQuickAction,
+  className,
+}: TrackableListProps) {
+  if (cards.length === 0) {
+    return <EmptyState />;
+  }
+
+  const sortedCards = [...cards].sort(
+    (a, b) => (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99)
+  );
+
+  return (
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3",
+        className
+      )}
+    >
+      {sortedCards.map((card) => (
+        <TrackableCard
+          key={card.userTrackableId}
+          card={card}
+          onQuickAction={(actionId) => onQuickAction(card.userTrackableId, actionId)}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function TrackableListSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <TrackableCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}

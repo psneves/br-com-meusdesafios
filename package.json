@@ -1,0 +1,24 @@
+{
+  "name": "challengeos",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @challengeos/web dev",
+    "build": "pnpm --filter @challengeos/web build",
+    "start": "pnpm --filter @challengeos/web start",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:migration:generate": "pnpm --filter @challengeos/db migration:generate",
+    "db:migration:run": "pnpm --filter @challengeos/db migration:run",
+    "db:migration:revert": "pnpm --filter @challengeos/db migration:revert",
+    "db:seed": "pnpm --filter @challengeos/db seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
