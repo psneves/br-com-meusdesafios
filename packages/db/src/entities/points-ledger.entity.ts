@@ -9,7 +9,7 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { UserTrackable } from "./user-trackable.entity";
-import type { PointSource } from "@challengeos/shared";
+import type { PointSource } from "@meusdesafios/shared";
 
 @Entity("points_ledger")
 @Index(["userId", "day"])

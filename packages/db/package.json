@@ -1,5 +1,5 @@
 {
-  "name": "@challengeos/db",
+  "name": "@meusdesafios/db",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -14,7 +14,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@challengeos/shared": "workspace:*",
+    "@meusdesafios/shared": "workspace:*",
     "pg": "^8.11.3",
     "typeorm": "^0.3.20",
     "reflect-metadata": "^0.2.1"

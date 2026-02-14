@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Trophy, TrendingUp, Flame } from "lucide-react";
+import { Trophy, TrendingUp, Flame, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TodayHeaderProps {
   greeting: string;
@@ -7,6 +7,9 @@ interface TodayHeaderProps {
   totalPoints: number;
   points30d: number;
   bestStreak: number;
+  isToday?: boolean;
+  onPrevDay?: () => void;
+  onNextDay?: () => void;
   className?: string;
 }
 
@@ -16,90 +19,113 @@ export function TodayHeader({
   totalPoints,
   points30d,
   bestStreak,
+  isToday = true,
+  onPrevDay,
+  onNextDay,
   className,
 }: TodayHeaderProps) {
   return (
-    <header className={cn("space-y-2", className)}>
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white md:text-2xl">
-          {greeting}!
-        </h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400 md:text-sm">{date}</p>
+    <header className={cn("space-y-1", className)}>
+      {/* Line 1: greeting + day nav */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          {onPrevDay && (
+            <button
+              onClick={onPrevDay}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              aria-label="Dia anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {greeting}
+          </h1>
+        </div>
+        <div className="flex items-center gap-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500">{date}</p>
+          {onNextDay && (
+            <button
+              onClick={onNextDay}
+              disabled={isToday}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-md",
+                isToday
+                  ? "cursor-not-allowed text-gray-200 dark:text-gray-700"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+              )}
+              aria-label="Dia seguinte"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Summary strip — compact row on desktop, 2-row grid on mobile */}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
-        <SummaryChip
+      {/* Line 2: compact stat chips in a single row */}
+      <div className="flex items-center gap-2">
+        <StatChip
           icon={Trophy}
           value={totalPoints}
           suffix=" pts"
           label="Hoje"
           variant="primary"
-          helperText="Ganhe +10 pts ao cumprir uma meta hoje."
-          className="col-span-2 md:col-span-1"
         />
-        <SummaryChip
+        <StatChip
           icon={TrendingUp}
           value={points30d}
           suffix=" pts"
-          label="30 dias"
-          variant="secondary"
+          label="30d"
         />
-        <SummaryChip
+        <StatChip
           icon={Flame}
           value={bestStreak}
-          suffix=" dias"
-          label="Melhor sequência"
-          variant="secondary"
+          suffix="d"
+          label="Melhor"
         />
       </div>
     </header>
   );
 }
 
-interface SummaryChipProps {
+interface StatChipProps {
   icon: React.ComponentType<{ className?: string }>;
   value: number;
   suffix: string;
   label: string;
-  variant: "primary" | "secondary";
-  helperText?: string;
-  className?: string;
+  variant?: "primary" | "secondary";
 }
 
-function SummaryChip({
+function StatChip({
   icon: Icon,
   value,
   suffix,
   label,
-  variant,
-  helperText,
-  className,
-}: SummaryChipProps) {
+  variant = "secondary",
+}: StatChipProps) {
   const isPrimary = variant === "primary";
 
   return (
     <div
       className={cn(
-        "flex min-h-[44px] items-center gap-2 rounded-xl border px-3 py-2",
+        "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5",
         isPrimary
           ? "border-indigo-200 bg-indigo-50 dark:border-indigo-800/50 dark:bg-indigo-950/30"
-          : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900",
-        className
+          : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
       )}
     >
       <Icon
         className={cn(
-          "h-4 w-4 shrink-0",
+          "h-3.5 w-3.5 shrink-0",
           isPrimary
             ? "text-indigo-500 dark:text-indigo-400"
             : "text-gray-400 dark:text-gray-500"
         )}
       />
-      <div className="min-w-0">
-        <p
+      <div className="flex items-baseline gap-0.5">
+        <span
           className={cn(
-            "text-sm font-bold leading-tight",
+            "text-sm font-bold leading-none",
             isPrimary
               ? "text-indigo-600 dark:text-indigo-400"
               : "text-gray-900 dark:text-white"
@@ -107,15 +133,10 @@ function SummaryChip({
         >
           {value.toLocaleString()}
           {suffix}
-        </p>
-        <p className="truncate text-[10px] leading-tight text-gray-500 dark:text-gray-400">
+        </span>
+        <span className="text-[10px] leading-none text-gray-400 dark:text-gray-500">
           {label}
-        </p>
-        {helperText && (
-          <p className="mt-0.5 text-[9px] leading-tight text-indigo-500/70 dark:text-indigo-400/60 md:text-[10px]">
-            {helperText}
-          </p>
-        )}
+        </span>
       </div>
     </div>
   );
@@ -123,15 +144,15 @@ function SummaryChip({
 
 export function TodayHeaderSkeleton() {
   return (
-    <header className="animate-pulse space-y-2">
-      <div>
-        <div className="h-6 w-36 rounded bg-gray-200 dark:bg-gray-800 md:h-8 md:w-48" />
-        <div className="mt-1 h-4 w-28 rounded bg-gray-200 dark:bg-gray-800 md:w-32" />
+    <header className="animate-pulse space-y-1">
+      <div className="flex items-center justify-between">
+        <div className="h-5 w-28 rounded bg-gray-200 dark:bg-gray-800" />
+        <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-800" />
       </div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
-        <div className="col-span-2 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 md:col-span-1" />
-        <div className="h-12 rounded-xl bg-gray-200 dark:bg-gray-800" />
-        <div className="h-12 rounded-xl bg-gray-200 dark:bg-gray-800" />
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-24 rounded-lg bg-gray-200 dark:bg-gray-800" />
+        <div className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-gray-800" />
+        <div className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-gray-800" />
       </div>
     </header>
   );

@@ -5,7 +5,7 @@ import {
   OneToMany,
 } from "typeorm";
 import { UserTrackable } from "./user-trackable.entity";
-import type { Goal, ScoringConfig, TrackableCategory } from "@challengeos/shared";
+import type { Goal, ScoringConfig, TrackableCategory } from "@meusdesafios/shared";
 
 @Entity("trackable_templates")
 export class TrackableTemplate {
@@ -20,7 +20,7 @@ export class TrackableTemplate {
 
   @Column({
     type: "enum",
-    enum: ["RUN", "BIKE", "SWIM", "GYM", "SLEEP", "DIET", "WATER"],
+    enum: ["WATER", "DIET_CONTROL", "SLEEP", "PHYSICAL_EXERCISE"],
   })
   category!: TrackableCategory;
 

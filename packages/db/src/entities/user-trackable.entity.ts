@@ -11,7 +11,7 @@ import { User } from "./user.entity";
 import { TrackableTemplate } from "./trackable-template.entity";
 import { TrackableLog } from "./trackable-log.entity";
 import { Streak } from "./streak.entity";
-import type { Goal, Schedule, ScoringConfig } from "@challengeos/shared";
+import type { Goal, Schedule, ScoringConfig } from "@meusdesafios/shared";
 
 @Entity("user_trackables")
 export class UserTrackable {

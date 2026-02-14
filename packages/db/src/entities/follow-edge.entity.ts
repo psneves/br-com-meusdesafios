@@ -10,7 +10,7 @@ import {
   Unique,
 } from "typeorm";
 import { User } from "./user.entity";
-import type { FollowStatus } from "@challengeos/shared";
+import type { FollowStatus } from "@meusdesafios/shared";
 
 @Entity("follow_edges")
 @Index(["requesterId", "targetId", "status"])

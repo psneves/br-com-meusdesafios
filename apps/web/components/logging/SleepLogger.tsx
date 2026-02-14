@@ -62,7 +62,7 @@ export function SleepLogger({
       {/* Hora de deitar */}
       <div className="mb-4">
         <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          A que horas foste dormir?
+          A que horas você foi dormir?
         </label>
         <input
           type="time"
@@ -92,7 +92,7 @@ export function SleepLogger({
       {/* Duração */}
       <div className="mb-4">
         <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Quantas horas dormiste?
+          Quantas horas você dormiu?
         </label>
         <div className="grid grid-cols-3 gap-2">
           {DURATION_PRESETS.map((preset) => (

@@ -1,4 +1,4 @@
-import type { TrackableCategory, GoalType } from "@challengeos/shared";
+import type { TrackableCategory, GoalType, ExerciseModality } from "@meusdesafios/shared";
 
 export interface PeriodSummary {
   value: number;
@@ -53,6 +53,7 @@ export interface QuickAction {
   label: string;
   amount?: number;
   unit?: string;
+  exerciseModality?: ExerciseModality;
 }
 
 export interface TodayResponse {

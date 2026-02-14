@@ -1,77 +1,167 @@
-# Product Requirements – ChallengeOS
+# Product Requirements - Meus Desafios
 
-## Goal
-Build a gamified app to track life challenges with **standard Trackables**:
-- Run, Bike, Swim, Gym, Sleep, Diet, Water
+## Product goals + audience
 
-Users earn points and streaks, compete in private social rankings, and progress through challenges.
+### Target audience
+
+- Adults aged 25-35 seeking routine consistency with low daily friction.
+- Users who value measurable progress over social exposure.
+
+### Application goals
+
+- Make routine logging fast enough to sustain daily use.
+- Transform completed routines into transparent points and streaks.
+- Keep 4 core challenges under one consistent interaction model.
+- Support optional accountability via privacy-safe social features.
 
 ---
 
-## Key concepts
-### Trackable
-A single unit of behavior to track, each with:
+## Problem statement
+
+Most habit and challenge apps fail because they are either too complex to log daily or too vague about progress rules.
+
+Meus Desafios solves this by combining:
+- quick, repeatable logging interactions
+- explicit scoring rules
+- stable day-by-day progress feedback
+- optional social comparison without identity leakage
+
+---
+
+## Success metrics (MVP)
+
+- Activation: users activate at least 2 core challenges in first session.
+- Week-1 consistency: users log at least 4 of 7 days on one active challenge.
+- Logging speed: common actions complete in under 30 seconds.
+- Explainability: every points event has a readable reason.
+- Privacy safety: zero endpoints expose other users' rank identity.
+
+---
+
+## Core concepts
+
+### Core challenge
+
+A challenge card shown on Today and tracked daily.
+
+The app exposes 4 core challenges:
+- Water
+- Diet Control
+- Sleep
+- Physical Exercise
+
+### Trackable engine
+
+The internal rules engine still uses a unified trackable model so every challenge supports:
 - goal type
-- schedule (daily/weekly)
-- logging method
-- scoring and streak rules
-- visibility rules
+- schedule
+- log inputs
+- daily evaluation rules
+- point/streak outcomes
+- visibility controls
 
 ### Challenge template
-A predefined bundle of Trackables + schedule + default scoring.
+
+A predefined bundle of core challenges and starter configurations that accelerates onboarding.
+
+### Day boundary
+
+A "day" is evaluated in the user's configured timezone.
 
 ---
 
-## Core user stories (MVP)
-### Tracking
-- As a user, I can activate Trackables from standard templates.
-- As a user, I can log progress quickly today.
-- As a user, I can see my current streaks, points, and progress.
+## Functional requirements (MVP)
 
-### Sleep
-- As a user, I can track sleep consistency (bedtime and/or hours).
-- As a user, I can see streaks for sleep compliance.
+### Onboarding and setup
 
-### Diet
-- As a user, I can track diet via checklists (met/not met).
-- As a user, I can optionally log a single numeric (protein or calories).
+- Users can activate core challenges from standard templates.
+- Users can override goal/schedule defaults per challenge.
+- Physical Exercise is activated once and logs modality-specific activity (gym, run, cycling, swim).
 
-### Water
-- As a user, I can quickly log water with one tap (250/500/750 ml + custom).
+### Today experience
+
+- Users can view the 4 core challenge cards in one list.
+- Users can log common actions in 1-2 taps.
+- Users can see immediate feedback: progress, points, streak impact.
+
+### Detail experience
+
+Each challenge detail screen includes:
+- `Overview`: current week trend and status
+- `Logs`: entries + add flow
+- `Rules`: exact scoring and streak criteria
+
+### Scoring + streaks
+
+- Daily goal evaluation runs server-side.
+- Base points and milestone bonuses are deterministic.
+- Duplicate submissions do not double-award points.
 
 ### Social + privacy
-- As a user, I can request to follow someone.
-- As a user, I can accept/deny follow requests.
-- As a user, I can see a leaderboard for my “accepted network” without seeing who is around me.
+
+- Follow request flow: request, accept, deny.
+- Stats visibility requires accepted relationship.
+- Leaderboards return only self rank output.
+
+---
+
+## Core user stories
+
+### Tracking
+
+- As a user, I can activate the core challenges relevant to me.
+- As a user, I can log routine progress with minimal effort.
+- As a user, I can quickly see if I met today's goal.
+
+### Sleep
+
+- As a user, I can track bedtime and/or sleep duration.
+- As a user, I can see streaks tied to sleep consistency.
+
+### Diet Control
+
+- As a user, I can mark diet compliance with a checklist.
+- As a user, I can optionally log one numeric nutrition metric.
+
+### Water
+
+- As a user, I can quick-add water amounts with one tap.
+
+### Physical Exercise
+
+- As a user, I can log gym, run, cycling, or swim inside one Physical Exercise challenge.
+- As a user, I can score exercise consistency without activating separate exercise cards.
+
+### Social
+
+- As a user, I can choose who can view my shared stats.
+- As a user, I can see my rank without exposing other people.
 
 ---
 
 ## Non-functional requirements
-- **Privacy-first**: no stats visibility without acceptance.
-- **Anti-leak**: leaderboard endpoints cannot be used to infer other users.
-- **Server authoritative**: scoring, streaks, ranks computed on server.
-- **Explainable scoring**: UI can show “why you earned points”.
+
+- Privacy-controlled by default.
+- Server-authoritative calculations for points/streaks/rank.
+- Explainable scoring outputs.
+- Deterministic recomputation from logs.
+- API schema validation on all inputs and outputs.
 
 ---
 
-## MVP out of scope (defer)
-- Wearables integrations (Garmin/Strava/Apple Health)
-- Full nutrition/macros diary
-- Messaging, comments, likes
-- Public leaderboards (outside accepted network)
-- Paid plans, referrals, badges marketplace
+## MVP out of scope
+
+- Wearables auto-sync (Garmin, Strava, Apple Health)
+- Rich nutrition diary/macros planner
+- Messaging/comments/likes
+- Public/global leaderboards
+- Monetization and referrals
 
 ---
 
-## UX principles
-- “Daily cockpit” **Today screen** with Trackable cards.
-- One consistent interaction model:
-  - view progress → quick log → feedback (streak + points)
-- Minimal friction (few taps) and clarity on rules.
+## Global acceptance criteria
 
----
-
-## Acceptance criteria (global)
-- Logging must not require more than **2 taps** for common actions (water add, checklist complete).
-- Streak rules must be consistent and shown in **Rules tab**.
-- Leaderboards must never reveal neighbors’ identities or ranking order.
+- Common log actions require no more than 2 taps.
+- Rules tab fully explains how scoring is computed.
+- Day-based scoring remains correct across timezone boundaries.
+- Leaderboards never return any other user's identity.

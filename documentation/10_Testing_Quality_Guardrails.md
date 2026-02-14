@@ -1,62 +1,88 @@
-# Testing, Quality & Guardrails – ChallengeOS
+# Testing, Quality & Guardrails - Meus Desafios
 
-## Testing priorities
-### 1) Scoring correctness
-- Unit tests for each goal type:
-  - binary, target, range, time window
-- Unit tests for streak transitions:
-  - increment, reset, milestone bonus
-- Ledger tests:
-  - points are not double-counted
+## Quality goals
 
-### 2) Privacy enforcement
-- Tests that reject access when follow status != accepted
-- Tests that leaderboard endpoints never return other users
-- Inference resistance:
-  - no pagination
-  - no top-N endpoints
-  - minimum cohort size behavior
-
-### 3) API contract tests
-- Validate request/response schemas (zod or similar)
-- Backward compatibility for mobile/web clients
+- Scoring and streak logic is deterministic and auditable.
+- Privacy constraints are enforced at API and data-access layers.
+- Logging flows remain fast, stable, and idempotent.
 
 ---
 
-## Quality guardrails
-- Server is source of truth for:
-  - daily progress
-  - streaks
-  - points
-  - rank
-- Keep points_ledger immutable
-- Use migrations for schema changes
-- Add observability:
-  - audit scoring runs
-  - track recalculation errors
+## Test strategy
+
+### 1. Unit tests (logic core)
+
+Scoring engine:
+- `binary`, `target`, `range`, `time_window` evaluation
+- streak transitions: increment, reset, milestones
+- dedupe behavior for repeated recompute
+
+Validation layer:
+- payload schema validation
+- numeric bounds per core challenge category
+- physical exercise modality validation (`gym`, `run`, `cycling`, `swim`)
+
+### 2. Integration tests (service + DB)
+
+- log creation -> daily recompute -> ledger writes
+- idempotency key behavior for repeated submissions
+- recompute correctness after backfilled logs
+
+### 3. API contract tests
+
+- request/response shape validation
+- error envelope consistency
+- backward compatibility for mobile/web clients
+
+### 4. Privacy/security tests
+
+- follow status access matrix (`pending`, `accepted`, `denied`, `blocked`)
+- leaderboard endpoints return self result only
+- minimum cohort behavior
+- no top-N, no pagination, no neighbor leakage
+
+### 5. UI behavior tests
+
+- Today quick actions update progress correctly
+- Rules tab content is visible and understandable
+- rank unavailable state is rendered clearly
 
 ---
 
-## Edge cases to test
-- Late-night logs (timezone boundaries)
-- Sleep spanning midnight
-- Duplicate logs and idempotency
-- User deactivates/reactivates a trackable
-- Cohort too small for leaderboard rank
-- Blocking a user (future), ensure no visibility
+## Critical edge cases
+
+- timezone boundaries around midnight
+- sleep logs spanning midnight
+- duplicate log requests
+- out-of-order/backfilled logs
+- challenge deactivation/reactivation
+- physical exercise logs across mixed modalities in the same day
+- blocked users removed from social visibility
 
 ---
 
-## Security checks
-- Authorization middleware required on every endpoint
-- Validate inputs (limits: max water per day, max distance per day)
-- Rate limiting on log creation
+## Operational guardrails
+
+- server is source of truth for points, streaks, and rank
+- points ledger is immutable
+- all schema changes use migrations
+- scoring jobs emit audit logs and error telemetry
+
+---
+
+## Performance and reliability checks
+
+- P95 latency targets for Today and logging endpoints
+- leaderboard endpoint caching strategy validated
+- recompute jobs retry safely without double-awards
 
 ---
 
 ## Release checklist
-- [ ] All scoring tests green
-- [ ] Privacy tests green
-- [ ] No endpoints returning other users in leaderboards
-- [ ] Data migrations applied cleanly
-- [ ] Basic monitoring enabled
+
+- [ ] Scoring unit/integration tests pass
+- [ ] Privacy/security tests pass
+- [ ] API contracts validated against schemas
+- [ ] No leaderboard response exposes other user identity
+- [ ] Migration and rollback scripts verified
+- [ ] Monitoring dashboards and alerts enabled

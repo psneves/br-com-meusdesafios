@@ -7,12 +7,9 @@ import { cn } from "@/lib/utils";
 
 const CATEGORY_ORDER: Record<string, number> = {
   WATER: 0,
-  DIET: 1,
+  DIET_CONTROL: 1,
   SLEEP: 2,
-  GYM: 3,
-  RUN: 4,
-  BIKE: 5,
-  SWIM: 6,
+  PHYSICAL_EXERCISE: 3,
 };
 
 interface TrackableListProps {
@@ -37,7 +34,7 @@ export function TrackableList({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3",
+        "grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3",
         className
       )}
     >
@@ -54,7 +51,7 @@ export function TrackableList({
 
 export function TrackableListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
         <TrackableCardSkeleton key={i} />
       ))}

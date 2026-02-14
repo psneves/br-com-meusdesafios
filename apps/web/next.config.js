@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@challengeos/shared", "@challengeos/db"],
+  transpilePackages: ["@meusdesafios/shared", "@meusdesafios/db"],
 };
 
 module.exports = nextConfig;

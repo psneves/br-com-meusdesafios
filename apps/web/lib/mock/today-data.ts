@@ -19,7 +19,7 @@ export const mockTodayCards: TodayCard[] = [
   // Água - progresso parcial
   {
     userTrackableId: "ut-water-001",
-    templateCode: "WATER_DAILY",
+    templateCode: "WATER",
     name: "Água",
     icon: "💧",
     category: "WATER",
@@ -45,43 +45,17 @@ export const mockTodayCards: TodayCard[] = [
       { id: "water-750", type: "add", label: "+750 ml", amount: 750, unit: "ml" },
       { id: "water-custom", type: "log", label: "Personalizar" },
     ],
+    period7d: { value: 15500, unit: "ml", count: 5 },
+    period30d: { value: 62000, unit: "ml", count: 22 },
   },
 
-  // Corrida - não começou
-  {
-    userTrackableId: "ut-run-001",
-    templateCode: "RUN_DISTANCE",
-    name: "Corrida",
-    icon: "🏃",
-    category: "RUN",
-    goal: {
-      type: "target",
-      target: 5,
-      unit: "km",
-    },
-    progress: {
-      value: 0,
-      unit: "km",
-      met: false,
-      percentage: 0,
-    },
-    streak: {
-      current: 2,
-      best: 8,
-    },
-    pointsToday: 0,
-    quickActions: [
-      { id: "run-log", type: "log", label: "Registrar" },
-    ],
-  },
-
-  // Dieta - toggle simples
+  // Controle Alimentar - toggle simples
   {
     userTrackableId: "ut-diet-001",
-    templateCode: "DIET_CHECKLIST",
-    name: "Alimentação",
+    templateCode: "DIET_CONTROL",
+    name: "Controle Alimentar",
     icon: "🥗",
-    category: "DIET",
+    category: "DIET_CONTROL",
     goal: {
       type: "binary",
     },
@@ -98,12 +72,14 @@ export const mockTodayCards: TodayCard[] = [
     quickActions: [
       { id: "diet-toggle", type: "toggle", label: "Cumpri" },
     ],
+    period7d: { value: 5, count: 5 },
+    period30d: { value: 22, count: 22 },
   },
 
   // Sono - não registado
   {
     userTrackableId: "ut-sleep-001",
-    templateCode: "SLEEP_BEDTIME",
+    templateCode: "SLEEP",
     name: "Sono",
     icon: "😴",
     category: "SLEEP",
@@ -122,92 +98,44 @@ export const mockTodayCards: TodayCard[] = [
     },
     pointsToday: 0,
     quickActions: [
-      { id: "sleep-log", type: "log", label: "Registrar" },
+      { id: "sleep-log", type: "log", label: "Registar" },
     ],
+    period7d: { value: 4, count: 4 },
+    period30d: { value: 18, count: 18 },
   },
 
-  // Ginásio - meta cumprida
+  // Exercício Físico - progresso parcial com modalidades
   {
-    userTrackableId: "ut-gym-001",
-    templateCode: "GYM_SESSION",
-    name: "Musculação",
-    icon: "🏋️",
-    category: "GYM",
+    userTrackableId: "ut-exercise-001",
+    templateCode: "PHYSICAL_EXERCISE",
+    name: "Exercício Físico",
+    icon: "💪",
+    category: "PHYSICAL_EXERCISE",
     goal: {
       type: "target",
       target: 60,
       unit: "min",
     },
     progress: {
-      value: 75,
+      value: 45,
       unit: "min",
-      met: true,
-      percentage: 100,
+      met: false,
+      percentage: 75,
     },
     streak: {
       current: 3,
       best: 10,
     },
-    pointsToday: 15,
-    quickActions: [
-      { id: "gym-log", type: "log", label: "Registrar" },
-    ],
-  },
-
-  // Ciclismo - parcial
-  {
-    userTrackableId: "ut-bike-001",
-    templateCode: "BIKE_DISTANCE",
-    name: "Ciclismo",
-    icon: "🚴",
-    category: "BIKE",
-    goal: {
-      type: "target",
-      target: 20,
-      unit: "km",
-    },
-    progress: {
-      value: 12,
-      unit: "km",
-      met: false,
-      percentage: 60,
-    },
-    streak: {
-      current: 1,
-      best: 6,
-    },
     pointsToday: 0,
     quickActions: [
-      { id: "bike-log", type: "log", label: "Registrar" },
+      { id: "exercise-log", type: "log", label: "Registar" },
     ],
-  },
-
-  // Natação - meta cumprida
-  {
-    userTrackableId: "ut-swim-001",
-    templateCode: "SWIM_DISTANCE",
-    name: "Natação",
-    icon: "🏊",
-    category: "SWIM",
-    goal: {
-      type: "target",
-      target: 1,
-      unit: "km",
-    },
-    progress: {
-      value: 1.2,
-      unit: "km",
-      met: true,
-      percentage: 100,
-    },
-    streak: {
-      current: 14,
-      best: 14,
-    },
-    pointsToday: 30,
-    quickActions: [
-      { id: "swim-log", type: "log", label: "Registrar" },
+    breakdown: [
+      { label: "Corrida", value: 30, actionId: "exercise-log" },
+      { label: "Musculação", value: 15, actionId: "exercise-log" },
     ],
+    period7d: { value: 320, unit: "min", count: 5 },
+    period30d: { value: 1200, unit: "min", count: 20 },
   },
 ];
 
