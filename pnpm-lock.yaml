@@ -14,10 +14,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@challengeos/db':
+      '@meusdesafios/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@challengeos/shared':
+      '@meusdesafios/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       clsx:
@@ -81,7 +81,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@challengeos/shared':
+      '@meusdesafios/shared':
         specifier: workspace:*
         version: link:../shared
       pg:

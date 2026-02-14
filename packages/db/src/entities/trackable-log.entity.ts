@@ -9,7 +9,7 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { UserTrackable } from "./user-trackable.entity";
-import type { LogMeta } from "@challengeos/shared";
+import type { LogMeta } from "@meusdesafios/shared";
 
 @Entity("trackable_logs")
 @Index(["userTrackableId", "occurredAt"])

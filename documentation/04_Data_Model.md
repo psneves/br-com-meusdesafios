@@ -1,4 +1,4 @@
-# Data Model – ChallengeOS (Postgres-first)
+# Data Model – Meus Desafios (Postgres-first)
 
 ## Overview
 Model around:

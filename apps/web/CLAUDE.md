@@ -12,7 +12,7 @@ pnpm build        # Production build (also validates TypeScript)
 pnpm lint         # ESLint with next/core-web-vitals
 ```
 
-No web-specific tests exist yet. Shared package tests are run from the monorepo root with `pnpm --filter @challengeos/shared test`.
+No web-specific tests exist yet. Shared package tests are run from the monorepo root with `pnpm --filter @meusdesafios/shared test`.
 
 ## Architecture
 
@@ -57,8 +57,8 @@ Both `ui/` and `trackables/` have barrel `index.ts` exports.
 
 ### Types
 
-Web-specific types live in `lib/types/today.ts` (TodayCard, TodayResponse, LogFeedback, QuickAction). These import shared types (TrackableCategory, GoalType) from `@challengeos/shared`.
+Web-specific types live in `lib/types/today.ts` (TodayCard, TodayResponse, LogFeedback, QuickAction). These import shared types (TrackableCategory, GoalType) from `@meusdesafios/shared`.
 
 ### Monorepo Integration
 
-`next.config.js` transpiles `@challengeos/shared` and `@challengeos/db` so they can be imported directly. TypeScript strict mode is enabled.
+`next.config.js` transpiles `@meusdesafios/shared` and `@meusdesafios/db` so they can be imported directly. TypeScript strict mode is enabled.

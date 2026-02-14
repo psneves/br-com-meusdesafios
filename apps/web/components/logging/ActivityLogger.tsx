@@ -5,7 +5,7 @@ import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { getCategoryConfig } from "@/lib/category-config";
 import { cn } from "@/lib/utils";
-import type { TrackableCategory } from "@challengeos/shared";
+import type { TrackableCategory } from "@meusdesafios/shared";
 
 interface ActivityLoggerProps {
   isOpen: boolean;

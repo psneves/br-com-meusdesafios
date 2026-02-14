@@ -1,4 +1,4 @@
-# Backlog & Roadmap – ChallengeOS
+# Backlog & Roadmap – Meus Desafios
 
 ## Milestone 0: Foundations (Week 1)
 - [ ] Repo setup + lint/test tooling

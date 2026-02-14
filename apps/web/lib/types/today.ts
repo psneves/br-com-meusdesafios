@@ -1,4 +1,4 @@
-import type { TrackableCategory, GoalType } from "@challengeos/shared";
+import type { TrackableCategory, GoalType } from "@meusdesafios/shared";
 
 export interface PeriodSummary {
   value: number;

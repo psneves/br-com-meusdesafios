@@ -1,6 +1,6 @@
-# ChallengeOS – Cloud Code AI Training Pack
+# Meus Desafios – Cloud Code AI Training Pack
 
-This folder contains 10 markdown files designed to configure and train an AI coding assistant to build **ChallengeOS**: a privacy-first, gamified life-challenges tracking app.
+This folder contains 10 markdown files designed to configure and train an AI coding assistant to build **Meus Desafios**: a privacy-first, gamified life-challenges tracking app.
 
 ## How to use (recommended workflow)
 

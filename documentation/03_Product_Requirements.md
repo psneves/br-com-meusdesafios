@@ -1,4 +1,4 @@
-# Product Requirements – ChallengeOS
+# Product Requirements – Meus Desafios
 
 ## Goal
 Build a gamified app to track life challenges with **standard Trackables**:

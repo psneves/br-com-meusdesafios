@@ -5,7 +5,7 @@ import {
   OneToMany,
 } from "typeorm";
 import { UserTrackable } from "./user-trackable.entity";
-import type { Goal, ScoringConfig, TrackableCategory } from "@challengeos/shared";
+import type { Goal, ScoringConfig, TrackableCategory } from "@meusdesafios/shared";
 
 @Entity("trackable_templates")
 export class TrackableTemplate {

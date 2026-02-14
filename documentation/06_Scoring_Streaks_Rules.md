@@ -1,4 +1,4 @@
-# Scoring & Streak Rules – ChallengeOS (Explainable + Deterministic)
+# Scoring & Streak Rules – Meus Desafios (Explainable + Deterministic)
 
 ## Principles
 - **Server-calculated**

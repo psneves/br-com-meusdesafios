@@ -9,7 +9,7 @@ import { WaterLogger } from "@/components/logging/WaterLogger";
 import { SleepLogger } from "@/components/logging/SleepLogger";
 import { ActivityLogger } from "@/components/logging/ActivityLogger";
 import type { TodayCard } from "@/lib/types/today";
-import type { TrackableCategory } from "@challengeos/shared";
+import type { TrackableCategory } from "@meusdesafios/shared";
 
 type ModalType = "water" | "sleep" | "activity" | null;
 

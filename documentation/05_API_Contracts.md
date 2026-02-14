@@ -1,4 +1,4 @@
-# API Contracts – ChallengeOS (Privacy-first)
+# API Contracts – Meus Desafios (Privacy-first)
 
 ## Auth
 Assume standard session/JWT.

@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Meus Desafios",
-  description: "Acompanha os teus desafios diários de forma gamificada",
+  description: "Consistência vira resultado",
   icons: {
     icon: [
       { url: "/logo-256x256.png", sizes: "256x256", type: "image/png" },

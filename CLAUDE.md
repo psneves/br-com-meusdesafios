@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ChallengeOS is a privacy-first, gamified life-challenges tracking app.
+Meus Desafios – Consistency becomes results.
+Meus Desafios is the app for anyone who wants to build routines and see real progress. With simple goals and straightforward gamification (points and streaks), you can log in just a few taps and track your progress effortlessly. Everything follows the same Tracking pattern—like Running, Cycling, Swimming, Gym, Sleep, Diet, and Water—with a “Today” card, quick actions, and a clear detail screen (Overview / Logs / Rules) so you always understand what counts and how you score. And if you choose to share, social features are optional, with visibility controls to avoid unnecessary exposure.
 
 ## Build & Development Commands
 
@@ -23,8 +24,8 @@ pnpm lint                   # Lint all packages
 
 # Testing
 pnpm test                   # Run all tests
-pnpm --filter @challengeos/shared test      # Run shared package tests
-pnpm --filter @challengeos/shared test:run  # Run tests once (CI)
+pnpm --filter @meusdesafios/shared test      # Run shared package tests
+pnpm --filter @meusdesafios/shared test:run  # Run tests once (CI)
 
 # Database (TypeORM)
 pnpm db:migration:run       # Run migrations

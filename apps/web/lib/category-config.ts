@@ -9,7 +9,7 @@ import {
   Waves,
   HeartPulse,
 } from "lucide-react";
-import type { TrackableCategory } from "@challengeos/shared";
+import type { TrackableCategory } from "@meusdesafios/shared";
 
 export interface CategoryConfig {
   icon: LucideIcon;

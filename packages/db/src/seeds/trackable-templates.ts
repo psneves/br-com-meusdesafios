@@ -1,5 +1,5 @@
-import type { Goal, ScoringConfig } from "@challengeos/shared";
-import { DEFAULT_SCORING } from "@challengeos/shared";
+import type { Goal, ScoringConfig } from "@meusdesafios/shared";
+import { DEFAULT_SCORING } from "@meusdesafios/shared";
 
 interface TemplateSeed {
   code: string;

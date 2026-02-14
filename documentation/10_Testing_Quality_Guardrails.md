@@ -1,4 +1,4 @@
-# Testing, Quality & Guardrails – ChallengeOS
+# Testing, Quality & Guardrails – Meus Desafios
 
 ## Testing priorities
 ### 1) Scoring correctness

@@ -1,4 +1,4 @@
-# Leaderboards & Privacy – ChallengeOS
+# Leaderboards & Privacy – Meus Desafios
 
 ## Problem statement
 Users want a social rank, but must not see:
