@@ -15,6 +15,17 @@ function formatDate(date: Date): string {
   });
 }
 
+/** Days elapsed in the current week (Mon=1 .. Sun=7) */
+function weekDaysElapsed(): number {
+  const dow = new Date().getDay(); // 0=Sun 1=Mon ... 6=Sat
+  return dow === 0 ? 7 : dow;
+}
+
+/** Days elapsed in the current month (1..31) */
+function monthDaysElapsed(): number {
+  return new Date().getDate();
+}
+
 export const mockTodayCards: TodayCard[] = [
   // Água - progresso parcial
   {
@@ -43,40 +54,40 @@ export const mockTodayCards: TodayCard[] = [
       { id: "water-250", type: "add", label: "+250 ml", amount: 250, unit: "ml" },
       { id: "water-500", type: "add", label: "+500 ml", amount: 500, unit: "ml" },
       { id: "water-750", type: "add", label: "+750 ml", amount: 750, unit: "ml" },
-      { id: "water-custom", type: "log", label: "Personalizar" },
     ],
-    period7d: { value: 15500, unit: "ml", count: 5 },
-    period30d: { value: 62000, unit: "ml", count: 22 },
+    periodWeek: { value: 12500, unit: "ml", count: 5, totalDays: weekDaysElapsed() },
+    periodMonth: { value: 30000, unit: "ml", count: 11, totalDays: monthDaysElapsed() },
   },
 
-  // Controle Alimentar - toggle simples
+  // Proteína - refeições com proteína
   {
     userTrackableId: "ut-diet-001",
     templateCode: "DIET_CONTROL",
-    name: "Controle Alimentar",
+    name: "Proteína",
     icon: "🥗",
     category: "DIET_CONTROL",
     goal: {
-      type: "binary",
+      type: "target",
+      target: 5,
+      unit: "refeições",
     },
     progress: {
-      value: 0,
+      value: 2,
+      unit: "refeições",
       met: false,
-      percentage: 0,
+      percentage: 40,
     },
     streak: {
       current: 7,
       best: 14,
     },
     pointsToday: 0,
-    quickActions: [
-      { id: "diet-toggle", type: "toggle", label: "Cumpri" },
-    ],
-    period7d: { value: 5, count: 5 },
-    period30d: { value: 22, count: 22 },
+    quickActions: [],
+    periodWeek: { value: 22, unit: "refeições", count: 5, totalDays: weekDaysElapsed() },
+    periodMonth: { value: 55, unit: "refeições", count: 11, totalDays: monthDaysElapsed() },
   },
 
-  // Sono - não registado
+  // Sono - duração em minutos
   {
     userTrackableId: "ut-sleep-001",
     templateCode: "SLEEP",
@@ -84,11 +95,13 @@ export const mockTodayCards: TodayCard[] = [
     icon: "😴",
     category: "SLEEP",
     goal: {
-      type: "time_window",
-      timeWindowEnd: "23:00",
+      type: "target",
+      target: 420,
+      unit: "min",
     },
     progress: {
       value: 0,
+      unit: "min",
       met: false,
       percentage: 0,
     },
@@ -98,10 +111,13 @@ export const mockTodayCards: TodayCard[] = [
     },
     pointsToday: 0,
     quickActions: [
-      { id: "sleep-log", type: "log", label: "Registar" },
+      { id: "sleep-6h30", type: "add", label: "6:30", amount: 390, unit: "min" },
+      { id: "sleep-7h", type: "add", label: "7:00", amount: 420, unit: "min" },
+      { id: "sleep-plus", type: "add", label: "+", amount: 30, unit: "min" },
+      { id: "sleep-minus", type: "add", label: "\u2212", amount: -30, unit: "min" },
     ],
-    period7d: { value: 4, count: 4 },
-    period30d: { value: 18, count: 18 },
+    periodWeek: { value: 2100, unit: "min", count: 4, totalDays: weekDaysElapsed() },
+    periodMonth: { value: 5460, unit: "min", count: 9, totalDays: monthDaysElapsed() },
   },
 
   // Exercício Físico - progresso parcial com modalidades
@@ -127,15 +143,9 @@ export const mockTodayCards: TodayCard[] = [
       best: 10,
     },
     pointsToday: 0,
-    quickActions: [
-      { id: "exercise-log", type: "log", label: "Registar" },
-    ],
-    breakdown: [
-      { label: "Corrida", value: 30, actionId: "exercise-log" },
-      { label: "Musculação", value: 15, actionId: "exercise-log" },
-    ],
-    period7d: { value: 320, unit: "min", count: 5 },
-    period30d: { value: 1200, unit: "min", count: 20 },
+    quickActions: [],
+    periodWeek: { value: 180, unit: "min", count: 3, totalDays: weekDaysElapsed() },
+    periodMonth: { value: 600, unit: "min", count: 10, totalDays: monthDaysElapsed() },
   },
 ];
 
@@ -149,8 +159,8 @@ export function getMockTodayResponse(): TodayResponse {
     date: formatDate(new Date()),
     greeting: getGreeting(),
     totalPoints,
-    points30d: 450,
-    bestStreak: 14,
+    pointsWeek: 120,
+    pointsMonth: 450,
     cards: mockTodayCards,
   };
 }

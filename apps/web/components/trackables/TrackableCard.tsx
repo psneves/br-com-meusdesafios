@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronRight, AlertCircle, Plus, Loader2 } from "lucide-react";
+import { Check, X, ChevronRight, AlertCircle, Plus, Minus, Loader2 } from "lucide-react";
 import { StreakBadge } from "./StreakBadge";
 import { PointsChip } from "./PointsChip";
 import { getCategoryConfig } from "@/lib/category-config";
-import type { TodayCard, QuickAction, PeriodSummary } from "@/lib/types/today";
+import type { TodayCard, QuickAction } from "@/lib/types/today";
 import { cn } from "@/lib/utils";
 
 interface TrackableCardProps {
@@ -51,7 +51,7 @@ export function TrackableCard({
       )}
     >
       {/* Header: icon + name + goal | streak + points */}
-      <div className="flex items-center gap-2 px-3 pt-2.5 pb-0.5">
+      <div className="flex items-center gap-2 px-3 pt-2 pb-0.5">
         <Icon className={cn("h-4 w-4 shrink-0", cfg.color)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -75,7 +75,7 @@ export function TrackableCard({
         </div>
       </div>
 
-      {/* Progress bar (only for target-type goals with progress) */}
+      {/* Progress bar (only for target-type goals) */}
       {card.goal.type === "target" && (
         <div className="px-3 pt-1">
           <CompactProgress
@@ -86,15 +86,13 @@ export function TrackableCard({
             percentage={card.progress.percentage}
             accentColor={cn(cfg.barColor, cfg.barColorDark)}
             metTextClass={cn(cfg.metText, cfg.metTextDark)}
+            isSleep={card.category === "SLEEP"}
           />
         </div>
       )}
 
-      {/* Period stats (7d / 30d) */}
-      <PeriodStats card={card} />
-
       {/* Compact action row — category-specific */}
-      <div className="px-3 pt-1.5 pb-2.5">
+      <div className="px-3 pt-1 pb-2">
         <CompactActions
           card={card}
           cfg={cfg}
@@ -111,31 +109,16 @@ export function TrackableCard({
         </div>
       )}
 
-      {/* Footer: met message or details link */}
-      {(card.progress.met || onViewDetails) && (
-        <div className="flex items-center justify-between border-t border-gray-100 px-3 py-1.5 dark:border-gray-800">
-          <div className="min-w-0">
-            {card.progress.met && (
-              <p className={cn("flex items-center gap-1 text-[11px] font-medium", cfg.metText, cfg.metTextDark)}>
-                <Check className="h-3 w-3" />
-                Meta cumprida!
-                {card.pointsToday > 0 && (
-                  <span className="ml-0.5 text-gray-400 dark:text-gray-500">
-                    (+{card.pointsToday} pts)
-                  </span>
-                )}
-              </p>
-            )}
-          </div>
-          {onViewDetails && (
-            <button
-              onClick={onViewDetails}
-              className="inline-flex shrink-0 items-center gap-0.5 text-[11px] font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-            >
-              Detalhes
-              <ChevronRight className="h-3 w-3" />
-            </button>
-          )}
+      {/* Footer: details link only */}
+      {onViewDetails && (
+        <div className="flex items-center justify-end border-t border-gray-100 px-3 dark:border-gray-800">
+          <button
+            onClick={onViewDetails}
+            className="inline-flex min-h-[44px] shrink-0 items-center gap-0.5 text-[11px] font-medium text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded dark:text-gray-500 dark:hover:text-gray-300"
+          >
+            Detalhes
+            <ChevronRight className="h-3 w-3" />
+          </button>
         </div>
       )}
     </div>
@@ -152,6 +135,7 @@ function CompactProgress({
   percentage,
   accentColor,
   metTextClass,
+  isSleep = false,
 }: {
   value: number;
   target: number;
@@ -160,9 +144,14 @@ function CompactProgress({
   percentage: number;
   accentColor: string;
   metTextClass: string;
+  isSleep?: boolean;
 }) {
-  const fmt = (v: number) =>
-    v >= 1000 ? v.toLocaleString() : v % 1 !== 0 ? v.toFixed(1) : v.toString();
+  const fmt = (v: number) => {
+    if (isSleep) return formatMinAsHours(v);
+    return v >= 1000 ? v.toLocaleString() : v % 1 !== 0 ? v.toFixed(1) : v.toString();
+  };
+
+  const displayUnit = isSleep ? "" : unit;
 
   return (
     <div className="space-y-0.5">
@@ -179,7 +168,7 @@ function CompactProgress({
             met ? metTextClass : "text-gray-500 dark:text-gray-400"
           )}
         >
-          {fmt(value)}/{fmt(target)} {unit}
+          {fmt(value)}/{fmt(target)}{displayUnit ? ` ${displayUnit}` : ""}
         </span>
       </div>
     </div>
@@ -205,7 +194,7 @@ function CompactActions({
   switch (card.category) {
     case "WATER":
       return (
-        <WaterCompactActions
+        <AddChipActions
           actions={card.quickActions}
           cfg={cfg}
           isLoading={isLoading}
@@ -215,22 +204,28 @@ function CompactActions({
       );
     case "DIET_CONTROL":
       return (
-        <DietCompactActions
+        <DietMealActions
           card={card}
+          cfg={cfg}
+          loadingActionId={loadingActionId}
+          onAction={onAction}
+        />
+      );
+    case "SLEEP":
+      return (
+        <SleepCompactActions
+          actions={card.quickActions}
           cfg={cfg}
           isLoading={isLoading}
           isAnyLoading={isAnyLoading}
           onAction={onAction}
         />
       );
-    case "SLEEP":
     case "PHYSICAL_EXERCISE":
       return (
-        <SingleButtonAction
-          action={card.quickActions.find((a) => a.type === "log") || card.quickActions[0]}
+        <ExerciseCompactActions
           cfg={cfg}
-          isLoading={isLoading}
-          isAnyLoading={isAnyLoading}
+          loadingActionId={loadingActionId}
           onAction={onAction}
         />
       );
@@ -239,8 +234,9 @@ function CompactActions({
   }
 }
 
-// Water: "+" primary button + horizontal chip row (250/500/750)
-function WaterCompactActions({
+// ── Add Chip Actions (Water) ─────────────────────────────
+
+function AddChipActions({
   actions,
   cfg,
   isLoading,
@@ -254,56 +250,209 @@ function WaterCompactActions({
   onAction: (id: string) => void;
 }) {
   const addActions = actions.filter((a) => a.type === "add");
-  const logAction = actions.find((a) => a.type === "log");
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Quick-add chips */}
-      <div className="flex flex-1 items-center gap-1.5">
-        {addActions.map((action) => (
-          <button
-            key={action.id}
-            onClick={() => onAction(action.id)}
-            disabled={isAnyLoading}
-            className={cn(
-              "flex-1 rounded-lg border py-1.5 text-center text-xs font-medium transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-              "disabled:pointer-events-none disabled:opacity-50",
-              cfg.activeBg,
-              cfg.activeBgDark,
-              cfg.metText,
-              cfg.metTextDark,
-              "border-current/15 hover:opacity-80"
-            )}
-          >
-            {isLoading(action.id) ? (
-              <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" />
-            ) : (
-              `+${action.amount}`
-            )}
-          </button>
-        ))}
-      </div>
-      {/* Custom log button */}
-      {logAction && (
+    <div className="flex items-center gap-1.5">
+      {addActions.map((action) => (
         <button
-          onClick={() => onAction(logAction.id)}
+          key={action.id}
+          onClick={() => onAction(action.id)}
           disabled={isAnyLoading}
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors",
+            "flex-1 rounded-lg border py-2 text-center text-xs font-medium transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
             "disabled:pointer-events-none disabled:opacity-50",
-            cfg.btnBg,
-            cfg.btnHover,
-            cfg.btnBgDark,
-            cfg.btnHoverDark
+            cfg.activeBg,
+            cfg.activeBgDark,
+            cfg.metText,
+            cfg.metTextDark,
+            "border-current/15 hover:opacity-80"
           )}
-          aria-label="Personalizar quantidade"
         >
-          {isLoading(logAction.id) ? (
+          {isLoading(action.id) ? (
+            <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" />
+          ) : (
+            `+${action.amount}`
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Diet Meal Actions (5 meal circles) ───────────────────
+
+type MealState = "neutral" | "success" | "fail";
+
+const MEAL_LABELS = ["Café", "Lanche", "Almoço", "Lanche", "Jantar"];
+
+function DietMealActions({
+  card,
+  cfg,
+  loadingActionId,
+  onAction,
+}: {
+  card: TodayCard;
+  cfg: ReturnType<typeof getCategoryConfig>;
+  loadingActionId: string | null;
+  onAction: (id: string) => void;
+}) {
+  const [meals, setMeals] = useState<MealState[]>(() => {
+    const successCount = Math.min(Math.max(0, card.progress.value), 5);
+    return Array.from({ length: 5 }, (_, i) =>
+      i < successCount ? "success" as MealState : "neutral" as MealState
+    );
+  });
+
+  const isAnyLoading = !!loadingActionId;
+
+  const cycleMeal = (index: number) => {
+    if (isAnyLoading) return;
+
+    setMeals((prev) => {
+      const current = prev[index];
+      let next: MealState;
+      let delta = 0;
+
+      if (current === "neutral") {
+        next = "success";
+        delta = 1;
+      } else if (current === "success") {
+        next = "fail";
+        delta = -1;
+      } else {
+        next = "neutral";
+        delta = 0;
+      }
+
+      const updated = [...prev];
+      updated[index] = next;
+
+      if (delta !== 0) {
+        onAction(`diet-meal-delta-${delta}`);
+      }
+
+      return updated;
+    });
+  };
+
+  return (
+    <div className="flex items-end justify-between">
+      {meals.map((state, i) => (
+        <button
+          key={i}
+          onClick={() => cycleMeal(i)}
+          disabled={isAnyLoading}
+          className="flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-full disabled:pointer-events-none disabled:opacity-50"
+          aria-label={`${MEAL_LABELS[i]}: ${state === "neutral" ? "não registrado" : state === "success" ? "cumprido" : "não cumprido"}`}
+        >
+          <div
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-full transition-all",
+              state === "neutral" &&
+                "border-2 border-dashed border-gray-300 bg-white text-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-500",
+              state === "success" &&
+                cn("text-white shadow-sm", cfg.btnBg, cfg.btnBgDark),
+              state === "fail" &&
+                "bg-red-100 text-red-500 dark:bg-red-900/40 dark:text-red-400"
+            )}
+          >
+            {state === "neutral" && (
+              <span className="text-[11px] font-medium">{i + 1}</span>
+            )}
+            {state === "success" && <Check className="h-4 w-4" strokeWidth={2.5} />}
+            {state === "fail" && <X className="h-4 w-4" strokeWidth={2.5} />}
+          </div>
+          <span className="text-[9px] leading-none text-gray-400 dark:text-gray-500">
+            {MEAL_LABELS[i]}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Sleep Compact Actions ([6:30] [7:00] [-] [+]) ──────
+
+function SleepCompactActions({
+  actions,
+  cfg,
+  isLoading,
+  isAnyLoading,
+  onAction,
+}: {
+  actions: QuickAction[];
+  cfg: ReturnType<typeof getCategoryConfig>;
+  isLoading: (id: string) => boolean;
+  isAnyLoading: boolean;
+  onAction: (id: string) => void;
+}) {
+  const presets = actions.filter((a) => a.label !== "+" && a.label !== "\u2212");
+  const plusAction = actions.find((a) => a.label === "+");
+  const minusAction = actions.find((a) => a.label === "\u2212");
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {presets.map((action) => (
+        <button
+          key={action.id}
+          onClick={() => onAction(action.id)}
+          disabled={isAnyLoading}
+          className={cn(
+            "flex-1 rounded-lg border py-2 text-center text-xs font-medium transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+            "disabled:pointer-events-none disabled:opacity-50",
+            cfg.activeBg,
+            cfg.activeBgDark,
+            cfg.metText,
+            cfg.metTextDark,
+            "border-current/15 hover:opacity-80"
+          )}
+        >
+          {isLoading(action.id) ? (
+            <Loader2 className="mx-auto h-3.5 w-3.5 animate-spin" />
+          ) : (
+            action.label
+          )}
+        </button>
+      ))}
+      {minusAction && (
+        <button
+          onClick={() => onAction(minusAction.id)}
+          disabled={isAnyLoading}
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+            "disabled:pointer-events-none disabled:opacity-50",
+            "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
+            "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+          )}
+          aria-label="Menos 30 minutos"
+        >
+          {isLoading(minusAction.id) ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Plus className="h-4 w-4" />
+            <Minus className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+      {plusAction && (
+        <button
+          onClick={() => onAction(plusAction.id)}
+          disabled={isAnyLoading}
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+            "disabled:pointer-events-none disabled:opacity-50",
+            "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
+            "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+          )}
+          aria-label="Mais 30 minutos"
+        >
+          {isLoading(plusAction.id) ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Plus className="h-3.5 w-3.5" />
           )}
         </button>
       )}
@@ -311,154 +460,141 @@ function WaterCompactActions({
   );
 }
 
-// Diet: segmented "Cumpri / Não cumpri"
-function DietCompactActions({
-  card,
+// ── Exercise Compact Actions ────────────────────────────
+
+const EXERCISE_MODALITIES = [
+  { id: "SWIM", label: "Nata\u00e7\u00e3o" },
+  { id: "GYM", label: "Muscula\u00e7\u00e3o" },
+  { id: "RUN", label: "Corrida" },
+  { id: "CYCLING", label: "Bike" },
+] as const;
+
+const MIN_EXERCISE_MINUTES = 15;
+const MAX_EXERCISE_MINUTES = 120;
+const EXERCISE_STEP = 15;
+
+function ExerciseCompactActions({
   cfg,
-  isLoading,
-  isAnyLoading,
+  loadingActionId,
   onAction,
 }: {
-  card: TodayCard;
   cfg: ReturnType<typeof getCategoryConfig>;
-  isLoading: (id: string) => boolean;
-  isAnyLoading: boolean;
+  loadingActionId: string | null;
   onAction: (id: string) => void;
 }) {
-  const toggleAction = card.quickActions.find((a) => a.type === "toggle");
-  if (!toggleAction) return null;
+  const [selectedModality, setSelectedModality] = useState<string | null>(null);
+  const [selectedMinutes, setSelectedMinutes] = useState<number>(30);
 
-  const met = card.progress.met;
+  const isAnyLoading = !!loadingActionId;
+  const actionId = `exercise-${selectedModality}-${selectedMinutes}`;
+
+  const handleRegister = () => {
+    if (!selectedModality) return;
+    onAction(actionId);
+  };
+
+  const canDecrement = selectedMinutes > MIN_EXERCISE_MINUTES;
+  const canIncrement = selectedMinutes < MAX_EXERCISE_MINUTES;
 
   return (
-    <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-      <button
-        onClick={() => !met && onAction(toggleAction.id)}
-        disabled={isAnyLoading}
-        className={cn(
-          "flex flex-1 items-center justify-center gap-1 py-2 text-xs font-medium transition-colors",
-          "disabled:pointer-events-none",
-          met
-            ? cn("text-white", cfg.btnBg, cfg.btnBgDark)
-            : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-        )}
-      >
-        {isLoading(toggleAction.id) && !met ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <>
-            {met && <Check className="h-3.5 w-3.5" />}
-            Cumpri
-          </>
-        )}
-      </button>
-      <div className="w-px bg-gray-200 dark:bg-gray-700" />
-      <button
-        onClick={() => met && onAction(toggleAction.id)}
-        disabled={isAnyLoading}
-        className={cn(
-          "flex flex-1 items-center justify-center gap-1 py-2 text-xs font-medium transition-colors",
-          "disabled:pointer-events-none",
-          !met
-            ? "bg-gray-50 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-            : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-        )}
-      >
-        {isLoading(toggleAction.id) && met ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          "Nao cumpri"
-        )}
-      </button>
+    <div className="space-y-1">
+      {/* Modality selector */}
+      <div>
+        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          Modalidade
+        </p>
+        <div className="flex gap-1">
+          {EXERCISE_MODALITIES.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => setSelectedModality(m.id)}
+              disabled={isAnyLoading}
+              className={cn(
+                "flex-1 rounded-md py-1.5 text-center text-[10px] font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+                "disabled:pointer-events-none disabled:opacity-50",
+                selectedModality === m.id
+                  ? cn("text-white", cfg.btnBg, cfg.btnBgDark)
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Duration stepper + Registrar */}
+      <div>
+        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          Duração
+        </p>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setSelectedMinutes((v) => Math.max(MIN_EXERCISE_MINUTES, v - EXERCISE_STEP))}
+            disabled={isAnyLoading || !canDecrement}
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+              "disabled:pointer-events-none disabled:opacity-40",
+              "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
+              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            )}
+            aria-label="Diminuir duração"
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <span className="min-w-[3.5rem] text-center text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+            {selectedMinutes} min
+          </span>
+          <button
+            onClick={() => setSelectedMinutes((v) => Math.min(MAX_EXERCISE_MINUTES, v + EXERCISE_STEP))}
+            disabled={isAnyLoading || !canIncrement}
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+              "disabled:pointer-events-none disabled:opacity-40",
+              "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100",
+              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            )}
+            aria-label="Aumentar duração"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+          <button
+            onClick={handleRegister}
+            disabled={!selectedModality || isAnyLoading}
+            className={cn(
+              "ml-auto shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-white transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+              "disabled:pointer-events-none disabled:opacity-50",
+              cfg.btnBg,
+              cfg.btnHover,
+              cfg.btnBgDark,
+              cfg.btnHoverDark
+            )}
+          >
+            {loadingActionId === actionId ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              "Registrar"
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
-}
-
-// Sleep / Exercise: single "Registar" button
-function SingleButtonAction({
-  action,
-  cfg,
-  isLoading,
-  isAnyLoading,
-  onAction,
-}: {
-  action: QuickAction;
-  cfg: ReturnType<typeof getCategoryConfig>;
-  isLoading: (id: string) => boolean;
-  isAnyLoading: boolean;
-  onAction: (id: string) => void;
-}) {
-  if (!action) return null;
-
-  return (
-    <button
-      onClick={() => onAction(action.id)}
-      disabled={isAnyLoading}
-      className={cn(
-        "flex w-full items-center justify-center rounded-lg py-2 text-xs font-medium text-white transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-        "disabled:pointer-events-none disabled:opacity-50",
-        cfg.btnBg,
-        cfg.btnHover,
-        cfg.btnBgDark,
-        cfg.btnHoverDark
-      )}
-    >
-      {isLoading(action.id) ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        action.label
-      )}
-    </button>
-  );
-}
-
-// ── Period Stats (7d / 30d) ─────────────────────────────
-
-function PeriodStats({ card }: { card: TodayCard }) {
-  if (!card.period7d && !card.period30d) return null;
-
-  const isTarget = card.goal.type === "target";
-
-  return (
-    <div className="flex items-center gap-0.5 px-3 pt-1 text-[10px] leading-none text-gray-400 dark:text-gray-500">
-      {card.period7d && (
-        <span>
-          Sem: {formatPeriod(card.period7d, isTarget, 7)}
-        </span>
-      )}
-      {card.period7d && card.period30d && (
-        <span className="mx-1">·</span>
-      )}
-      {card.period30d && (
-        <span>
-          Mes: {formatPeriod(card.period30d, isTarget, 30)}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function formatPeriod(period: PeriodSummary, isTarget: boolean, totalDays: number): string {
-  if (!isTarget) {
-    return `${period.count}/${totalDays} dias`;
-  }
-
-  const unit = period.unit || "";
-  let valueStr: string;
-
-  if (unit === "ml" && period.value >= 1000) {
-    valueStr = `${(period.value / 1000).toFixed(1).replace(/\.0$/, "")}L`;
-  } else if (period.value >= 1000) {
-    valueStr = period.value.toLocaleString() + (unit ? ` ${unit}` : "");
-  } else {
-    valueStr = period.value.toString() + (unit ? ` ${unit}` : "");
-  }
-
-  return `${valueStr} (${period.count}/${totalDays})`;
 }
 
 // ── Helpers ──────────────────────────────────────────────
+
+function formatMinAsHours(min: number): string {
+  if (min <= 0) return "0h";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (m === 0) return `${h}h`;
+  return `${h}h${m.toString().padStart(2, "0")}`;
+}
 
 function getGoalLabel(card: TodayCard): string {
   const { goal, category } = card;
@@ -469,11 +605,21 @@ function getGoalLabel(card: TodayCard): string {
   }
 
   if (goal.type === "time_window") {
-    return `Deitar ate ${goal.timeWindowEnd}`;
+    return `Deitar at\u00e9 ${goal.timeWindowEnd}`;
   }
 
+  // Target type
   const target = goal.target || 0;
   const unit = goal.unit || "";
+
+  if (category === "SLEEP" && unit === "min") {
+    return `Meta: ${formatMinAsHours(target)} por noite`;
+  }
+
+  if (category === "DIET_CONTROL") {
+    return `Meta: ${target} ${unit}/dia`;
+  }
+
   const formatted = target >= 1000 ? target.toLocaleString() : target.toString();
   return `Meta: ${formatted} ${unit}`;
 }

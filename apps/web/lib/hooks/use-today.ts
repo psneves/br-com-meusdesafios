@@ -184,6 +184,14 @@ export function useToday(): UseTodayResult {
         }
       }
 
+      if (actionId.startsWith("diet-meal-delta-")) {
+        const delta = parseInt(actionId.replace("diet-meal-delta-", ""), 10);
+        if (!isNaN(delta)) {
+          await logValue(cardId, delta);
+          return;
+        }
+      }
+
       if (actionId.startsWith("activity-log-")) {
         const value = parseFloat(actionId.replace("activity-log-", ""));
         if (!isNaN(value)) {

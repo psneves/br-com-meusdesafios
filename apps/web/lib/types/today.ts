@@ -4,6 +4,7 @@ export interface PeriodSummary {
   value: number;
   unit?: string;
   count: number; // number of days with logs
+  totalDays: number; // total days in the period (partial week/month)
 }
 
 export interface ProgressBreakdown {
@@ -24,8 +25,8 @@ export interface TodayCard {
   pointsToday: number;
   quickActions: QuickAction[];
   breakdown?: ProgressBreakdown[];
-  period7d?: PeriodSummary;
-  period30d?: PeriodSummary;
+  periodWeek?: PeriodSummary;
+  periodMonth?: PeriodSummary;
 }
 
 export interface CardGoal {
@@ -60,8 +61,8 @@ export interface TodayResponse {
   date: string;
   greeting: string;
   totalPoints: number;
-  points30d: number;
-  bestStreak: number;
+  pointsWeek: number;
+  pointsMonth: number;
   cards: TodayCard[];
 }
 

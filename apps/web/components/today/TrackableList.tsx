@@ -34,7 +34,7 @@ export function TrackableList({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3",
+        "grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3",
         className
       )}
     >
@@ -51,7 +51,7 @@ export function TrackableList({
 
 export function TrackableListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
         <TrackableCardSkeleton key={i} />
       ))}
