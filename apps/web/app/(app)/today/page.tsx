@@ -7,6 +7,8 @@ import { useToday } from "@/lib/hooks/use-today";
 import { TodayHeader, TodayHeaderSkeleton } from "@/components/today/TodayHeader";
 import { TrackableList, TrackableListSkeleton } from "@/components/today/TrackableList";
 import { FeedbackToast } from "@/components/today/FeedbackToast";
+import { WaterLogger, SleepLogger, ActivityLogger, DietLogger } from "@/components/logging";
+import type { TrackableCategory } from "@meusdesafios/shared";
 
 function startOfDay(date: Date): Date {
   const d = new Date(date);
@@ -28,13 +30,20 @@ function formatWeekday(date: Date): string {
 
 export default function TodayPage() {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
+  const [activeModal, setActiveModal] = useState<{
+    cardId: string;
+    category: TrackableCategory;
+  } | null>(null);
+  const [expandedKpi, setExpandedKpi] = useState<"week" | "month" | null>(null);
 
   const {
     data,
+    weekSummary,
+    monthSummary,
     isLoading,
     error,
     feedback,
-    logQuickAction,
+    logValue,
     clearFeedback,
     refresh,
   } = useToday(selectedDate);
@@ -62,12 +71,57 @@ export default function TodayPage() {
   const displayGreeting = formatWeekday(selectedDate);
   const displayDate = formatDateShort(selectedDate);
 
-  const handleQuickAction = useCallback(
-    async (cardId: string, actionId: string) => {
-      return logQuickAction(cardId, actionId);
+  // ── Modal handlers ───────────────────────────────────────
+
+  const handleRegister = useCallback(
+    (cardId: string) => {
+      const card = data?.cards.find((c) => c.userTrackableId === cardId);
+      if (card) setActiveModal({ cardId, category: card.category });
     },
-    [logQuickAction]
+    [data]
   );
+
+  const handleCloseModal = useCallback(() => setActiveModal(null), []);
+
+  const handleWaterLog = useCallback(
+    async (amount: number) => {
+      if (activeModal) await logValue(activeModal.cardId, amount);
+    },
+    [activeModal, logValue]
+  );
+
+  const handleSleepLog = useCallback(
+    async (durationMin: number) => {
+      if (activeModal) await logValue(activeModal.cardId, durationMin);
+    },
+    [activeModal, logValue]
+  );
+
+  const handleActivityLog = useCallback(
+    async (value: number) => {
+      if (activeModal) await logValue(activeModal.cardId, value);
+    },
+    [activeModal, logValue]
+  );
+
+  const handleDietLog = useCallback(
+    async (successCount: number) => {
+      if (!activeModal || !data) return;
+      const card = data.cards.find((c) => c.userTrackableId === activeModal.cardId);
+      if (!card) return;
+      const delta = successCount - card.progress.value;
+      if (delta !== 0) await logValue(activeModal.cardId, delta);
+    },
+    [activeModal, data, logValue]
+  );
+
+  // ── Derive active card ───────────────────────────────────
+
+  const activeCard = activeModal
+    ? data?.cards.find((c) => c.userTrackableId === activeModal.cardId) ?? null
+    : null;
+
+  // ── Render ───────────────────────────────────────────────
 
   if (error) {
     return (
@@ -95,6 +149,8 @@ export default function TodayPage() {
           <TodayHeader
             greeting={displayGreeting}
             date={displayDate}
+            userName="Paulo Neves"
+            avatarUrl="/profile/profile.png"
             totalPoints={data.totalPoints}
             pointsWeek={data.pointsWeek}
             pointsMonth={data.pointsMonth}
@@ -102,16 +158,62 @@ export default function TodayPage() {
             isToday={isToday}
             onPrevDay={handlePrevDay}
             onNextDay={handleNextDay}
+            weekSummary={weekSummary ?? undefined}
+            monthSummary={monthSummary ?? undefined}
+            onKpiChange={setExpandedKpi}
           />
-          <TrackableList
-            cards={data.cards}
-            onQuickAction={handleQuickAction}
-          />
+          {expandedKpi !== "month" && (
+            <TrackableList
+              cards={data.cards}
+              onRegister={handleRegister}
+            />
+          )}
         </>
       )}
 
       {/* Feedback Toast */}
       <FeedbackToast feedback={feedback} onDismiss={clearFeedback} />
+
+      {/* Logging Modals */}
+      {activeCard && activeModal?.category === "WATER" && (
+        <WaterLogger
+          isOpen
+          onClose={handleCloseModal}
+          onLog={handleWaterLog}
+          currentProgress={activeCard.progress.value}
+          target={activeCard.goal.target}
+        />
+      )}
+      {activeCard && activeModal?.category === "SLEEP" && (
+        <SleepLogger
+          isOpen
+          onClose={handleCloseModal}
+          onLog={handleSleepLog}
+        />
+      )}
+      {activeCard && activeModal?.category === "PHYSICAL_EXERCISE" && (
+        <ActivityLogger
+          isOpen
+          onClose={handleCloseModal}
+          onLog={handleActivityLog}
+          category={activeCard.category}
+          name={activeCard.name}
+          icon={activeCard.icon}
+          currentProgress={activeCard.progress.value}
+          target={activeCard.goal.target}
+          unit={activeCard.goal.unit}
+        />
+      )}
+      {activeCard && activeModal?.category === "DIET_CONTROL" && (
+        <DietLogger
+          isOpen
+          onClose={handleCloseModal}
+          onLog={handleDietLog}
+          currentProgress={activeCard.progress.value}
+          currentBreakdown={activeCard.breakdown}
+          target={activeCard.goal.target}
+        />
+      )}
     </div>
   );
 }

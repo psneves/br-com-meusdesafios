@@ -1,9 +1,19 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Trophy, TrendingUp, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Info, User } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
+import { WeeklySummaryPanel } from "@/components/today/WeeklySummaryPanel";
+import { MonthlySummaryPanel } from "@/components/today/MonthlySummaryPanel";
+import type { WeeklySummary, MonthlySummary } from "@/lib/types/today";
 
 interface TodayHeaderProps {
   greeting: string;
   date: string;
+  userName?: string;
+  avatarUrl?: string;
   totalPoints: number;
   pointsWeek: number;
   pointsMonth: number;
@@ -11,10 +21,11 @@ interface TodayHeaderProps {
   isToday?: boolean;
   onPrevDay?: () => void;
   onNextDay?: () => void;
+  weekSummary?: WeeklySummary;
+  monthSummary?: MonthlySummary;
+  onKpiChange?: (kpi: "week" | "month" | null) => void;
   className?: string;
 }
-
-// ── Date helpers for KPI labels & tooltips ───────────────
 
 function getDayLabel(selected: Date): string {
   const now = new Date();
@@ -26,51 +37,20 @@ function getDayLabel(selected: Date): string {
   if (diffDays === 0) return "Hoje";
   if (diffDays === 1) return "Ontem";
 
-  // Within last 6 days: abbreviated weekday
   if (diffDays <= 6) {
-    const wd = sel.toLocaleDateString("pt-BR", { weekday: "short" });
-    return wd.charAt(0).toUpperCase() + wd.slice(1).replace(".", "");
+    const wd = sel.toLocaleDateString("pt-BR", { weekday: "long" });
+    const capitalized = wd.charAt(0).toUpperCase() + wd.slice(1);
+    return capitalized.split("-")[0];
   }
 
-  // Older: short date
   return `${sel.getDate()}/${sel.getMonth() + 1}`;
-}
-
-function getDayTooltip(selected: Date): string {
-  return selected.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-}
-
-function getWeekTooltip(selected: Date): string {
-  const day = selected.getDay(); // 0=Sun
-  const diffToMon = day === 0 ? -6 : 1 - day;
-  const mon = new Date(selected);
-  mon.setDate(selected.getDate() + diffToMon);
-  const sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-
-  const fmtShort = (d: Date) =>
-    d.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "");
-
-  if (mon.getMonth() === sun.getMonth()) {
-    const monStr = fmtShort(mon);
-    return `${mon.getDate()}–${sun.getDate()} de ${monStr.split(" de ")[1] || monStr.split(" ")[1]}`;
-  }
-  return `${fmtShort(mon)} – ${fmtShort(sun)}`;
-}
-
-function getMonthTooltip(selected: Date): string {
-  const month = selected.toLocaleDateString("pt-BR", { month: "long" });
-  const lastDay = new Date(selected.getFullYear(), selected.getMonth() + 1, 0).getDate();
-  return `1–${lastDay} de ${month}`;
 }
 
 export function TodayHeader({
   greeting,
   date,
+  userName,
+  avatarUrl,
   totalPoints,
   pointsWeek,
   pointsMonth,
@@ -78,160 +58,236 @@ export function TodayHeader({
   isToday = true,
   onPrevDay,
   onNextDay,
+  weekSummary,
+  monthSummary,
+  onKpiChange,
   className,
 }: TodayHeaderProps) {
+  const [showPointsInfo, setShowPointsInfo] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [expandedKpi, setExpandedKpi] = useState<"week" | "month" | null>(null);
   const dayLabel = getDayLabel(selectedDate);
-  const dayTooltip = getDayTooltip(selectedDate);
-  const weekTooltip = getWeekTooltip(selectedDate);
-  const monthTooltip = getMonthTooltip(selectedDate);
+
+  const toggleKpi = (kpi: "week" | "month") => {
+    setExpandedKpi((prev) => {
+      const next = prev === kpi ? null : kpi;
+      onKpiChange?.(next);
+      return next;
+    });
+  };
+
+  // Mock detail data derived from points
+  const weekGoalsMet = pointsWeek > 0 ? Math.ceil(pointsWeek / 10) : 0;
+  const monthGoalsMet = pointsMonth > 0 ? Math.ceil(pointsMonth / 10) : 0;
 
   return (
-    <header className={cn("space-y-1.5", className)}>
-      {/* Day navigation */}
-      <div className="flex items-center justify-center gap-1">
-        {onPrevDay && (
-          <button
-            onClick={onPrevDay}
-            className="flex h-11 w-11 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-            aria-label="Dia anterior"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-        )}
-        <div className="text-center">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-            {greeting}
-          </h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500">{date}</p>
-        </div>
-        {onNextDay && (
-          <button
-            onClick={onNextDay}
-            disabled={isToday}
-            className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-              isToday
-                ? "cursor-not-allowed text-gray-200 dark:text-gray-700"
-                : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+    <header className={cn("space-y-3 pt-2", className)}>
+      {/* Top row: avatar + greeting (left)  |  day nav (right) */}
+      <div className="flex items-center">
+        {/* Avatar + greeting */}
+        <div className="flex min-w-0 items-center gap-2.5">
+          {!avatarUrl || avatarError ? (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+              <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+            </div>
+          ) : (
+            <Image
+              src={avatarUrl}
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
+              onError={() => setAvatarError(true)}
+            />
+          )}
+          <div className="min-w-0">
+            {userName && (
+              <p className="truncate text-[15px] font-bold leading-tight text-gray-900 dark:text-white">
+                {userName}
+              </p>
             )}
-            aria-label="Dia seguinte"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        )}
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">{date}</p>
+          </div>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Day navigation pill */}
+        <div className="flex items-center gap-1 rounded-full bg-white px-1 py-1 shadow-sm ring-1 ring-gray-100 dark:bg-gray-800/60 dark:ring-gray-700/50">
+          {onPrevDay && (
+            <button
+              onClick={onPrevDay}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              aria-label="Dia anterior"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <span className="w-[7rem] text-center text-sm font-semibold text-gray-900 dark:text-white">
+            {greeting}
+          </span>
+          {onNextDay && (
+            <button
+              onClick={onNextDay}
+              disabled={isToday}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
+                isToday
+                  ? "cursor-not-allowed text-gray-200 dark:text-gray-700"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              )}
+              aria-label="Dia seguinte"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Line 2: KPI columns with vertical dividers */}
-      <div className="grid grid-cols-3">
-        <Kpi
-          icon={Trophy}
-          value={totalPoints}
-          label={`Pontos ${dayLabel.toLowerCase()}`}
-          tooltip={dayTooltip}
-          variant="primary"
-        />
-        <Kpi
-          icon={TrendingUp}
-          value={pointsWeek}
-          label="Semana"
-          tooltip={weekTooltip}
-          border
-        />
-        <Kpi
-          icon={CalendarDays}
-          value={pointsMonth}
-          label="Mês"
-          tooltip={monthTooltip}
-          border
-        />
+      {/* KPI cards */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* Primary: Pontos hoje */}
+        <button
+          onClick={() => setShowPointsInfo(true)}
+          className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50 px-2 py-2.5 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40"
+          aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
+        >
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-extrabold tabular-nums leading-none text-indigo-600 dark:text-indigo-400">
+              {totalPoints === 0 ? "\u2014" : totalPoints}
+            </span>
+            <span className="text-sm font-bold text-indigo-500/80 dark:text-indigo-400/70">XP</span>
+            <Info className="mb-auto mt-0.5 h-3 w-3 text-indigo-400/50 dark:text-indigo-500/50" />
+          </div>
+          <span className="mt-1 text-[11px] font-medium leading-none text-indigo-500/80 dark:text-indigo-400/70">
+            {dayLabel}
+          </span>
+        </button>
+        {/* Secondary: Semana */}
+        <button
+          onClick={() => toggleKpi("week")}
+          className={cn(
+            "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-2 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1",
+            "bg-white dark:bg-gray-900/40"
+          )}
+          aria-label={`${pointsWeek} XP na semana`}
+          aria-expanded={expandedKpi === "week"}
+        >
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
+              {pointsWeek === 0 ? "\u2014" : pointsWeek}
+            </span>
+            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
+          </div>
+          <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
+            Semana
+            <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "week" && "rotate-180")} />
+          </span>
+        </button>
+        {/* Secondary: Mês */}
+        <button
+          onClick={() => toggleKpi("month")}
+          className={cn(
+            "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-2 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1",
+            "bg-white dark:bg-gray-900/40"
+          )}
+          aria-label={`${pointsMonth} XP no mês`}
+          aria-expanded={expandedKpi === "month"}
+        >
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
+              {pointsMonth === 0 ? "\u2014" : pointsMonth}
+            </span>
+            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
+          </div>
+          <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
+            Mês
+            <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "month" && "rotate-180")} />
+          </span>
+        </button>
       </div>
 
-      {/* Helper text */}
-      <p className="text-center text-[10px] text-gray-400 dark:text-gray-500">
-        Pontos vêm de metas concluídas (+10) e bônus de sequência.
-      </p>
-    </header>
-  );
-}
-
-interface KpiProps {
-  icon: React.ComponentType<{ className?: string }>;
-  value: number;
-  label: string;
-  tooltip?: string;
-  variant?: "primary" | "secondary";
-  border?: boolean;
-}
-
-function Kpi({
-  icon: Icon,
-  value,
-  label,
-  tooltip,
-  variant = "secondary",
-  border = false,
-}: KpiProps) {
-  const isPrimary = variant === "primary";
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center gap-0.5 py-1",
-        border && "border-l border-gray-200 dark:border-gray-800"
+      {/* Expanded KPI detail */}
+      {expandedKpi && (
+        <div className="rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-gray-800/40">
+          {expandedKpi === "week" && weekSummary ? (
+            <WeeklySummaryPanel summary={weekSummary} />
+          ) : expandedKpi === "week" ? (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500 dark:text-gray-400">
+                {weekGoalsMet} {weekGoalsMet === 1 ? "meta batida" : "metas batidas"}
+              </span>
+              <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-300">
+                {pointsWeek} XP
+              </span>
+            </div>
+          ) : expandedKpi === "month" && monthSummary ? (
+            <MonthlySummaryPanel summary={monthSummary} />
+          ) : (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500 dark:text-gray-400">
+                {monthGoalsMet} {monthGoalsMet === 1 ? "meta batida" : "metas batidas"}
+              </span>
+              <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-300">
+                {pointsMonth} XP
+              </span>
+            </div>
+          )}
+        </div>
       )}
-      title={tooltip}
-    >
-      <Icon
-        className={cn(
-          "h-3.5 w-3.5",
-          isPrimary
-            ? "text-indigo-500 dark:text-indigo-400"
-            : "text-gray-400 dark:text-gray-500"
-        )}
-      />
-      <span
-        className={cn(
-          "text-lg font-bold leading-none tabular-nums",
-          isPrimary
-            ? "text-indigo-600 dark:text-indigo-400"
-            : "text-gray-900 dark:text-white"
-        )}
+
+      {/* Points explanation modal */}
+      <Modal
+        isOpen={showPointsInfo}
+        onClose={() => setShowPointsInfo(false)}
+        title="Como funciona o XP"
       >
-        {value === 0 ? "—" : value}
-      </span>
-      <span
-        className={cn(
-          "text-[10px] font-medium leading-none",
-          isPrimary
-            ? "text-indigo-500/70 dark:text-indigo-400/60"
-            : "text-gray-400 dark:text-gray-500"
-        )}
-      >
-        {label}
-      </span>
-    </div>
+        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              XP diário
+            </h3>
+            <p>
+              Ao bater a meta do dia em qualquer desafio, você ganha{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>.
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Simples assim. Complete seus desafios e acumule XP!
+          </p>
+        </div>
+      </Modal>
+    </header>
   );
 }
 
 export function TodayHeaderSkeleton() {
   return (
-    <header className="animate-pulse space-y-1.5">
-      <div className="flex items-center justify-between">
-        <div className="h-5 w-28 rounded bg-gray-200 dark:bg-gray-800" />
-        <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-800" />
+    <header className="animate-pulse space-y-3 pt-2">
+      <div className="flex items-center">
+        <div className="flex items-center gap-2.5">
+          <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+        <div className="flex-1" />
+        <div className="h-8 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
       </div>
-      <div className="grid grid-cols-3">
-        {[0, 1, 2].map((i) => (
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/10">
+          <div className="h-6 w-8 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="mt-1.5 h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+        </div>
+        {[1, 2].map((i) => (
           <div
             key={i}
-            className={cn(
-              "flex flex-col items-center gap-1 py-1",
-              i > 0 && "border-l border-gray-200 dark:border-gray-800"
-            )}
+            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-800/40"
           >
-            <div className="h-3.5 w-3.5 rounded-full bg-gray-200 dark:bg-gray-700" />
-            <div className="h-5 w-10 rounded bg-gray-200 dark:bg-gray-700" />
-            <div className="h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-6 w-8 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="mt-1.5 h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
           </div>
         ))}
       </div>

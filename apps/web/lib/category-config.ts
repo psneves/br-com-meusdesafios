@@ -39,8 +39,8 @@ const configs: Record<string, CategoryConfig> = {
   WATER: {
     icon: Droplets,
     color: "text-blue-500",
-    bgLight: "bg-blue-50/50",
-    bgDark: "dark:bg-blue-950/15",
+    bgLight: "bg-blue-100",
+    bgDark: "dark:bg-blue-900/50",
     borderAccent: "border-l-blue-400",
     btnBg: "bg-blue-500",
     btnHover: "hover:bg-blue-600",
@@ -57,8 +57,8 @@ const configs: Record<string, CategoryConfig> = {
   DIET_CONTROL: {
     icon: Utensils,
     color: "text-emerald-500",
-    bgLight: "bg-emerald-50/50",
-    bgDark: "dark:bg-emerald-950/15",
+    bgLight: "bg-emerald-100",
+    bgDark: "dark:bg-emerald-900/50",
     borderAccent: "border-l-emerald-400",
     btnBg: "bg-emerald-500",
     btnHover: "hover:bg-emerald-600",
@@ -75,8 +75,8 @@ const configs: Record<string, CategoryConfig> = {
   SLEEP: {
     icon: Moon,
     color: "text-violet-500",
-    bgLight: "bg-violet-50/50",
-    bgDark: "dark:bg-violet-950/15",
+    bgLight: "bg-violet-100",
+    bgDark: "dark:bg-violet-900/50",
     borderAccent: "border-l-violet-400",
     btnBg: "bg-violet-500",
     btnHover: "hover:bg-violet-600",
@@ -93,8 +93,8 @@ const configs: Record<string, CategoryConfig> = {
   PHYSICAL_EXERCISE: {
     icon: HeartPulse,
     color: "text-rose-500",
-    bgLight: "bg-rose-50/50",
-    bgDark: "dark:bg-rose-950/15",
+    bgLight: "bg-rose-100",
+    bgDark: "dark:bg-rose-900/50",
     borderAccent: "border-l-rose-400",
     btnBg: "bg-rose-500",
     btnHover: "hover:bg-rose-600",

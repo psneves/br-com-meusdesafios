@@ -36,7 +36,7 @@ export function PointsChip({
       )}
     >
       {isPositive && "+"}
-      {points} pts
+      {points}
     </span>
   );
 }
@@ -53,7 +53,7 @@ export function TotalPoints({ points, className }: TotalPointsProps) {
         <p className="text-2xl font-bold text-gray-900 dark:text-white">
           {points.toLocaleString()}
         </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">pontos hoje</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">XP hoje</p>
       </div>
     </div>
   );

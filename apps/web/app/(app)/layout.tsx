@@ -21,28 +21,30 @@ export default function AppLayout({
     : "/logo-512x512.png";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0a]">
+    <div className="flex h-[100dvh] flex-col bg-slate-50 dark:bg-[#0a0a0a]">
       {/* Top app bar */}
-      <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800/60 dark:bg-black/90">
-        <div className="mx-auto flex h-12 max-w-5xl items-center px-4 md:h-14">
-          <Link href="/today" className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-lg">
+      <nav className="shrink-0 z-40 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] dark:bg-[#111] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+        <div className="mx-auto flex h-11 max-w-5xl items-center px-4 md:h-12">
+          <Link href="/today" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-lg">
             <Image
               src={logoSrc}
               alt="Meus Desafios"
-              width={36}
-              height={36}
-              className="h-8 w-8 rounded-lg md:h-9 md:w-9"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-lg"
               priority
             />
-            <span className="text-base font-bold text-gray-900 dark:text-white md:text-lg">
+            <span className="text-sm font-bold tracking-tight text-gray-900 dark:text-white">
               Meus Desafios
             </span>
           </Link>
         </div>
       </nav>
 
-      {/* Main content */}
-      <main className="mx-auto max-w-5xl px-3 py-2 pb-20 md:px-4 md:py-6 md:pb-24">{children}</main>
+      {/* Main content — scrollable area between header and tab bar */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-3 py-2 md:px-4 md:py-6">{children}</div>
+      </main>
 
       {/* Bottom tab bar */}
       <BottomTabBar />

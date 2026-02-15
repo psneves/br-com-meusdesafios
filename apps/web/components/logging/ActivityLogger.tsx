@@ -21,9 +21,9 @@ interface ActivityLoggerProps {
 
 const MODALITIES: { key: ExerciseModality; label: string; icon: string; unit: string }[] = [
   { key: "GYM", label: "Musculação", icon: "🏋️", unit: "min" },
-  { key: "RUN", label: "Corrida", icon: "🏃", unit: "km" },
-  { key: "CYCLING", label: "Ciclismo", icon: "🚴", unit: "km" },
-  { key: "SWIM", label: "Natação", icon: "🏊", unit: "km" },
+  { key: "RUN", label: "Corrida", icon: "🏃", unit: "min" },
+  { key: "CYCLING", label: "Ciclismo", icon: "🚴", unit: "min" },
+  { key: "SWIM", label: "Natação", icon: "🏊", unit: "min" },
 ];
 
 const MODALITY_PRESETS: Record<ExerciseModality, { label: string; value: number }[]> = {
@@ -34,22 +34,22 @@ const MODALITY_PRESETS: Record<ExerciseModality, { label: string; value: number 
     { label: "90 min", value: 90 },
   ],
   RUN: [
-    { label: "2 km", value: 2 },
-    { label: "3 km", value: 3 },
-    { label: "5 km", value: 5 },
-    { label: "10 km", value: 10 },
+    { label: "20 min", value: 20 },
+    { label: "30 min", value: 30 },
+    { label: "45 min", value: 45 },
+    { label: "60 min", value: 60 },
   ],
   CYCLING: [
-    { label: "5 km", value: 5 },
-    { label: "10 km", value: 10 },
-    { label: "20 km", value: 20 },
-    { label: "30 km", value: 30 },
+    { label: "30 min", value: 30 },
+    { label: "45 min", value: 45 },
+    { label: "60 min", value: 60 },
+    { label: "90 min", value: 90 },
   ],
   SWIM: [
-    { label: "0.5 km", value: 0.5 },
-    { label: "1 km", value: 1 },
-    { label: "1.5 km", value: 1.5 },
-    { label: "2 km", value: 2 },
+    { label: "20 min", value: 20 },
+    { label: "30 min", value: 30 },
+    { label: "45 min", value: 45 },
+    { label: "60 min", value: 60 },
   ],
 };
 
@@ -203,7 +203,7 @@ export function ActivityLogger({
           {/* Valor personalizado */}
           <div className="mb-4">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {activeModality === "GYM" ? "Duração" : "Distância"}
+              Duração
             </label>
             <div className="relative">
               <input

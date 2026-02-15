@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { TodayCard, TodayResponse, LogFeedback } from "../types/today";
-import { getMockTodayResponse } from "../mock/today-data";
+import type { TodayCard, TodayResponse, LogFeedback, WeeklySummary, MonthlySummary } from "../types/today";
+import { getMockTodayResponse, getMockWeeklySummary, getMockMonthlySummary } from "../mock/today-data";
 
 interface UseTodayResult {
   data: TodayResponse | null;
+  weekSummary: WeeklySummary | null;
+  monthSummary: MonthlySummary | null;
   isLoading: boolean;
   error: Error | null;
   feedback: LogFeedback | null;
@@ -23,6 +25,8 @@ export function useToday(selectedDate?: Date): UseTodayResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [feedback, setFeedback] = useState<LogFeedback | null>(null);
+  const [weekSummary, setWeekSummary] = useState<WeeklySummary | null>(null);
+  const [monthSummary, setMonthSummary] = useState<MonthlySummary | null>(null);
   const initialLoadDone = useRef(false);
 
   const fetchToday = useCallback(async () => {
@@ -39,6 +43,8 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         }
         const response = getMockTodayResponse(selectedDate);
         setData(response);
+        setWeekSummary(getMockWeeklySummary(selectedDate ?? new Date()));
+        setMonthSummary(getMockMonthlySummary(selectedDate ?? new Date()));
       } else {
         setIsLoading(true);
         const params = selectedDate
@@ -75,7 +81,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
           goalMet: true,
           pointsEarned: newPoints,
           streakUpdated: { from: card.streak.current, to: newStreak },
-          message: `Meta cumprida! +10 pts`,
+          message: `Meta cumprida! +10 XP`,
         };
 
         return {
@@ -244,7 +250,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
                   goalMet: true,
                   pointsEarned: newPoints,
                   streakUpdated: { from: c.streak.current, to: newStreak },
-                  message: `Meta cumprida! +10 pts`,
+                  message: `Meta cumprida! +10 XP`,
                 });
 
                 return {
@@ -310,6 +316,8 @@ export function useToday(selectedDate?: Date): UseTodayResult {
 
   return {
     data,
+    weekSummary,
+    monthSummary,
     isLoading,
     error,
     feedback,

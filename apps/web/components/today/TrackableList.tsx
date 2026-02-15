@@ -14,13 +14,13 @@ const CATEGORY_ORDER: Record<string, number> = {
 
 interface TrackableListProps {
   cards: TodayCard[];
-  onQuickAction: (cardId: string, actionId: string) => Promise<void> | void;
+  onRegister: (cardId: string) => void;
   className?: string;
 }
 
 export function TrackableList({
   cards,
-  onQuickAction,
+  onRegister,
   className,
 }: TrackableListProps) {
   if (cards.length === 0) {
@@ -34,7 +34,7 @@ export function TrackableList({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3",
+        "grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3",
         className
       )}
     >
@@ -42,7 +42,7 @@ export function TrackableList({
         <TrackableCard
           key={card.userTrackableId}
           card={card}
-          onQuickAction={(actionId) => onQuickAction(card.userTrackableId, actionId)}
+          onRegister={() => onRegister(card.userTrackableId)}
         />
       ))}
     </div>

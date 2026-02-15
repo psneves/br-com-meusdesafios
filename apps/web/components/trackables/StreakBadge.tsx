@@ -13,13 +13,6 @@ function getStreakVariant(days: number): {
   textClass: string;
   iconClass: string;
 } {
-  if (days === 0) {
-    return {
-      bgClass: "bg-gray-100 dark:bg-gray-800",
-      textClass: "text-gray-400 dark:text-gray-500",
-      iconClass: "text-gray-300 dark:text-gray-600",
-    };
-  }
   if (days < 3) {
     return {
       bgClass: "bg-amber-50 dark:bg-amber-900/20",
@@ -62,24 +55,25 @@ export function StreakBadge({
   showBest = false,
   className,
 }: StreakBadgeProps) {
+  if (current === 0) return null;
+
   const { bgClass, textClass, iconClass } = getStreakVariant(current);
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+          "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
           bgClass,
           textClass
         )}
       >
         <Flame className={cn("h-3 w-3", iconClass)} />
-        <span>{current}</span>
-        <span className="text-[10px]">{current === 1 ? "dia" : "dias"}</span>
+        {current}d
       </span>
       {showBest && best !== undefined && best > current && (
-        <span className="text-xs text-gray-400 dark:text-gray-500">
-          (melhor: {best})
+        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+          ({best})
         </span>
       )}
     </div>
