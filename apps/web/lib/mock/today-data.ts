@@ -63,6 +63,7 @@ const EXERCISE_BREAKDOWNS: Record<string, ProgressBreakdown[]> = {
     { label: "Corrida", value: 50, actionId: "exercise-run" },
   ],
   "2026-02-16": [{ label: "Corrida", value: 70, actionId: "exercise-run" }],
+  "2026-02-17": [{ label: "Musculação", value: 30, actionId: "exercise-gym" }],
 };
 
 // Diet meal breakdowns: value 1=success, 0=skipped, -1=fail
@@ -413,8 +414,8 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
   const mon = weekMonday(selected);
 
   const days: WeekDayStatus[] = [];
-  const challengeData: { daysMet: boolean[]; metCount: number; totalDays: number }[] =
-    TRACKABLES.map(() => ({ daysMet: [], metCount: 0, totalDays: 0 }));
+  const challengeData: { daysMet: boolean[]; metCount: number; totalDays: number; weeklyProgress: number }[] =
+    TRACKABLES.map(() => ({ daysMet: [], metCount: 0, totalDays: 0, weeklyProgress: 0 }));
 
   let totalXP = 0;
   let totalDone = 0;
@@ -434,6 +435,7 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
       challengeData[ti].daysMet.push(met);
       if (!isFuture) {
         challengeData[ti].totalDays++;
+        challengeData[ti].weeklyProgress += getValue(def.field, day);
         if (met) {
           challengeData[ti].metCount++;
           totalXP += 10;
@@ -475,9 +477,28 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
     daysMet: challengeData[i].daysMet,
     metCount: challengeData[i].metCount,
     totalDays: challengeData[i].totalDays,
+    weeklyTarget: def.target * 7,
+    weeklyProgress: challengeData[i].weeklyProgress,
+    unit: def.unit,
   }));
 
-  return { days, challenges, totalXP, percentMet, perfectDays, totalDone, bestStreak };
+  // Week is complete when all 7 days have data (no future days)
+  const isComplete = days.every((d) => !d.isFuture);
+
+  // Weekly goal bonus: +10 XP per challenge with 7/7 days met
+  let weeklyGoalBonusXP = 0;
+  if (isComplete) {
+    for (const ch of challenges) {
+      if (ch.metCount === 7) weeklyGoalBonusXP += 10;
+    }
+  }
+
+  // Perfect week bonus: +10 XP if ALL challenges met all 7 days (Mon-Sun)
+  const perfectWeekBonusXP = isComplete && perfectDays === 7 ? 10 : 0;
+
+  totalXP += weeklyGoalBonusXP + perfectWeekBonusXP;
+
+  return { days, challenges, totalXP, percentMet, perfectDays, totalDone, bestStreak, isComplete, weeklyGoalBonusXP, perfectWeekBonusXP };
 }
 
 export function getMockMonthlySummary(selectedDate: Date): MonthlySummary {

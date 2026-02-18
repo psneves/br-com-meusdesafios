@@ -127,7 +127,36 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         if (USE_MOCK) {
           await new Promise((resolve) => setTimeout(resolve, 300));
 
-          const { card: updatedCard, feedback: newFeedback } = updateCardWithValue(card, value);
+          let { card: updatedCard, feedback: newFeedback } = updateCardWithValue(card, value);
+
+          // Update breakdown for exercise logs with modality
+          if (card.category === "PHYSICAL_EXERCISE" && meta?.modality) {
+            const modalityLabels: Record<string, string> = {
+              GYM: "Musculação",
+              RUN: "Corrida",
+              CYCLING: "Ciclismo",
+              SWIM: "Natação",
+            };
+            const modKey = meta.modality as string;
+            const label = modalityLabels[modKey] || modKey;
+            const actionId = `exercise-${modKey.toLowerCase()}`;
+            const existing = updatedCard.breakdown || [];
+            const idx = existing.findIndex((b) => b.actionId === actionId);
+
+            if (idx >= 0) {
+              updatedCard = {
+                ...updatedCard,
+                breakdown: existing.map((b, i) =>
+                  i === idx ? { ...b, value: b.value + value } : b
+                ),
+              };
+            } else {
+              updatedCard = {
+                ...updatedCard,
+                breakdown: [...existing, { label, value, actionId }],
+              };
+            }
+          }
 
           const updatedCards = data.cards.map((c) =>
             c.userTrackableId === cardId ? updatedCard : c

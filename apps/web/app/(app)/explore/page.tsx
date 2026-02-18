@@ -73,7 +73,7 @@ export default function ExplorePage() {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-phi-4 md:space-y-phi-5">
       {/* Search */}
       <div className="relative pt-2">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -89,7 +89,7 @@ export default function ExplorePage() {
       {/* Pending requests */}
       {visiblePending.length > 0 && (
         <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-          <div className="flex items-center gap-2 px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2 px-phi-4 pt-phi-4 pb-phi-2">
             <Clock className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
               Solicitações pendentes
@@ -100,7 +100,7 @@ export default function ExplorePage() {
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {visiblePending.map((user) => (
-              <div key={user.id} className="flex items-center gap-3 px-4 py-3">
+              <div key={user.id} className="flex items-center gap-phi-3 px-phi-4 py-phi-3">
                 <DefaultAvatar name={user.name} />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
@@ -132,7 +132,7 @@ export default function ExplorePage() {
 
       {/* Suggested people */}
       <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between px-phi-4 pt-phi-4 pb-phi-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             Pessoas sugeridas
           </h2>
@@ -145,7 +145,7 @@ export default function ExplorePage() {
           {mockSuggested.map((user) => {
             const isSent = sentRequests.has(user.id);
             return (
-              <div key={user.id} className="flex items-center gap-3 px-4 py-3">
+              <div key={user.id} className="flex items-center gap-phi-3 px-phi-4 py-phi-3">
                 <DefaultAvatar name={user.name} />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-white">

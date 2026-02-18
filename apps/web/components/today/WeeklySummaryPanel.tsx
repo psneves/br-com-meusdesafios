@@ -1,11 +1,13 @@
 "use client";
 
 import { Fragment } from "react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import type { WeeklySummary } from "@/lib/types/today";
 
 const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"];
+
 
 interface WeeklySummaryPanelProps {
   summary: WeeklySummary;
@@ -87,7 +89,7 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
       <div
         className="grid items-center gap-y-2"
         style={{
-          gridTemplateColumns: "1rem 6.5rem repeat(7, 1fr) 2.5rem",
+          gridTemplateColumns: "1rem 6.5rem repeat(7, 1fr) 1rem",
         }}
       >
         {/* Vertical pill highlight for selected day */}
@@ -96,7 +98,7 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
             className="pointer-events-none z-0 justify-self-center rounded-full bg-indigo-50 dark:bg-indigo-900/25"
             style={{
               gridColumn: selectedIdx + 3,
-              gridRow: `1 / ${rowCount + 1}`,
+              gridRow: `1 / ${rowCount + 2}`,
               width: "1.5rem",
               height: "100%",
               paddingTop: "0.125rem",
@@ -109,6 +111,7 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
         {summary.challenges.map((ch, rowIdx) => {
           const cfg = getCategoryConfig(ch.category);
           const row = rowIdx + 1;
+          const completedWeek = summary.isComplete && ch.metCount === 7;
 
           return (
             <Fragment key={ch.category}>
@@ -150,14 +153,32 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
                 );
               })}
 
-              {/* Count */}
-              <span
-                className="z-10 text-right text-[11px] tabular-nums font-medium text-gray-500 dark:text-gray-400"
+              {/* Row star — challenge completed all available days */}
+              <div
+                className="z-10 flex justify-center"
                 style={{ gridRow: row, gridColumn: 10 }}
               >
-                {ch.metCount}/{ch.totalDays}
-              </span>
+                {completedWeek && (
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                )}
+              </div>
             </Fragment>
+          );
+        })}
+
+        {/* Bottom row: column stars for perfect days */}
+        {summary.days.map((day, i) => {
+          const isPerfect = !day.isFuture && day.metCount === day.total && day.total > 0;
+          return (
+            <div
+              key={`star-${day.date}`}
+              className="z-10 flex justify-center pt-1"
+              style={{ gridRow: rowCount + 1, gridColumn: i + 3 }}
+            >
+              {isPerfect && (
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              )}
+            </div>
           );
         })}
       </div>

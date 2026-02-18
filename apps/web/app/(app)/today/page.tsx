@@ -98,8 +98,8 @@ export default function TodayPage() {
   );
 
   const handleActivityLog = useCallback(
-    async (value: number) => {
-      if (activeModal) await logValue(activeModal.cardId, value);
+    async (value: number, _unit?: string, modality?: string) => {
+      if (activeModal) await logValue(activeModal.cardId, value, modality ? { modality } : undefined);
     },
     [activeModal, logValue]
   );
@@ -138,7 +138,7 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="space-y-2 md:space-y-4">
+    <div className="space-y-phi-3 md:space-y-phi-4">
       {isLoading || !data ? (
         <>
           <TodayHeaderSkeleton />

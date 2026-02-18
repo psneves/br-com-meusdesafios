@@ -85,7 +85,7 @@ export function TodayHeader({
       {/* Top row: avatar + greeting (left)  |  day nav (right) */}
       <div className="flex items-center">
         {/* Avatar + greeting */}
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-phi-3">
           {!avatarUrl || avatarError ? (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
               <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
@@ -144,79 +144,75 @@ export function TodayHeader({
         </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-2">
-        {/* Primary: Pontos hoje */}
-        <button
-          onClick={() => {
-            if (expandedKpi) {
-              setExpandedKpi(null);
-              onKpiChange?.(null);
-            } else {
-              setShowPointsInfo(true);
-            }
-          }}
-          className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50 px-2 py-2.5 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40"
-          aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
-        >
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-extrabold tabular-nums leading-none text-indigo-600 dark:text-indigo-400">
-              {totalPoints}
+      {/* XP Summary — single container */}
+      <div className="rounded-2xl bg-gray-50 p-phi-2 dark:bg-gray-800/30">
+        <div className="grid gap-phi-2" style={{ gridTemplateColumns: "1.618fr 1fr 1fr" }}>
+          {/* Primary: Pontos hoje */}
+          <button
+            onClick={() => {
+              if (expandedKpi) {
+                setExpandedKpi(null);
+                onKpiChange?.(null);
+              } else {
+                setShowPointsInfo(true);
+              }
+            }}
+            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50 px-phi-2 py-phi-3 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40"
+            aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
+          >
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-extrabold tabular-nums leading-none text-indigo-600 dark:text-indigo-400">
+                {totalPoints}
+              </span>
+              <span className="text-sm font-bold text-indigo-500/80 dark:text-indigo-400/70">XP</span>
+              <Info className="mb-auto mt-0.5 h-3 w-3 text-indigo-400/50 dark:text-indigo-500/50" />
+            </div>
+            <span className="mt-1 text-[11px] font-medium leading-none text-indigo-500/80 dark:text-indigo-400/70">
+              {dayLabel}
             </span>
-            <span className="text-sm font-bold text-indigo-500/80 dark:text-indigo-400/70">XP</span>
-            <Info className="mb-auto mt-0.5 h-3 w-3 text-indigo-400/50 dark:text-indigo-500/50" />
-          </div>
-          <span className="mt-1 text-[11px] font-medium leading-none text-indigo-500/80 dark:text-indigo-400/70">
-            {dayLabel}
-          </span>
-        </button>
-        {/* Secondary: Semana */}
-        <button
-          onClick={() => toggleKpi("week")}
-          className={cn(
-            "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-2 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1",
-            "bg-white dark:bg-gray-900/40"
-          )}
-          aria-label={`${pointsWeek} XP na semana`}
-          aria-expanded={expandedKpi === "week"}
-        >
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-              {pointsWeek}
+          </button>
+          {/* Secondary: Semana */}
+          <button
+            onClick={() => toggleKpi("week")}
+            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-white/80 px-phi-2 py-phi-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1 dark:bg-gray-900/40"
+            aria-label={`${pointsWeek} XP na semana`}
+            aria-expanded={expandedKpi === "week"}
+          >
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
+                {pointsWeek}
+              </span>
+              <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
+            </div>
+            <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
+              Semana
+              <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "week" && "rotate-180")} />
             </span>
-            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
-          </div>
-          <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
-            Semana
-            <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "week" && "rotate-180")} />
-          </span>
-        </button>
-        {/* Secondary: Mês */}
-        <button
-          onClick={() => toggleKpi("month")}
-          className={cn(
-            "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-2 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1",
-            "bg-white dark:bg-gray-900/40"
-          )}
-          aria-label={`${pointsMonth} XP no mês`}
-          aria-expanded={expandedKpi === "month"}
-        >
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-              {pointsMonth}
+          </button>
+          {/* Secondary: Mês */}
+          <button
+            onClick={() => toggleKpi("month")}
+            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-white/80 px-phi-2 py-phi-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1 dark:bg-gray-900/40"
+            aria-label={`${pointsMonth} XP no mês`}
+            aria-expanded={expandedKpi === "month"}
+          >
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
+                {pointsMonth}
+              </span>
+              <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
+            </div>
+            <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
+              Mês
+              <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "month" && "rotate-180")} />
             </span>
-            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
-          </div>
-          <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
-            Mês
-            <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "month" && "rotate-180")} />
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Expanded KPI detail */}
       {expandedKpi && (
-        <div className="rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-gray-800/40">
+        <div className="rounded-xl bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
           {expandedKpi === "week" && weekSummary ? (
             <WeeklySummaryPanel summary={weekSummary} />
           ) : expandedKpi === "week" ? (
@@ -260,8 +256,30 @@ export function TodayHeader({
             </p>
           </div>
 
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Meta semanal
+            </h3>
+            <p>
+              Complete 7/7 dias de um desafio (Seg–Dom) e ganhe{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              por desafio.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Semana perfeita
+            </h3>
+            <p>
+              Bata <em>todas</em> as metas em <em>todos</em> os 7 dias e ganhe mais{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              de bônus.
+            </p>
+          </div>
+
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Simples assim. Complete seus desafios e acumule XP!
+            Semana conta de segunda a domingo. Complete seus desafios e acumule XP!
           </p>
         </div>
       </Modal>
@@ -273,7 +291,7 @@ export function TodayHeaderSkeleton() {
   return (
     <header className="animate-pulse space-y-3 pt-2">
       <div className="flex items-center">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-phi-3">
           <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
           <div className="space-y-1.5">
             <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
@@ -283,20 +301,22 @@ export function TodayHeaderSkeleton() {
         <div className="flex-1" />
         <div className="h-8 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/10">
-          <div className="h-6 w-8 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="mt-1.5 h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
-        </div>
-        {[1, 2].map((i) => (
-          <div
-            key={i}
-            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-800/40"
-          >
-            <div className="h-6 w-8 rounded bg-gray-200 dark:bg-gray-700" />
+      <div className="rounded-2xl bg-gray-50 p-phi-2 dark:bg-gray-800/30">
+        <div className="grid gap-phi-2" style={{ gridTemplateColumns: "1.618fr 1fr 1fr" }}>
+          <div className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/10">
+            <div className="h-7 w-10 rounded bg-gray-200 dark:bg-gray-700" />
             <div className="mt-1.5 h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
           </div>
-        ))}
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-900/40"
+            >
+              <div className="h-5 w-8 rounded bg-gray-200 dark:bg-gray-700" />
+              <div className="mt-1.5 h-2.5 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+            </div>
+          ))}
+        </div>
       </div>
     </header>
   );

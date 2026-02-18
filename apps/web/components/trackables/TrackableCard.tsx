@@ -30,7 +30,7 @@ export function TrackableCard({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-2xl border bg-white dark:bg-gray-900",
+        "grid rounded-2xl border bg-white p-phi-3 dark:bg-gray-900",
         card.progress.met
           ? cn(
               "border-l-[3px]",
@@ -42,49 +42,66 @@ export function TrackableCard({
           : cn("border-l-2", cfg.borderAccent, "border-gray-200 dark:border-gray-800"),
         className
       )}
+      style={{ gridTemplateColumns: "48px 1fr auto" }}
     >
-      {/* Header: icon + name + goal | streak + points + register */}
-      <div className="flex items-center gap-2 px-3 pt-2 pb-0.5">
-        <Icon className={cn("h-4 w-4 shrink-0", cfg.color)} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-              {card.name}
-            </span>
-            {card.progress.met && (
-              <Check
-                className={cn("h-3.5 w-3.5 shrink-0", cfg.metText, cfg.metTextDark)}
-                aria-label="Meta cumprida"
-              />
-            )}
-          </div>
-          <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-            {goalLabel}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <StreakBadge current={card.streak.current} showBest={false} />
-          <PointsChip points={card.pointsToday} size="sm" />
-          <button
-            onClick={onRegister}
-            aria-label="Registrar"
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-white transition-all active:scale-90",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-              cfg.btnBg,
-              cfg.btnHover,
-              cfg.btnBgDark,
-              cfg.btnHoverDark
-            )}
-          >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-          </button>
+      {/* Left zone: category icon */}
+      <div className="flex items-start pt-0.5">
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg",
+            cfg.activeBg,
+            cfg.activeBgDark
+          )}
+        >
+          <Icon className={cn("h-5 w-5", cfg.color)} />
         </div>
       </div>
 
-      {/* Progress bar — target-based cards */}
-      {card.goal.type === "target" && (
-        <div className="px-3 pt-1 pb-2">
+      {/* Middle zone: content */}
+      <div className="min-w-0 space-y-1">
+        {/* Row 1: Name + check + streak + points (all inline) */}
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            {card.name}
+          </span>
+          {card.progress.met && (
+            <Check
+              className={cn("h-3.5 w-3.5 shrink-0", cfg.metText, cfg.metTextDark)}
+              aria-label="Meta cumprida"
+            />
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <StreakBadge current={card.streak.current} showBest={false} />
+            <PointsChip points={card.pointsToday} size="sm" />
+          </div>
+        </div>
+
+        {/* Row 2: Goal subtitle OR exercise breakdown (same row, no height change) */}
+        {card.category === "PHYSICAL_EXERCISE" &&
+        card.breakdown &&
+        card.breakdown.length > 0 ? (
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {card.breakdown.map((entry, i) => (
+              <span
+                key={`${entry.actionId}-${i}`}
+                className={cn(
+                  "shrink-0 text-[10px] font-medium leading-tight",
+                  cfg.metText,
+                  cfg.metTextDark
+                )}
+              >
+                {entry.label} {entry.value}′
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
+            {goalLabel}
+          </p>
+        )}
+
+        {/* Row 3: Progress bar (target-type only) */}
+        {card.goal.type === "target" && (
           <CompactProgress
             value={card.progress.value}
             target={card.goal.target || 0}
@@ -95,36 +112,26 @@ export function TrackableCard({
             metTextClass={cn(cfg.metText, cfg.metTextDark)}
             isSleep={card.category === "SLEEP"}
           />
-        </div>
-      )}
-
-      {/* Exercise breakdown chips (read-only) */}
-      {card.category === "PHYSICAL_EXERCISE" &&
-        card.breakdown &&
-        card.breakdown.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-3 pt-1 pb-2">
-            {card.breakdown.map((entry, i) => (
-              <span
-                key={`${entry.actionId}-${i}`}
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                  cfg.activeBg,
-                  cfg.activeBgDark,
-                  cfg.metText,
-                  cfg.metTextDark
-                )}
-              >
-                {entry.label} {entry.value}′
-              </span>
-            ))}
-          </div>
         )}
+      </div>
 
-      {/* Bottom padding for cards without progress bar */}
-      {card.goal.type !== "target" &&
-        !(card.category === "PHYSICAL_EXERCISE" && card.breakdown && card.breakdown.length > 0) && (
-          <div className="pb-1" />
-        )}
+      {/* Right zone: plus button only */}
+      <div className="flex items-center pl-2">
+        <button
+          onClick={onRegister}
+          aria-label={`Registrar ${card.name}`}
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-full text-white transition-all active:scale-90",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+            cfg.btnBg,
+            cfg.btnHover,
+            cfg.btnBgDark,
+            cfg.btnHoverDark
+          )}
+        >
+          <Plus className="h-4.5 w-4.5" strokeWidth={2.5} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -239,15 +246,27 @@ function getGoalLabel(card: TodayCard): string {
 
 export function TrackableCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        <div className="h-4 w-4 rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="flex-1">
-          <div className="h-3.5 w-20 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="mt-1 h-2.5 w-14 rounded bg-gray-200 dark:bg-gray-700" />
+    <div
+      className="animate-pulse grid rounded-2xl border border-gray-200 bg-white p-phi-3 dark:border-gray-800 dark:bg-gray-900"
+      style={{ gridTemplateColumns: "48px 1fr auto" }}
+    >
+      {/* Left: icon placeholder */}
+      <div className="flex items-start pt-0.5">
+        <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
+      </div>
+      {/* Middle: text + bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="ml-auto h-4 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
         </div>
-        <div className="h-5 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
-        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="ml-auto h-2.5 w-14 rounded bg-gray-200 dark:bg-gray-700" />
+      </div>
+      {/* Right: button only */}
+      <div className="flex items-center pl-2">
+        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
       </div>
     </div>
   );

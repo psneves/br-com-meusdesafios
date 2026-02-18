@@ -49,7 +49,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-phi-4 md:space-y-phi-5">
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-3 pt-4 pb-2">
         <Image
@@ -68,8 +68,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Aparência */}
-      <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <section className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-phi-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Aparência
         </h2>
         {mounted ? (
@@ -105,8 +105,8 @@ export default function ProfilePage() {
       </section>
 
       {/* Personalizar Desafios */}
-      <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <section className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-phi-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Personalizar Desafios
         </h2>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -157,8 +157,8 @@ export default function ProfilePage() {
       </section>
 
       {/* Conta */}
-      <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <section className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-phi-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Conta
         </h2>
         <button className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20">

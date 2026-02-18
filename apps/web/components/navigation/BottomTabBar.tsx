@@ -22,7 +22,7 @@ export function BottomTabBar() {
       className="shrink-0 z-40 border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="mx-auto flex h-12 max-w-5xl items-center justify-around">
+      <div className="flex h-12 items-center justify-around">
         {tabs.map(({ href, label, icon: Icon }) => {
           const isActive =
             pathname === href || pathname.startsWith(href + "/");

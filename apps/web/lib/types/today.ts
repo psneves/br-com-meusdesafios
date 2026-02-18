@@ -82,6 +82,9 @@ export interface WeekChallengeSummary {
   daysMet: boolean[];  // length-7, Mon=0..Sun=6
   metCount: number;    // total days met
   totalDays: number;   // days with data (excludes future)
+  weeklyTarget: number;  // daily target × 7
+  weeklyProgress: number; // sum of actual values so far this week
+  unit: string;          // unit of measurement (ml, min, refeições)
 }
 
 export interface WeeklySummary {
@@ -92,6 +95,9 @@ export interface WeeklySummary {
   perfectDays: number;   // days where ALL challenges were met
   totalDone: number;     // total individual goals met
   bestStreak: number;    // longest streak of perfect days in the week
+  isComplete: boolean;            // true if all 7 days have data (week is over)
+  weeklyGoalBonusXP: number;     // +10 per challenge with 7/7 days met
+  perfectWeekBonusXP: number;    // +10 if ALL challenges met all 7 days (Mon-Sun)
 }
 
 export interface MonthChallengeSummary {

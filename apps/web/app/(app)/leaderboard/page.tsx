@@ -116,9 +116,9 @@ export default function LeaderboardPage() {
       : null;
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-phi-4 md:space-y-phi-5">
       {/* Page title */}
-      <div className="flex items-center gap-2.5 pt-2">
+      <div className="flex items-center gap-phi-3 pt-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/30">
           <Trophy className="h-5 w-5 text-amber-500" />
         </div>
@@ -188,7 +188,7 @@ export default function LeaderboardPage() {
 
       {/* Main rank card */}
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-center gap-4 p-5">
+        <div className="flex items-center gap-phi-4 p-phi-4">
           <Image
             src="/profile/profile.png"
             alt=""
@@ -241,7 +241,7 @@ export default function LeaderboardPage() {
 
       {/* Per-challenge ranks */}
       <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="px-4 pt-4 pb-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <h2 className="px-phi-4 pt-phi-4 pb-phi-2 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Por desafio
         </h2>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -256,7 +256,7 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={ch.category}
-                className="flex items-center gap-3 px-4 py-3"
+                className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
               >
                 <div
                   className={cn(
@@ -296,7 +296,7 @@ export default function LeaderboardPage() {
       </section>
 
       {/* Privacy notice */}
-      <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2.5 dark:bg-gray-800/40">
+      <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
         <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
           Seu ranking é privado. Apenas sua posição é mostrada — nenhum dado de outros participantes é exposto.

@@ -9,6 +9,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      spacing: {
+        "phi-1": "0.25rem",    // 4px
+        "phi-2": "0.375rem",   // 6px
+        "phi-3": "0.625rem",   // 10px
+        "phi-4": "1.0625rem",  // 17px
+        "phi-5": "1.6875rem",  // 27px
+        "phi-6": "2.75rem",    // 44px
+        "phi-7": "4.5rem",     // 72px
+      },
       colors: {
         primary: {
           50: "#f0f9ff",
