@@ -8,6 +8,7 @@ import type {
   MonthlySummary,
   MonthChallengeSummary,
 } from "../types/today";
+import { getChallengeSettings } from "../hooks/use-challenge-settings";
 
 // ── Raw mock daily data (Feb 1–18, 2026) ──────────────────
 
@@ -376,7 +377,17 @@ function buildCard(def: TrackableDef, date: Date): TodayCard {
 export function getMockTodayResponse(date?: Date): TodayResponse {
   const d = sod(date ?? new Date());
   const today = sod(new Date());
-  const cards = TRACKABLES.map((def) => buildCard(def, d));
+
+  // Read user settings to filter inactive challenges and override targets
+  const settings = getChallengeSettings();
+  const activeTrackables = TRACKABLES.filter(
+    (def) => settings[def.category].active
+  ).map((def) => ({
+    ...def,
+    target: settings[def.category].target,
+  }));
+
+  const cards = activeTrackables.map((def) => buildCard(def, d));
 
   const totalPoints = cards.reduce((sum, c) => sum + c.pointsToday, 0);
 
@@ -389,11 +400,11 @@ export function getMockTodayResponse(date?: Date): TodayResponse {
   const monthLast = new Date(d.getFullYear(), d.getMonth() + 1, 0);
   const monthEnd = monthLast > today ? today : monthLast;
 
-  const pointsWeek = TRACKABLES.reduce(
+  const pointsWeek = activeTrackables.reduce(
     (sum, def) => sum + sumPointsRange(def.field, def.target, mon, weekEnd),
     0
   );
-  const pointsMonth = TRACKABLES.reduce(
+  const pointsMonth = activeTrackables.reduce(
     (sum, def) => sum + sumPointsRange(def.field, def.target, monthStart, monthEnd),
     0
   );
@@ -413,9 +424,17 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
   const selected = sod(selectedDate);
   const mon = weekMonday(selected);
 
+  const settings = getChallengeSettings();
+  const activeTrackables = TRACKABLES.filter(
+    (def) => settings[def.category].active
+  ).map((def) => ({
+    ...def,
+    target: settings[def.category].target,
+  }));
+
   const days: WeekDayStatus[] = [];
   const challengeData: { daysMet: boolean[]; metCount: number; totalDays: number; weeklyProgress: number }[] =
-    TRACKABLES.map(() => ({ daysMet: [], metCount: 0, totalDays: 0, weeklyProgress: 0 }));
+    activeTrackables.map(() => ({ daysMet: [], metCount: 0, totalDays: 0, weeklyProgress: 0 }));
 
   let totalXP = 0;
   let totalDone = 0;
@@ -430,7 +449,7 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
 
     let metCount = 0;
 
-    TRACKABLES.forEach((def, ti) => {
+    activeTrackables.forEach((def, ti) => {
       const met = !isFuture && isMet(def.field, def.target, day);
       challengeData[ti].daysMet.push(met);
       if (!isFuture) {
@@ -445,7 +464,7 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
       if (met) metCount++;
     });
 
-    const isPerfect = !isFuture && metCount === TRACKABLES.length;
+    const isPerfect = !isFuture && metCount === activeTrackables.length && activeTrackables.length > 0;
     if (isPerfect) perfectDays++;
     perfectFlags.push(isPerfect);
 
@@ -453,7 +472,7 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
       date: dayKey,
       dayOfMonth: day.getDate(),
       metCount,
-      total: TRACKABLES.length,
+      total: activeTrackables.length,
       isSelected,
       isFuture,
     });
@@ -467,10 +486,10 @@ export function getMockWeeklySummary(selectedDate: Date): WeeklySummary {
   }
 
   const nonFutureDays = days.filter((d) => !d.isFuture).length;
-  const totalPossible = nonFutureDays * TRACKABLES.length;
+  const totalPossible = nonFutureDays * activeTrackables.length;
   const percentMet = totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
 
-  const challenges: WeekChallengeSummary[] = TRACKABLES.map((def, i) => ({
+  const challenges: WeekChallengeSummary[] = activeTrackables.map((def, i) => ({
     category: def.category,
     name: def.name,
     icon: def.icon,
@@ -508,11 +527,19 @@ export function getMockMonthlySummary(selectedDate: Date): MonthlySummary {
   const month = selected.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+  const settings = getChallengeSettings();
+  const activeTrackables = TRACKABLES.filter(
+    (def) => settings[def.category].active
+  ).map((def) => ({
+    ...def,
+    target: settings[def.category].target,
+  }));
+
   const challengeData: {
     daysMet: boolean[];
     metCount: number;
     totalDays: number;
-  }[] = TRACKABLES.map(() => ({ daysMet: [], metCount: 0, totalDays: 0 }));
+  }[] = activeTrackables.map(() => ({ daysMet: [], metCount: 0, totalDays: 0 }));
 
   let totalDone = 0;
   let perfectDays = 0;
@@ -533,7 +560,7 @@ export function getMockMonthlySummary(selectedDate: Date): MonthlySummary {
 
     let dayMetCount = 0;
 
-    TRACKABLES.forEach((def, ti) => {
+    activeTrackables.forEach((def, ti) => {
       const met = !isFuture && isMet(def.field, def.target, day);
       challengeData[ti].daysMet.push(met);
       if (!isFuture) {
@@ -546,10 +573,10 @@ export function getMockMonthlySummary(selectedDate: Date): MonthlySummary {
       if (met) dayMetCount++;
     });
 
-    if (!isFuture && dayMetCount === TRACKABLES.length) {
+    if (!isFuture && dayMetCount === activeTrackables.length && activeTrackables.length > 0) {
       perfectDays++;
     }
-    perfectDayFlags.push(!isFuture && dayMetCount === TRACKABLES.length);
+    perfectDayFlags.push(!isFuture && dayMetCount === activeTrackables.length && activeTrackables.length > 0);
   }
 
   // Compute best streak of perfect days
@@ -565,12 +592,12 @@ export function getMockMonthlySummary(selectedDate: Date): MonthlySummary {
   }
 
   // Total possible = totalDays (non-future) * number of challenges
-  const totalPossible = challengeData[0].totalDays * TRACKABLES.length;
+  const totalPossible = (challengeData[0]?.totalDays ?? 0) * activeTrackables.length;
   const percentMet = totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
 
   const totalXP = totalDone * 10;
 
-  const challenges: MonthChallengeSummary[] = TRACKABLES.map((def, i) => ({
+  const challenges: MonthChallengeSummary[] = activeTrackables.map((def, i) => ({
     category: def.category,
     name: def.name,
     icon: def.icon,

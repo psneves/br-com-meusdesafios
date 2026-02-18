@@ -6,46 +6,86 @@ import { useEffect, useState } from "react";
 import { Sun, Moon, Minus, Plus, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
+import { useChallengeSettings } from "@/lib/hooks/use-challenge-settings";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
-interface ChallengeGoal {
+interface ChallengeGoalDef {
   category: TrackableCategory;
   label: string;
-  value: number;
   unit: string;
+  displayUnit: string;
   step: number;
   min: number;
+  /** Convert internal value to display value */
+  toDisplay: (v: number) => number;
+  /** Convert display value to internal value */
+  toInternal: (v: number) => number;
+  /** Format the display value */
+  format: (v: number) => string;
 }
 
-const initialGoals: ChallengeGoal[] = [
-  { category: "WATER", label: "Água", value: 2500, unit: "ml", step: 250, min: 250 },
-  { category: "DIET_CONTROL", label: "Dieta", value: 5, unit: "refeições", step: 1, min: 1 },
-  { category: "PHYSICAL_EXERCISE", label: "Exercício", value: 60, unit: "min", step: 15, min: 15 },
-  { category: "SLEEP", label: "Sono", value: 7, unit: "h", step: 0.5, min: 0.5 },
+const CHALLENGE_DEFS: ChallengeGoalDef[] = [
+  {
+    category: "WATER",
+    label: "Água",
+    unit: "ml",
+    displayUnit: "ml",
+    step: 250,
+    min: 250,
+    toDisplay: (v) => v,
+    toInternal: (v) => v,
+    format: (v) => String(v),
+  },
+  {
+    category: "DIET_CONTROL",
+    label: "Dieta",
+    unit: "refeições",
+    displayUnit: "refeições",
+    step: 1,
+    min: 1,
+    toDisplay: (v) => v,
+    toInternal: (v) => v,
+    format: (v) => String(v),
+  },
+  {
+    category: "PHYSICAL_EXERCISE",
+    label: "Exercício",
+    unit: "min",
+    displayUnit: "min",
+    step: 15,
+    min: 15,
+    toDisplay: (v) => v,
+    toInternal: (v) => v,
+    format: (v) => String(v),
+  },
+  {
+    category: "SLEEP",
+    label: "Sono",
+    unit: "min",
+    displayUnit: "h",
+    step: 30,
+    min: 30,
+    toDisplay: (v) => v / 60,
+    toInternal: (v) => v * 60,
+    format: (v) => (v / 60).toFixed(1),
+  },
 ];
 
 export default function ProfilePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [goals, setGoals] = useState(initialGoals);
+  const { settings, toggleActive, updateTarget } = useChallengeSettings();
 
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted && resolvedTheme === "dark";
 
-  function updateGoal(category: TrackableCategory, delta: number) {
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.category !== category) return g;
-        const next = Math.round((g.value + delta) * 100) / 100;
-        return next >= g.min ? { ...g, value: next } : g;
-      })
-    );
-  }
-
-  function formatValue(goal: ChallengeGoal): string {
-    if (goal.step % 1 !== 0) return goal.value.toFixed(1);
-    return String(goal.value);
+  function handleTargetChange(def: ChallengeGoalDef, delta: number) {
+    const current = settings[def.category].target;
+    const next = Math.round((current + delta) * 100) / 100;
+    if (next >= def.min) {
+      updateTarget(def.category, next);
+    }
   }
 
   return (
@@ -110,13 +150,20 @@ export default function ProfilePage() {
           Personalizar Desafios
         </h2>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {goals.map((goal) => {
-            const config = getCategoryConfig(goal.category);
+          {CHALLENGE_DEFS.map((def) => {
+            const config = getCategoryConfig(def.category);
             const Icon = config.icon;
+            const setting = settings[def.category];
+            const isActive = setting.active;
+            const displayValue = def.format(setting.target);
+
             return (
               <div
-                key={goal.category}
-                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                key={def.category}
+                className={cn(
+                  "flex items-center justify-between py-3 first:pt-0 last:pb-0 transition-opacity",
+                  !isActive && "opacity-50"
+                )}
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -129,26 +176,52 @@ export default function ProfilePage() {
                     <Icon className={cn("h-4 w-4", config.color)} />
                   </div>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {goal.label}
+                    {def.label}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  {/* Toggle switch */}
                   <button
-                    onClick={() => updateGoal(goal.category, -goal.step)}
-                    disabled={goal.value <= goal.min}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                    role="switch"
+                    aria-checked={isActive}
+                    aria-label={`${isActive ? "Desativar" : "Ativar"} ${def.label}`}
+                    onClick={() => toggleActive(def.category)}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
+                      isActive
+                        ? "bg-primary-600 dark:bg-primary-500"
+                        : "bg-gray-200 dark:bg-gray-700"
+                    )}
                   >
-                    <Minus className="h-3.5 w-3.5" />
+                    <span
+                      className={cn(
+                        "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
+                        isActive ? "translate-x-5" : "translate-x-0"
+                      )}
+                    />
                   </button>
-                  <span className="w-16 text-center text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-                    {formatValue(goal)} {goal.unit}
-                  </span>
-                  <button
-                    onClick={() => updateGoal(goal.category, goal.step)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
+
+                  {/* Target controls — only visible when active */}
+                  {isActive && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleTargetChange(def, -def.step)}
+                        disabled={setting.target <= def.min}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="w-20 text-center text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                        {displayValue} {def.displayUnit}
+                      </span>
+                      <button
+                        onClick={() => handleTargetChange(def, def.step)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

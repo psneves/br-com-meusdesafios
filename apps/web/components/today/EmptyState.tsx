@@ -47,7 +47,7 @@ export function CustomizeCTA() {
           Personalizar hoje
         </p>
         <p className="text-[11px] text-gray-400 dark:text-gray-500">
-          Ajustar metas ou reordenar desafios
+          Ajustar metas
         </p>
       </div>
       <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />

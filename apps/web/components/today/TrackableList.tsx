@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 
 const CATEGORY_ORDER: Record<string, number> = {
   WATER: 0,
-  PHYSICAL_EXERCISE: 1,
-  DIET_CONTROL: 2,
+  DIET_CONTROL: 1,
+  PHYSICAL_EXERCISE: 2,
   SLEEP: 3,
 };
 
