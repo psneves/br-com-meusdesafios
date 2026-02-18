@@ -148,13 +148,20 @@ export function TodayHeader({
       <div className="grid grid-cols-3 gap-2">
         {/* Primary: Pontos hoje */}
         <button
-          onClick={() => setShowPointsInfo(true)}
+          onClick={() => {
+            if (expandedKpi) {
+              setExpandedKpi(null);
+              onKpiChange?.(null);
+            } else {
+              setShowPointsInfo(true);
+            }
+          }}
           className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50 px-2 py-2.5 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40"
           aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
         >
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-extrabold tabular-nums leading-none text-indigo-600 dark:text-indigo-400">
-              {totalPoints === 0 ? "\u2014" : totalPoints}
+              {totalPoints}
             </span>
             <span className="text-sm font-bold text-indigo-500/80 dark:text-indigo-400/70">XP</span>
             <Info className="mb-auto mt-0.5 h-3 w-3 text-indigo-400/50 dark:text-indigo-500/50" />
@@ -175,7 +182,7 @@ export function TodayHeader({
         >
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-              {pointsWeek === 0 ? "\u2014" : pointsWeek}
+              {pointsWeek}
             </span>
             <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
           </div>
@@ -196,7 +203,7 @@ export function TodayHeader({
         >
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-              {pointsMonth === 0 ? "\u2014" : pointsMonth}
+              {pointsMonth}
             </span>
             <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
           </div>

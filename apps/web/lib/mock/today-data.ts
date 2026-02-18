@@ -9,7 +9,7 @@ import type {
   MonthChallengeSummary,
 } from "../types/today";
 
-// ── Raw mock daily data (Feb 5–14, 2026) ──────────────────
+// ── Raw mock daily data (Feb 1–18, 2026) ──────────────────
 
 interface DailyValues {
   water: number;
@@ -33,7 +33,10 @@ const DAILY_DATA: Record<string, DailyValues> = {
   "2026-02-12": { water: 2600, exercise: 60, diet: 5, sleep: 430 },
   "2026-02-13": { water: 2900, exercise: 65, diet: 4, sleep: 460 },
   "2026-02-14": { water: 3000, exercise: 120, diet: 3, sleep: 450 },
-  "2026-02-15": { water: 500, exercise: 0, diet: 0, sleep: 480 },
+  "2026-02-15": { water: 1500, exercise: 0, diet: 0, sleep: 480 },
+  "2026-02-16": { water: 2800, exercise: 70, diet: 5, sleep: 440 },
+  "2026-02-17": { water: 2700, exercise: 30, diet: 4, sleep: 460 },
+  "2026-02-18": { water: 1200, exercise: 0, diet: 2, sleep: 450 },
 };
 
 const EXERCISE_BREAKDOWNS: Record<string, ProgressBreakdown[]> = {
@@ -59,6 +62,7 @@ const EXERCISE_BREAKDOWNS: Record<string, ProgressBreakdown[]> = {
     { label: "Ciclismo", value: 70, actionId: "exercise-cycling" },
     { label: "Corrida", value: 50, actionId: "exercise-run" },
   ],
+  "2026-02-16": [{ label: "Corrida", value: 70, actionId: "exercise-run" }],
 };
 
 // Diet meal breakdowns: value 1=success, 0=skipped, -1=fail
