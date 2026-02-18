@@ -8,6 +8,7 @@ import { TodayHeader, TodayHeaderSkeleton } from "@/components/today/TodayHeader
 import { TrackableList, TrackableListSkeleton } from "@/components/today/TrackableList";
 import { FeedbackToast } from "@/components/today/FeedbackToast";
 import { WaterLogger, SleepLogger, ActivityLogger, DietLogger } from "@/components/logging";
+import { AlertTriangle } from "lucide-react";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
 function startOfDay(date: Date): Date {
@@ -123,22 +124,24 @@ export default function TodayPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (error) {
-    return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center text-center">
-        <p className="mb-4 text-gray-500 dark:text-gray-400">Erro ao carregar dados de hoje</p>
-        <button
-          onClick={refresh}
-          className="text-indigo-600 hover:underline dark:text-indigo-400"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-phi-3 md:space-y-phi-4">
+      {/* Inline error banner */}
+      {error && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-phi-4 py-phi-3 dark:border-red-900/50 dark:bg-red-950/20">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-red-500 dark:text-red-400" />
+          <p className="flex-1 text-sm text-red-700 dark:text-red-300">
+            Erro ao carregar dados de hoje
+          </p>
+          <button
+            onClick={refresh}
+            className="shrink-0 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {isLoading || !data ? (
         <>
           <TodayHeaderSkeleton />

@@ -10,9 +10,9 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = "Nenhum desafio ativo",
+  title = "Sem desafios ativos",
   description = "Começa a tua jornada ativando alguns desafios para acompanhar o teu progresso.",
-  actionLabel = "Explorar desafios",
+  actionLabel = "Entrar em um desafio",
   actionHref = "/trackables/activate",
 }: EmptyStateProps) {
   return (

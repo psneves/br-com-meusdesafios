@@ -201,9 +201,8 @@ export default function ProfilePage() {
                     />
                   </button>
 
-                  {/* Target controls — only visible when active */}
-                  {isActive && (
-                    <div className="flex items-center gap-2">
+                  {/* Target controls — always reserve space, invisible when inactive */}
+                  <div className={cn("flex items-center gap-2", !isActive && "invisible")}>
                       <button
                         onClick={() => handleTargetChange(def, -def.step)}
                         disabled={setting.target <= def.min}
@@ -220,8 +219,7 @@ export default function ProfilePage() {
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
             );
