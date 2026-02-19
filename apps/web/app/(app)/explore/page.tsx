@@ -9,32 +9,12 @@ import {
   ChevronRight,
   X,
   Users,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// ── Mock data ────────────────────────────────────────────
-
-interface SuggestedUser {
-  id: string;
-  name: string;
-  username: string;
-}
-
-interface PendingRequest {
-  id: string;
-  name: string;
-  username: string;
-}
-
-const mockSuggested: SuggestedUser[] = [
-  { id: "1", name: "Ana Silva", username: "@anasilva" },
-  { id: "2", name: "Carlos Mendes", username: "@carlosm" },
-  { id: "3", name: "Julia Rocha", username: "@jurocha" },
-];
-
-const mockPending: PendingRequest[] = [
-  { id: "4", name: "Rafael Costa", username: "@rafaelc" },
-];
+import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
+import { useExplore } from "@/lib/hooks/use-explore";
+import type { PendingFollowRequest } from "@/lib/types/social";
 
 const SWIPE_THRESHOLD = 80;
 const TOAST_DURATION = 3000;
@@ -83,49 +63,74 @@ function Toast({
   );
 }
 
+// ── Loading Skeleton ─────────────────────────────────────
+
+function ExploreSkeleton() {
+  return (
+    <div className="space-y-phi-4 md:space-y-phi-5 animate-pulse">
+      <div className="h-10 rounded-xl bg-gray-200 dark:bg-gray-800" />
+      <div className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="mt-4 space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
-  const [acceptedRequests, setAcceptedRequests] = useState<Set<string>>(
-    new Set()
-  );
-  const [deniedRequests, setDeniedRequests] = useState<Set<string>>(
-    new Set()
-  );
   const [confirmingDeny, setConfirmingDeny] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastData | null>(null);
 
-  const handleFollow = (userId: string) => {
-    setSentRequests((prev) => new Set(prev).add(userId));
+  const explore = useExplore();
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    explore.search(value);
   };
 
-  const handleAccept = useCallback((userId: string) => {
-    setAcceptedRequests((prev) => new Set(prev).add(userId));
-    setConfirmingDeny(null);
-    setToast({ message: "Solicitação aceita", variant: "success" });
-  }, []);
-
-  const handleDenyRequest = (userId: string) => {
-    setConfirmingDeny(userId);
+  const handleFollow = (handle: string) => {
+    explore.sendFollowRequest(handle);
   };
 
-  const handleDenyConfirm = (userId: string) => {
-    setDeniedRequests((prev) => new Set(prev).add(userId));
+  const handleAccept = useCallback(
+    (edgeId: string) => {
+      setConfirmingDeny(null);
+      explore.acceptRequest(edgeId);
+    },
+    [explore]
+  );
+
+  const handleDenyRequest = (edgeId: string) => {
+    setConfirmingDeny(edgeId);
+  };
+
+  const handleDenyConfirm = (edgeId: string) => {
     setConfirmingDeny(null);
-    setToast({ message: "Solicitação recusada", variant: "neutral" });
+    explore.denyRequest(edgeId);
   };
 
   const handleDenyCancel = () => {
     setConfirmingDeny(null);
   };
 
-  const clearToast = useCallback(() => setToast(null), []);
+  if (explore.isLoading) {
+    return <ExploreSkeleton />;
+  }
 
-  const visiblePending = mockPending.filter(
-    (r) => !acceptedRequests.has(r.id) && !deniedRequests.has(r.id)
-  );
+  const displayUsers = explore.searchResults ?? explore.suggestedUsers;
+  const isShowingSearch = explore.searchResults !== null;
 
   return (
     <div className="space-y-phi-4 md:space-y-phi-5">
@@ -136,119 +141,144 @@ export default function ExplorePage() {
           type="text"
           placeholder="Buscar pessoas..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 dark:focus:border-indigo-500"
         />
+        {explore.isSearching && (
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" />
+        )}
       </div>
 
       {/* Pending requests */}
-      <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="px-phi-4 pt-phi-4 pb-phi-2">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Solicitações pendentes
-            </h2>
-            {visiblePending.length > 0 && (
-              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
-                {visiblePending.length}
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
-            Ao aceitar, vocês passam a ver estatísticas um do outro.
-          </p>
-        </div>
-
-        {visiblePending.length > 0 ? (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {visiblePending.map((user) => (
-              <PendingRequestRow
-                key={user.id}
-                user={user}
-                isConfirmingDeny={confirmingDeny === user.id}
-                onAccept={handleAccept}
-                onDenyRequest={handleDenyRequest}
-                onDenyConfirm={handleDenyConfirm}
-                onDenyCancel={handleDenyCancel}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
-            <Users className="h-8 w-8 text-gray-200 dark:text-gray-700" />
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              Nenhuma solicitação pendente
+      {!isShowingSearch && (
+        <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="px-phi-4 pt-phi-4 pb-phi-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Solicitações pendentes
+              </h2>
+              {explore.pendingRequests.length > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+                  {explore.pendingRequests.length}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+              Ao aceitar, vocês passam a ver estatísticas um do outro.
             </p>
           </div>
-        )}
-      </section>
 
-      {/* Suggested people */}
+          {explore.pendingRequests.length > 0 ? (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {explore.pendingRequests.map((req) => (
+                <PendingRequestRow
+                  key={req.edgeId}
+                  request={req}
+                  isConfirmingDeny={confirmingDeny === req.edgeId}
+                  onAccept={handleAccept}
+                  onDenyRequest={handleDenyRequest}
+                  onDenyConfirm={handleDenyConfirm}
+                  onDenyCancel={handleDenyCancel}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
+              <Users className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Nenhuma solicitação pendente
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Users list (suggested or search results) */}
       <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between px-phi-4 pt-phi-4 pb-phi-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Pessoas sugeridas
+            {isShowingSearch ? "Resultados" : "Pessoas sugeridas"}
           </h2>
-          <button className="flex items-center gap-0.5 text-xs font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300">
-            Ver mais
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          {!isShowingSearch && displayUsers.length > 0 && (
+            <button className="flex items-center gap-0.5 text-xs font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300">
+              Ver mais
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {mockSuggested.map((user) => {
-            const isSent = sentRequests.has(user.id);
-            return (
-              <div
-                key={user.id}
-                className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
-              >
-                <DefaultAvatar name={user.name} />
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {user.name}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {user.username}{" "}
-                    <span className="text-gray-300 dark:text-gray-600">
-                      ·
-                    </span>{" "}
-                    Sugestão
-                  </p>
-                  <p className="text-[11px] text-gray-400/80 dark:text-gray-500/80">
-                    Em comum: desafios similares
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleFollow(user.id)}
-                  disabled={isSent}
-                  className={cn(
-                    "flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                    isSent
-                      ? "border border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500"
-                      : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-                  )}
+          {displayUsers.length > 0 ? (
+            displayUsers.map((user) => {
+              const isSent =
+                user.followStatus === "pending" ||
+                user.followStatus === "accepted";
+              return (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
                 >
-                  {isSent ? (
-                    <>
-                      <UserCheck className="h-3 w-3" />
-                      Enviado
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="h-3 w-3" />
-                      Seguir
-                    </>
-                  )}
-                </button>
-              </div>
-            );
-          })}
+                  <DefaultAvatar
+                    name={user.displayName}
+                    avatarUrl={user.avatarUrl}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      {user.displayName}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      @{user.handle}
+                      {!isShowingSearch && (
+                        <>
+                          {" "}
+                          <span className="text-gray-300 dark:text-gray-600">
+                            ·
+                          </span>{" "}
+                          Sugestão
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleFollow(user.handle)}
+                    disabled={isSent}
+                    className={cn(
+                      "flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                      isSent
+                        ? "border border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-500"
+                        : "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                    )}
+                  >
+                    {isSent ? (
+                      <>
+                        <UserCheck className="h-3 w-3" />
+                        Enviado
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-3 w-3" />
+                        Seguir
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
+              <Users className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                {isShowingSearch
+                  ? "Nenhum resultado encontrado"
+                  : "Nenhuma sugestão disponível"}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Toast */}
-      <Toast toast={toast} onDismiss={clearToast} />
+      <Toast toast={explore.feedback} onDismiss={explore.clearFeedback} />
     </div>
   );
 }
@@ -256,16 +286,16 @@ export default function ExplorePage() {
 // ── Pending Request Row with swipe ──────────────────────
 
 interface PendingRequestRowProps {
-  user: PendingRequest;
+  request: PendingFollowRequest;
   isConfirmingDeny: boolean;
-  onAccept: (id: string) => void;
-  onDenyRequest: (id: string) => void;
-  onDenyConfirm: (id: string) => void;
+  onAccept: (edgeId: string) => void;
+  onDenyRequest: (edgeId: string) => void;
+  onDenyConfirm: (edgeId: string) => void;
   onDenyCancel: () => void;
 }
 
 function PendingRequestRow({
-  user,
+  request,
   isConfirmingDeny,
   onAccept,
   onDenyRequest,
@@ -290,12 +320,12 @@ function PendingRequestRow({
   const handleTouchEnd = useCallback(() => {
     isSwiping.current = false;
     if (swipeX > SWIPE_THRESHOLD) {
-      onAccept(user.id);
+      onAccept(request.edgeId);
     } else if (swipeX < -SWIPE_THRESHOLD) {
-      onDenyRequest(user.id);
+      onDenyRequest(request.edgeId);
     }
     setSwipeX(0);
-  }, [swipeX, onAccept, onDenyRequest, user.id]);
+  }, [swipeX, onAccept, onDenyRequest, request.edgeId]);
 
   if (isConfirmingDeny) {
     return (
@@ -305,7 +335,7 @@ function PendingRequestRow({
         </p>
         <div className="flex gap-2">
           <button
-            onClick={() => onDenyConfirm(user.id)}
+            onClick={() => onDenyConfirm(request.edgeId)}
             className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500"
           >
             Sim
@@ -356,63 +386,33 @@ function PendingRequestRow({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <DefaultAvatar name={user.name} />
+        <DefaultAvatar
+          name={request.displayName}
+          avatarUrl={request.avatarUrl}
+        />
         <div className="flex-1 min-w-0">
           <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-            {user.name}
+            {request.displayName}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            {user.username}
+            @{request.handle}
           </p>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => onAccept(user.id)}
+            onClick={() => onAccept(request.edgeId)}
             className="rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500"
           >
             Aceitar
           </button>
           <button
-            onClick={() => onDenyRequest(user.id)}
+            onClick={() => onDenyRequest(request.edgeId)}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
           >
             Recusar
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ── Helpers ──────────────────────────────────────────────
-
-const AVATAR_COLORS = [
-  "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-  "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400",
-  "bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400",
-  "bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400",
-  "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
-];
-
-function DefaultAvatar({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  const colorIdx =
-    name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) %
-    AVATAR_COLORS.length;
-
-  return (
-    <div
-      className={cn(
-        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-        AVATAR_COLORS[colorIdx]
-      )}
-    >
-      {initials}
     </div>
   );
 }

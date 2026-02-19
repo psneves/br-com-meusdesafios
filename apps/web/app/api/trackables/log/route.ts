@@ -1,0 +1,31 @@
+import { z } from "zod";
+import { getSession } from "@/lib/auth/session";
+import { createLog } from "@/lib/services/trackable.service";
+import { validateBody } from "@/lib/api/validate";
+import { successResponse, errors } from "@/lib/api/response";
+
+const logSchema = z.object({
+  userTrackableId: z.string().uuid(),
+  valueNum: z.number(),
+  meta: z.record(z.unknown()).optional(),
+});
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession();
+    if (!session.isLoggedIn || !session.id) {
+      return errors.unauthorized();
+    }
+
+    const validation = await validateBody(request, logSchema);
+    if ("error" in validation) {
+      return validation.error;
+    }
+
+    const feedback = await createLog(session.id, validation.data);
+    return successResponse({ feedback });
+  } catch (err) {
+    console.error("[POST /api/trackables/log]", err);
+    return errors.serverError();
+  }
+}

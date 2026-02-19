@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Flame } from "lucide-react";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 interface StreakBadgeProps {
   current: number;
@@ -49,6 +50,19 @@ function getStreakVariant(days: number): {
   };
 }
 
+function getStreakTooltip(current: number, best?: number): React.ReactNode {
+  return (
+    <div className="space-y-0.5">
+      <div className="font-semibold">
+        {current} {current === 1 ? "dia" : "dias"} seguidos batendo a meta
+      </div>
+      {best !== undefined && best > current && (
+        <div className="text-gray-400">Melhor: {best} dias</div>
+      )}
+    </div>
+  );
+}
+
 export function StreakBadge({
   current,
   best,
@@ -61,16 +75,18 @@ export function StreakBadge({
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
-      <span
-        className={cn(
-          "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-          bgClass,
-          textClass
-        )}
-      >
-        <Flame className={cn("h-3 w-3", iconClass)} />
-        {current} {current === 1 ? "dia" : "dias"}
-      </span>
+      <Tooltip content={getStreakTooltip(current, best)}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+            bgClass,
+            textClass
+          )}
+        >
+          <Flame className={cn("h-3 w-3", iconClass)} />
+          {current} {current === 1 ? "dia" : "dias"}
+        </span>
+      </Tooltip>
       {showBest && best !== undefined && best > current && (
         <span className="text-[10px] text-gray-400 dark:text-gray-500">
           ({best})

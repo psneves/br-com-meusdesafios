@@ -1,10 +1,24 @@
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 interface PointsChipProps {
   points: number;
   showZero?: boolean;
   size?: "sm" | "md";
   className?: string;
+}
+
+function getPointsTooltip(points: number): React.ReactNode {
+  if (points <= 0) {
+    return "Bata a meta do dia para ganhar +10 XP";
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <div className="font-semibold">+{points} XP ganhos hoje</div>
+      <div className="text-gray-400">Meta do dia batida = +10 XP</div>
+    </div>
+  );
 }
 
 export function PointsChip({
@@ -25,19 +39,21 @@ export function PointsChip({
   };
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-md font-medium",
-        isPositive
-          ? "bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400"
-          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
-        sizeClasses[size],
-        className
-      )}
-    >
-      {isPositive && "+"}
-      {points}
-    </span>
+    <Tooltip content={getPointsTooltip(points)}>
+      <span
+        className={cn(
+          "inline-flex items-center rounded-md font-medium",
+          isPositive
+            ? "bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400"
+            : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+          sizeClasses[size],
+          className
+        )}
+      >
+        {isPositive && "+"}
+        {points} XP
+      </span>
+    </Tooltip>
   );
 }
 
