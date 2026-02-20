@@ -10,6 +10,9 @@ export async function GET() {
 
     return successResponse({
       id: session.id,
+      handle: session.handle ?? "",
+      firstName: session.firstName ?? "",
+      lastName: session.lastName ?? "",
       displayName: session.displayName,
       avatarUrl: session.avatarUrl ?? null,
     });

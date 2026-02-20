@@ -17,6 +17,12 @@ export class User {
   @Column({ unique: true, length: 50 })
   handle!: string;
 
+  @Column({ name: "first_name", length: 50, default: "" })
+  firstName!: string;
+
+  @Column({ name: "last_name", length: 50, default: "" })
+  lastName!: string;
+
   @Column({ name: "display_name", length: 100 })
   displayName!: string;
 

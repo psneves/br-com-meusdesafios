@@ -15,6 +15,9 @@ export async function POST(request: Request) {
     const session = await getSession();
 
     session.id = body.id ?? "test-user-id";
+    session.handle = body.handle ?? "testuser";
+    session.firstName = body.firstName ?? "Test";
+    session.lastName = body.lastName ?? "User";
     session.displayName = body.displayName ?? "Test User";
     session.email = body.email ?? "test@example.com";
     session.avatarUrl = body.avatarUrl ?? null;

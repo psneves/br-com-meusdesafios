@@ -3,6 +3,9 @@ import { cookies } from "next/headers";
 
 export interface SessionData {
   id: string;
+  handle: string;
+  firstName: string;
+  lastName: string;
   displayName: string;
   email: string;
   avatarUrl?: string;

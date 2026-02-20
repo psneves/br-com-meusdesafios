@@ -28,9 +28,12 @@ export async function findOrCreateGoogleUser(
 
   // 3. Create new user
   const handle = await generateUniqueHandle(repo, profile.email);
+  const { firstName, lastName } = splitName(profile.name);
 
   const newUser = repo.create({
     email: profile.email.toLowerCase(),
+    firstName,
+    lastName,
     displayName: profile.name || "Usuário",
     handle,
     googleId: profile.id,
@@ -41,6 +44,15 @@ export async function findOrCreateGoogleUser(
   });
 
   return repo.save(newUser);
+}
+
+function splitName(fullName?: string): { firstName: string; lastName: string } {
+  if (!fullName?.trim()) return { firstName: "", lastName: "" };
+  const parts = fullName.trim().split(/\s+/);
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
 }
 
 async function generateUniqueHandle(

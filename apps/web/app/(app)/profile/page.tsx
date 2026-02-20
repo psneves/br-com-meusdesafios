@@ -4,10 +4,14 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight } from "lucide-react";
+import {
+  Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight,
+  Pencil, Check, X, Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { useChallengeSettings } from "@/lib/hooks/use-challenge-settings";
+import { useProfile } from "@/lib/hooks/use-profile";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
 interface ChallengeGoalDef {
@@ -17,11 +21,8 @@ interface ChallengeGoalDef {
   displayUnit: string;
   step: number;
   min: number;
-  /** Convert internal value to display value */
   toDisplay: (v: number) => number;
-  /** Convert display value to internal value */
   toInternal: (v: number) => number;
-  /** Format the display value */
   format: (v: number) => string;
 }
 
@@ -76,10 +77,65 @@ export default function ProfilePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { settings, toggleActive, updateTarget } = useChallengeSettings();
+  const {
+    profile,
+    isLoading: profileLoading,
+    isSaving,
+    error: profileError,
+    updateProfile,
+    checkHandle,
+    handleAvailable,
+    isCheckingHandle,
+  } = useProfile();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editHandle, setEditHandle] = useState("");
 
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted && resolvedTheme === "dark";
+
+  function startEditing() {
+    if (!profile) return;
+    setEditFirstName(profile.firstName || "");
+    setEditLastName(profile.lastName || "");
+    setEditHandle(profile.handle || "");
+    setIsEditing(true);
+  }
+
+  function cancelEditing() {
+    setIsEditing(false);
+  }
+
+  async function saveProfile() {
+    const ok = await updateProfile({
+      firstName: (editFirstName || "").trim(),
+      lastName: (editLastName || "").trim(),
+      handle: (editHandle || "").trim().toLowerCase(),
+    });
+    if (ok) setIsEditing(false);
+  }
+
+  function onHandleChange(value: string) {
+    const cleaned = value.toLowerCase().replaceAll(/[^a-z0-9_.]/g, "");
+    setEditHandle(cleaned);
+    if (cleaned !== profile?.handle) {
+      checkHandle(cleaned);
+    }
+  }
+
+  const handleValid =
+    (editHandle || "").length >= 3 &&
+    /^[a-z][a-z0-9_.]*$/.test(editHandle || "") &&
+    (editHandle === profile?.handle || handleAvailable === true);
+
+  const canSave =
+    (editFirstName || "").trim().length > 0 &&
+    (editLastName || "").trim().length > 0 &&
+    handleValid &&
+    !isSaving;
 
   function handleTargetChange(def: ChallengeGoalDef, delta: number) {
     const current = settings[def.category].target;
@@ -89,23 +145,136 @@ export default function ProfilePage() {
     }
   }
 
+  const avatarUrl = profile?.avatarUrl || "/profile/profile.png";
+  const displayName = profile ? profile.displayName : "";
+  const handle = profile ? profile.handle : "";
+
   return (
     <div className="space-y-phi-4 md:space-y-phi-5">
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-3 pt-4 pb-2">
-        <Image
-          src="/profile/profile.png"
-          alt="Foto de perfil"
-          width={80}
-          height={80}
-          className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
-        />
-        <div className="text-center">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Paulo Neves
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">@psneves</p>
-        </div>
+        {profileLoading ? (
+          <>
+            <div className="h-20 w-20 rounded-full bg-gray-200 animate-pulse dark:bg-gray-700" />
+            <div className="space-y-2 text-center">
+              <div className="mx-auto h-5 w-32 rounded bg-gray-200 animate-pulse dark:bg-gray-700" />
+              <div className="mx-auto h-4 w-20 rounded bg-gray-200 animate-pulse dark:bg-gray-700" />
+            </div>
+          </>
+        ) : isEditing ? (
+          <>
+            <Image
+              src={avatarUrl}
+              alt="Foto de perfil"
+              width={80}
+              height={80}
+              className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+            />
+            <div className="w-full max-w-xs space-y-3">
+              <div>
+                <label htmlFor="edit-firstName" className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Nome
+                </label>
+                <input
+                  id="edit-firstName"
+                  type="text"
+                  value={editFirstName}
+                  onChange={(e) => setEditFirstName(e.target.value)}
+                  maxLength={50}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-lastName" className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Sobrenome
+                </label>
+                <input
+                  id="edit-lastName"
+                  type="text"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  maxLength={50}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-handle" className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Username
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">@</span>
+                  <input
+                    id="edit-handle"
+                    type="text"
+                    value={editHandle}
+                    onChange={(e) => onHandleChange(e.target.value)}
+                    maxLength={30}
+                    className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-7 pr-8 text-sm text-gray-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                  {editHandle.length >= 3 && editHandle !== profile?.handle && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {isCheckingHandle ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      ) : handleAvailable ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : handleAvailable === false ? (
+                        <X className="h-4 w-4 text-red-500" />
+                      ) : null}
+                    </span>
+                  )}
+                </div>
+                {editHandle.length >= 3 && editHandle !== profile?.handle && handleAvailable === false && !isCheckingHandle && (
+                  <p className="mt-1 text-xs text-red-500">Username já está em uso</p>
+                )}
+              </div>
+              {profileError && (
+                <p className="text-xs text-red-500">{profileError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={cancelEditing}
+                  disabled={isSaving}
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveProfile}
+                  disabled={!canSave}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="relative">
+              <Image
+                src={avatarUrl}
+                alt="Foto de perfil"
+                width={80}
+                height={80}
+                className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+              />
+              <button
+                onClick={startEditing}
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label="Editar perfil"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <div className="text-center">
+              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {displayName}
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{handle}</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Aparência */}

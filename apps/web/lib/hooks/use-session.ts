@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-interface SessionUser {
+export interface SessionUser {
   id: string;
+  handle: string;
+  firstName: string;
+  lastName: string;
   displayName: string;
   avatarUrl: string | null;
 }
@@ -11,26 +14,41 @@ interface SessionUser {
 interface UseSessionResult {
   user: SessionUser | null;
   isLoading: boolean;
+  refreshSession: () => Promise<void>;
 }
 
 export function useSession(): UseSessionResult {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) {
+        setUser(null);
+        return;
+      }
+      const json = await res.json();
+      setUser(json.data);
+    } catch {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function fetchSession() {
+    async function load() {
       try {
         const res = await fetch("/api/auth/me");
         if (!res.ok) {
-          setUser(null);
+          if (!cancelled) setUser(null);
           return;
         }
         const json = await res.json();
-        if (!cancelled) {
-          setUser(json.data);
-        }
+        if (!cancelled) setUser(json.data);
       } catch {
         if (!cancelled) setUser(null);
       } finally {
@@ -38,11 +56,11 @@ export function useSession(): UseSessionResult {
       }
     }
 
-    fetchSession();
+    load();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { user, isLoading };
+  return { user, isLoading, refreshSession: fetchSession };
 }

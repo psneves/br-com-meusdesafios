@@ -4,6 +4,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useToday } from "@/lib/hooks/use-today";
+import { useSession } from "@/lib/hooks/use-session";
 import { TodayHeader, TodayHeaderSkeleton } from "@/components/today/TodayHeader";
 import { TrackableList, TrackableListSkeleton } from "@/components/today/TrackableList";
 import { FeedbackToast } from "@/components/today/FeedbackToast";
@@ -30,6 +31,7 @@ function formatWeekday(date: Date): string {
 }
 
 export default function TodayPage() {
+  const { user } = useSession();
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [activeModal, setActiveModal] = useState<{
     cardId: string;
@@ -152,8 +154,8 @@ export default function TodayPage() {
           <TodayHeader
             greeting={displayGreeting}
             date={displayDate}
-            userName="Paulo Neves"
-            avatarUrl="/profile/profile.png"
+            userName={user?.displayName ?? ""}
+            avatarUrl={user?.avatarUrl ?? "/profile/profile.png"}
             totalPoints={data.totalPoints}
             pointsWeek={data.pointsWeek}
             pointsMonth={data.pointsMonth}

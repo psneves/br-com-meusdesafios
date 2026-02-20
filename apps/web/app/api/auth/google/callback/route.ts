@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
 
     const session = await getSession();
     session.id = user.id;
+    session.handle = user.handle;
+    session.firstName = user.firstName;
+    session.lastName = user.lastName;
     session.displayName = user.displayName;
     session.email = user.email;
     session.avatarUrl = user.avatarUrl || undefined;
