@@ -49,20 +49,31 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
       {/* Divider */}
       <div className="border-t border-gray-100 dark:border-gray-700/50" />
 
-      {/* Day strip */}
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {/* Day labels */}
-        {DAY_LABELS.map((label) => (
+      {/* Unified grid: day strip + challenge rows share the same column layout */}
+      <div
+        className="grid items-center gap-y-1.5"
+        style={{
+          gridTemplateColumns: "1.25rem 5.5rem repeat(7, 1fr) 1.25rem",
+        }}
+      >
+        {/* Row 1: Day labels (columns 3-9) */}
+        {DAY_LABELS.map((label, i) => (
           <span
             key={label}
-            className="text-[10px] font-medium text-gray-400 dark:text-gray-500"
+            className="text-center text-[10px] font-medium text-gray-400 dark:text-gray-500"
+            style={{ gridRow: 1, gridColumn: i + 3 }}
           >
             {label}
           </span>
         ))}
-        {/* Date numbers + dots */}
-        {summary.days.map((day) => (
-          <div key={day.date} className="flex flex-col items-center gap-0.5">
+
+        {/* Row 2: Date numbers + summary dots (columns 3-9) */}
+        {summary.days.map((day, i) => (
+          <div
+            key={day.date}
+            className="flex flex-col items-center gap-0.5"
+            style={{ gridRow: 2, gridColumn: i + 3 }}
+          >
             <span
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
@@ -80,25 +91,20 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
             />
           </div>
         ))}
-      </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-100 dark:border-gray-700/50" />
+        {/* Row 3: Divider spanning full width */}
+        <div
+          className="border-t border-gray-100 dark:border-gray-700/50"
+          style={{ gridRow: 3, gridColumn: "1 / -1" }}
+        />
 
-      {/* Per-challenge rows — CSS grid for column alignment + vertical highlight */}
-      <div
-        className="grid items-center gap-y-2"
-        style={{
-          gridTemplateColumns: "1rem 6.5rem repeat(7, 1fr) 1rem",
-        }}
-      >
         {/* Vertical pill highlight for selected day */}
         {selectedIdx >= 0 && (
           <div
             className="pointer-events-none z-0 justify-self-center rounded-full bg-indigo-50 dark:bg-indigo-900/25"
             style={{
               gridColumn: selectedIdx + 3,
-              gridRow: `1 / ${rowCount + 2}`,
+              gridRow: `4 / ${rowCount + 5}`,
               width: "1.5rem",
               height: "100%",
               paddingTop: "0.125rem",
@@ -107,10 +113,10 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
           />
         )}
 
-        {/* Challenge rows */}
+        {/* Challenge rows (starting at row 4) */}
         {summary.challenges.map((ch, rowIdx) => {
           const cfg = getCategoryConfig(ch.category);
-          const row = rowIdx + 1;
+          const row = rowIdx + 4;
           const completedWeek = summary.isComplete && ch.metCount === 7;
 
           return (
@@ -173,7 +179,7 @@ export function WeeklySummaryPanel({ summary }: WeeklySummaryPanelProps) {
             <div
               key={`star-${day.date}`}
               className="z-10 flex justify-center pt-1"
-              style={{ gridRow: rowCount + 1, gridColumn: i + 3 }}
+              style={{ gridRow: rowCount + 4, gridColumn: i + 3 }}
             >
               {isPerfect && (
                 <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
