@@ -116,6 +116,11 @@ export default function ProfilePage() {
   }, []);
 
   const updateLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      setLocationError("Seu navegador não suporta geolocalização.");
+      return;
+    }
+
     setIsUpdatingLocation(true);
     setLocationError(null);
     setLocationSuccess(false);
@@ -124,7 +129,7 @@ export default function ProfilePage() {
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
-            timeout: 10000,
+            timeout: 15000,
           });
         }
       );
@@ -141,16 +146,18 @@ export default function ProfilePage() {
       setLocationUpdatedAt(json.data?.updatedAt ?? new Date().toISOString());
       setLocationSuccess(true);
       setTimeout(() => setLocationSuccess(false), 3000);
-    } catch (err) {
-      if (err instanceof GeolocationPositionError) {
+    } catch (err: unknown) {
+      const geoErr = err as { code?: number };
+      if (typeof geoErr.code === "number" && geoErr.code >= 1 && geoErr.code <= 3) {
         setLocationError(
-          err.code === err.PERMISSION_DENIED
+          geoErr.code === 1
             ? "Permissão negada. Ative nas configurações do navegador."
             : "Não foi possível obter sua localização."
         );
       } else {
         setLocationError("Erro ao atualizar localização.");
       }
+      console.error("[updateLocation]", err);
     } finally {
       setIsUpdatingLocation(false);
     }

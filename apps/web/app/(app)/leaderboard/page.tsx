@@ -40,6 +40,11 @@ export default function LeaderboardPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const activateLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      setLocationError("Seu navegador não suporta geolocalização.");
+      return;
+    }
+
     setIsActivatingLocation(true);
     setLocationError(null);
 
@@ -48,7 +53,7 @@ export default function LeaderboardPage() {
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: false,
-            timeout: 10000,
+            timeout: 15000,
           });
         }
       );
@@ -65,16 +70,21 @@ export default function LeaderboardPage() {
       if (!res.ok) throw new Error("Falha ao salvar localização");
 
       leaderboard.refresh();
-    } catch (err) {
-      if (err instanceof GeolocationPositionError) {
+    } catch (err: unknown) {
+      // GeolocationPositionError has a numeric .code property
+      const geoErr = err as { code?: number };
+      if (typeof geoErr.code === "number" && geoErr.code >= 1 && geoErr.code <= 3) {
         setLocationError(
-          err.code === err.PERMISSION_DENIED
+          geoErr.code === 1
             ? "Permissão de localização negada. Ative nas configurações do navegador."
-            : "Não foi possível obter sua localização. Tente novamente."
+            : geoErr.code === 3
+              ? "Tempo esgotado ao buscar localização. Tente novamente."
+              : "Não foi possível obter sua localização. Tente novamente."
         );
       } else {
         setLocationError("Erro ao ativar localização. Tente novamente.");
       }
+      console.error("[activateLocation]", err);
     } finally {
       setIsActivatingLocation(false);
     }
@@ -213,12 +223,17 @@ export default function LeaderboardPage() {
               {isActivatingLocation ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Ativando...
+                  Obtendo localização...
                 </>
               ) : (
                 "Ativar localização"
               )}
             </button>
+            {isActivatingLocation && (
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                Permita o acesso à localização no seu navegador.
+              </p>
+            )}
             {locationError && (
               <p className="text-xs text-red-500 dark:text-red-400">
                 {locationError}
