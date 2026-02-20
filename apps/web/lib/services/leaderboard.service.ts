@@ -2,6 +2,7 @@ import {
   getDataSource,
   FollowEdge,
   PointsLedger,
+  User,
   UserTrackable,
   TrackableTemplate,
 } from "@meusdesafios/db";
@@ -9,6 +10,7 @@ import type { TrackableCategory } from "@meusdesafios/shared";
 import type {
   Period,
   Scope,
+  Radius,
   RankData,
   ChallengeRank,
   LeaderboardData,
@@ -25,7 +27,7 @@ const CATEGORY_NAMES: Record<TrackableCategory, string> = {
 
 // ── Helpers ───────────────────────────────────────────────
 
-function buildCohortQuery(userId: string, scope: Scope): { sql: string; params: string[] } {
+function buildSocialCohortQuery(userId: string, scope: "following" | "followers"): { sql: string; params: string[] } {
   if (scope === "following") {
     return {
       sql: `SELECT e.target_id AS uid FROM follow_edges e WHERE e.requester_id = $1 AND e.status = 'accepted'`,
@@ -35,6 +37,41 @@ function buildCohortQuery(userId: string, scope: Scope): { sql: string; params: 
   return {
     sql: `SELECT e.requester_id AS uid FROM follow_edges e WHERE e.target_id = $1 AND e.status = 'accepted'`,
     params: [userId],
+  };
+}
+
+async function buildNearbyCohort(
+  ds: Awaited<ReturnType<typeof getDataSource>>,
+  userId: string,
+  radiusKm: Radius
+): Promise<{ cohortIds: string[]; userHasLocation: boolean }> {
+  const userRepo = ds.getRepository(User);
+  const user = await userRepo.findOneBy({ id: userId });
+
+  if (!user?.latitude || !user?.longitude) {
+    return { cohortIds: [userId], userHasLocation: false };
+  }
+
+  const nearbyRows: { uid: string }[] = await userRepo.query(
+    `SELECT u.id AS uid
+     FROM users u
+     WHERE u.latitude IS NOT NULL
+       AND u.longitude IS NOT NULL
+       AND u.id != $1
+       AND u.is_active = true
+       AND (6371 * acos(
+         LEAST(1.0, GREATEST(-1.0,
+           cos(radians($2)) * cos(radians(u.latitude))
+           * cos(radians(u.longitude) - radians($3))
+           + sin(radians($2)) * sin(radians(u.latitude))
+         ))
+       )) <= $4`,
+    [userId, user.latitude, user.longitude, radiusKm]
+  );
+
+  return {
+    cohortIds: [userId, ...nearbyRows.map((r) => r.uid)],
+    userHasLocation: true,
   };
 }
 
@@ -68,18 +105,42 @@ function getDateRange(period: Period): { start: string; end: string } {
 export async function computeLeaderboard(
   userId: string,
   scope: Scope,
-  period: Period
+  period: Period,
+  radius?: Radius
 ): Promise<LeaderboardData> {
   const ds = await getDataSource();
-  const edgeRepo = ds.getRepository(FollowEdge);
 
-  // 1. Build cohort
-  const cohortQuery = buildCohortQuery(userId, scope);
-  const cohortRows: { uid: string }[] = await edgeRepo.query(
-    cohortQuery.sql,
-    cohortQuery.params
-  );
-  const cohortIds = [userId, ...cohortRows.map((r) => r.uid)];
+  // 1. Build cohort based on scope
+  let cohortIds: string[];
+
+  if (scope === "nearby") {
+    const nearbyResult = await buildNearbyCohort(ds, userId, radius ?? 50);
+
+    if (!nearbyResult.userHasLocation) {
+      return {
+        overall: {
+          scope,
+          rank: null,
+          score: 0,
+          cohortSize: 0,
+          percentile: null,
+          rankStatus: "no_location",
+        },
+        challengeRanks: [],
+      };
+    }
+
+    cohortIds = nearbyResult.cohortIds;
+  } else {
+    const edgeRepo = ds.getRepository(FollowEdge);
+    const cohortQuery = buildSocialCohortQuery(userId, scope);
+    const cohortRows: { uid: string }[] = await edgeRepo.query(
+      cohortQuery.sql,
+      cohortQuery.params
+    );
+    cohortIds = [userId, ...cohortRows.map((r) => r.uid)];
+  }
+
   const cohortSize = cohortIds.length;
 
   // 2. Date range

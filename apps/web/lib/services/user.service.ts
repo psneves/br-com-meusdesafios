@@ -102,6 +102,47 @@ export async function isHandleAvailable(
   return !existing;
 }
 
+export interface UserLocation {
+  latitude: number;
+  longitude: number;
+  updatedAt: string;
+}
+
+export async function getLocation(userId: string): Promise<UserLocation | null> {
+  const ds = await getDataSource();
+  const user = await ds.getRepository(User).findOneBy({ id: userId });
+  if (!user || user.latitude == null || user.longitude == null) return null;
+
+  return {
+    latitude: user.latitude,
+    longitude: user.longitude,
+    updatedAt: user.locationUpdatedAt?.toISOString() ?? new Date().toISOString(),
+  };
+}
+
+export async function updateLocation(
+  userId: string,
+  latitude: number,
+  longitude: number
+): Promise<UserLocation> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(User);
+
+  const user = await repo.findOneBy({ id: userId });
+  if (!user) throw new Error("User not found");
+
+  user.latitude = latitude;
+  user.longitude = longitude;
+  user.locationUpdatedAt = new Date();
+  await repo.save(user);
+
+  return {
+    latitude,
+    longitude,
+    updatedAt: user.locationUpdatedAt.toISOString(),
+  };
+}
+
 export class HandleTakenError extends Error {
   constructor() {
     super("Handle already taken");

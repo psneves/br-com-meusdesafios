@@ -1,7 +1,8 @@
 import type { TrackableCategory } from "@meusdesafios/shared";
 
 export type Period = "week" | "month";
-export type Scope = "following" | "followers";
+export type Scope = "following" | "followers" | "nearby";
+export type Radius = 50 | 100 | 500;
 
 export interface RankData {
   scope: Scope;
@@ -9,7 +10,7 @@ export interface RankData {
   score: number;
   cohortSize: number;
   percentile: number | null;
-  rankStatus: "available" | "insufficient_cohort";
+  rankStatus: "available" | "insufficient_cohort" | "no_location";
 }
 
 export interface ChallengeRank {

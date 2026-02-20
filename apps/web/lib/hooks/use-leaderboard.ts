@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import type { Period, Scope, LeaderboardData } from "../types/leaderboard";
+import type { Period, Scope, Radius, LeaderboardData } from "../types/leaderboard";
 
 interface UseLeaderboardResult {
   data: LeaderboardData | null;
@@ -9,24 +9,28 @@ interface UseLeaderboardResult {
   error: Error | null;
   period: Period;
   scope: Scope;
+  radius: Radius;
   setPeriod: (p: Period) => void;
   setScope: (s: Scope) => void;
+  setRadius: (r: Radius) => void;
+  refresh: () => void;
 }
 
 export function useLeaderboard(): UseLeaderboardResult {
   const [period, setPeriod] = useState<Period>("week");
   const [scope, setScope] = useState<Scope>("following");
+  const [radius, setRadius] = useState<Radius>(50);
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchRank = useCallback(async (p: Period, s: Scope) => {
+  const fetchRank = useCallback(async (p: Period, s: Scope, r: Radius) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/leaderboards/rank?scope=${s}&period=${p}`
-      );
+      let url = `/api/leaderboards/rank?scope=${s}&period=${p}`;
+      if (s === "nearby") url += `&radius=${r}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch leaderboard");
       const json = await res.json();
       setData(json.data);
@@ -38,8 +42,12 @@ export function useLeaderboard(): UseLeaderboardResult {
   }, []);
 
   useEffect(() => {
-    fetchRank(period, scope);
-  }, [period, scope, fetchRank]);
+    fetchRank(period, scope, radius);
+  }, [period, scope, radius, fetchRank]);
+
+  const refresh = useCallback(() => {
+    fetchRank(period, scope, radius);
+  }, [fetchRank, period, scope, radius]);
 
   return {
     data,
@@ -47,7 +55,10 @@ export function useLeaderboard(): UseLeaderboardResult {
     error,
     period,
     scope,
+    radius,
     setPeriod,
     setScope,
+    setRadius,
+    refresh,
   };
 }

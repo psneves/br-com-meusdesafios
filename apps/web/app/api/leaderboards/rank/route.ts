@@ -3,10 +3,12 @@ import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateQuery } from "@/lib/api/validate";
 import { computeLeaderboard } from "@/lib/services/leaderboard.service";
+import type { Radius } from "@/lib/types/leaderboard";
 
 const rankSchema = z.object({
-  scope: z.enum(["following", "followers"]),
+  scope: z.enum(["following", "followers", "nearby"]),
   period: z.enum(["week", "month"]),
+  radius: z.enum(["50", "100", "500"]).optional(),
 });
 
 export async function GET(request: Request) {
@@ -22,10 +24,14 @@ export async function GET(request: Request) {
       return validation.error;
     }
 
+    const { scope, period, radius: radiusStr } = validation.data;
+    const radius = radiusStr ? (Number(radiusStr) as Radius) : undefined;
+
     const data = await computeLeaderboard(
       session.id,
-      validation.data.scope,
-      validation.data.period
+      scope,
+      period,
+      radius
     );
     return successResponse(data);
   } catch (err) {

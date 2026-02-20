@@ -1,11 +1,11 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight,
-  Pencil, Check, X, Loader2, Camera,
+  Pencil, Check, X, Loader2, Camera, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
@@ -95,7 +95,66 @@ export default function ProfilePage() {
   const [editLastName, setEditLastName] = useState("");
   const [editHandle, setEditHandle] = useState("");
 
+  // Location state
+  const [locationUpdatedAt, setLocationUpdatedAt] = useState<string | null | undefined>(undefined); // undefined = loading, null = no location
+  const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationSuccess, setLocationSuccess] = useState(false);
+
+  const locationActive = locationUpdatedAt != null && locationUpdatedAt !== undefined;
+
   useEffect(() => setMounted(true), []);
+
+  // Fetch location status on mount
+  useEffect(() => {
+    fetch("/api/profile/location")
+      .then((r) => r.json())
+      .then((json) => {
+        setLocationUpdatedAt(json.data?.updatedAt ?? null);
+      })
+      .catch(() => setLocationUpdatedAt(null));
+  }, []);
+
+  const updateLocation = useCallback(async () => {
+    setIsUpdatingLocation(true);
+    setLocationError(null);
+    setLocationSuccess(false);
+    try {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+          });
+        }
+      );
+      const res = await fetch("/api/profile/location", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      });
+      if (!res.ok) throw new Error("Falha ao salvar localização");
+      const json = await res.json();
+      setLocationUpdatedAt(json.data?.updatedAt ?? new Date().toISOString());
+      setLocationSuccess(true);
+      setTimeout(() => setLocationSuccess(false), 3000);
+    } catch (err) {
+      if (err instanceof GeolocationPositionError) {
+        setLocationError(
+          err.code === err.PERMISSION_DENIED
+            ? "Permissão negada. Ative nas configurações do navegador."
+            : "Não foi possível obter sua localização."
+        );
+      } else {
+        setLocationError("Erro ao atualizar localização.");
+      }
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  }, []);
 
   const isDark = mounted && resolvedTheme === "dark";
 
@@ -354,6 +413,79 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="h-[42px] rounded-lg bg-gray-100 animate-pulse dark:bg-gray-800" />
+        )}
+      </section>
+
+      {/* Localização */}
+      <section className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-phi-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Localização
+        </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg",
+                locationActive
+                  ? "bg-green-50 dark:bg-green-900/30"
+                  : "bg-gray-100 dark:bg-gray-800"
+              )}
+            >
+              <MapPin
+                className={cn(
+                  "h-4 w-4",
+                  locationActive
+                    ? "text-green-500"
+                    : "text-gray-400 dark:text-gray-500"
+                )}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {locationUpdatedAt === undefined
+                  ? "Carregando..."
+                  : locationActive
+                    ? "Localização ativa"
+                    : "Sem localização"}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                {locationActive && locationUpdatedAt
+                  ? `Atualizada em ${new Date(locationUpdatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}`
+                  : "Usada para o ranking regional"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={updateLocation}
+            disabled={isUpdatingLocation}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
+              locationSuccess
+                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            )}
+          >
+            {isUpdatingLocation ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Atualizando...
+              </>
+            ) : locationSuccess ? (
+              <>
+                <Check className="h-3.5 w-3.5" />
+                Salvo
+              </>
+            ) : locationActive ? (
+              "Atualizar"
+            ) : (
+              "Ativar"
+            )}
+          </button>
+        </div>
+        {locationError && (
+          <p className="mt-2 text-xs text-red-500 dark:text-red-400">
+            {locationError}
+          </p>
         )}
       </section>
 
