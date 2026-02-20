@@ -30,6 +30,9 @@ pnpm-debug.log*
 
 # Testing
 coverage
+__tests__/.auth/
+playwright-report/
+test-results/
 
 # Turbo
 .turbo

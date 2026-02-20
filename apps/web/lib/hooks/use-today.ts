@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import type { TodayCard, TodayResponse, LogFeedback } from "../types/today";
-import { getMockTodayResponse } from "../mock/today-data";
+import { useState, useCallback, useEffect, useRef } from "react";
+import type { TodayResponse, LogFeedback, WeeklySummary, MonthlySummary } from "../types/today";
 
 interface UseTodayResult {
   data: TodayResponse | null;
+  weekSummary: WeeklySummary | null;
+  monthSummary: MonthlySummary | null;
   isLoading: boolean;
   error: Error | null;
   feedback: LogFeedback | null;
@@ -15,102 +16,35 @@ interface UseTodayResult {
   refresh: () => Promise<void>;
 }
 
-// Flag to switch between mock and real API
-const USE_MOCK = true;
-
-export function useToday(): UseTodayResult {
+export function useToday(selectedDate?: Date): UseTodayResult {
   const [data, setData] = useState<TodayResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [feedback, setFeedback] = useState<LogFeedback | null>(null);
+  const [weekSummary] = useState<WeeklySummary | null>(null);
+  const [monthSummary] = useState<MonthlySummary | null>(null);
+  const initialLoadDone = useRef(false);
 
   const fetchToday = useCallback(async () => {
-    setIsLoading(true);
+    const isInitial = !initialLoadDone.current;
+    if (isInitial) setIsLoading(true);
     setError(null);
 
     try {
-      if (USE_MOCK) {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        const response = getMockTodayResponse();
-        setData(response);
-      } else {
-        const response = await fetch("/api/trackables/today");
-        if (!response.ok) throw new Error("Failed to fetch today data");
-        const json = await response.json();
-        setData(json.data);
-      }
+      const params = selectedDate
+        ? `?date=${selectedDate.toISOString().slice(0, 10)}`
+        : "";
+      const response = await fetch(`/api/trackables/today${params}`);
+      if (!response.ok) throw new Error("Failed to fetch today data");
+      const json = await response.json();
+      setData(json.data);
+      initialLoadDone.current = true;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Unknown error"));
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  // Helper to update a card with new value
-  const updateCardWithValue = useCallback(
-    (card: TodayCard, addValue: number): { card: TodayCard; feedback: LogFeedback | null } => {
-      const newValue = card.progress.value + addValue;
-      const target = card.goal.target || 0;
-      const wasMet = card.progress.met;
-      const nowMet = target > 0 ? newValue >= target : addValue > 0;
-
-      let newPoints = card.pointsToday;
-      let feedbackData: LogFeedback | null = null;
-
-      if (!wasMet && nowMet) {
-        newPoints = 10;
-        const newStreak = card.streak.current + 1;
-
-        // Check milestones
-        let bonus = 0;
-        if (newStreak === 3) bonus = 5;
-        else if (newStreak === 7) bonus = 10;
-        else if (newStreak === 14) bonus = 20;
-        else if (newStreak === 30) bonus = 50;
-
-        newPoints += bonus;
-
-        feedbackData = {
-          goalMet: true,
-          pointsEarned: newPoints,
-          streakUpdated: { from: card.streak.current, to: newStreak },
-          milestone: bonus > 0 ? { day: newStreak, bonus } : undefined,
-          message: bonus > 0
-            ? `Meta cumprida! +10 pts. Sequência dia ${newStreak}: +${bonus} pts!`
-            : `Meta cumprida! +10 pts`,
-        };
-
-        return {
-          card: {
-            ...card,
-            progress: {
-              ...card.progress,
-              value: newValue,
-              met: true,
-              percentage: 100,
-            },
-            pointsToday: newPoints,
-            streak: { ...card.streak, current: newStreak },
-          },
-          feedback: feedbackData,
-        };
-      }
-
-      return {
-        card: {
-          ...card,
-          progress: {
-            ...card.progress,
-            value: newValue,
-            percentage: target > 0 ? Math.min(100, Math.round((newValue / target) * 100)) : 0,
-          },
-        },
-        feedback: null,
-      };
-    },
-    []
-  );
+  }, [selectedDate]);
 
   // Log with a specific value (for modals)
   const logValue = useCallback(
@@ -121,51 +55,29 @@ export function useToday(): UseTodayResult {
       if (!card) return;
 
       try {
-        if (USE_MOCK) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+        const response = await fetch("/api/trackables/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userTrackableId: cardId,
+            valueNum: value,
+            meta,
+          }),
+        });
 
-          const { card: updatedCard, feedback: newFeedback } = updateCardWithValue(card, value);
+        if (!response.ok) throw new Error("Erro ao registar");
 
-          const updatedCards = data.cards.map((c) =>
-            c.userTrackableId === cardId ? updatedCard : c
-          );
-
-          const newTotal = updatedCards.reduce((sum, c) => sum + c.pointsToday, 0);
-
-          setData({
-            ...data,
-            totalPoints: newTotal,
-            cards: updatedCards,
-          });
-
-          if (newFeedback) {
-            setFeedback(newFeedback);
-          }
-        } else {
-          const response = await fetch("/api/trackables/log", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userTrackableId: cardId,
-              valueNum: value,
-              meta,
-            }),
-          });
-
-          if (!response.ok) throw new Error("Erro ao registar");
-
-          const json = await response.json();
-          if (json.data.feedback) {
-            setFeedback(json.data.feedback);
-          }
-
-          await fetchToday();
+        const json = await response.json();
+        if (json.data.feedback) {
+          setFeedback(json.data.feedback);
         }
+
+        await fetchToday();
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }
     },
-    [data, fetchToday, updateCardWithValue]
+    [data, fetchToday]
   );
 
   const logQuickAction = useCallback(
@@ -184,10 +96,29 @@ export function useToday(): UseTodayResult {
         }
       }
 
+      if (actionId.startsWith("diet-meal-delta-")) {
+        const delta = parseInt(actionId.replace("diet-meal-delta-", ""), 10);
+        if (!isNaN(delta)) {
+          await logValue(cardId, delta);
+          return;
+        }
+      }
+
       if (actionId.startsWith("activity-log-")) {
         const value = parseFloat(actionId.replace("activity-log-", ""));
         if (!isNaN(value)) {
           await logValue(cardId, value);
+          return;
+        }
+      }
+
+      // exercise-{MODALITY}-{minutes} from ExerciseCompactActions
+      if (actionId.startsWith("exercise-")) {
+        const parts = actionId.split("-");
+        const minutes = parseFloat(parts[parts.length - 1]);
+        if (!isNaN(minutes)) {
+          const modality = parts.slice(1, -1).join("-").toUpperCase();
+          await logValue(cardId, minutes, { exerciseModality: modality });
           return;
         }
       }
@@ -202,94 +133,31 @@ export function useToday(): UseTodayResult {
       if (!action) return;
 
       try {
-        if (USE_MOCK) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+        const response = await fetch("/api/trackables/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userTrackableId: cardId,
+            valueNum: action.amount,
+            meta: action.exerciseModality
+              ? { exerciseModality: action.exerciseModality }
+              : undefined,
+          }),
+        });
 
-          const updatedCards = data.cards.map((c) => {
-            if (c.userTrackableId !== cardId) return c;
+        if (!response.ok) throw new Error("Failed to log action");
 
-            // Handle different action types
-            if (action.type === "add" && action.amount) {
-              const { card: updatedCard, feedback: newFeedback } = updateCardWithValue(c, action.amount);
-              if (newFeedback) setFeedback(newFeedback);
-              return updatedCard;
-            }
-
-            if (action.type === "toggle") {
-              const nowMet = !c.progress.met;
-              let newPoints = c.pointsToday;
-
-              if (nowMet && !c.progress.met) {
-                newPoints = 10;
-                const newStreak = c.streak.current + 1;
-
-                let bonus = 0;
-                if (newStreak === 3) bonus = 5;
-                else if (newStreak === 7) bonus = 10;
-                else if (newStreak === 14) bonus = 20;
-                else if (newStreak === 30) bonus = 50;
-
-                newPoints += bonus;
-
-                setFeedback({
-                  goalMet: true,
-                  pointsEarned: newPoints,
-                  streakUpdated: { from: c.streak.current, to: newStreak },
-                  milestone: bonus > 0 ? { day: newStreak, bonus } : undefined,
-                  message: bonus > 0
-                    ? `Meta cumprida! +10 pts. Sequência dia ${newStreak}: +${bonus} pts!`
-                    : `Meta cumprida! +10 pts`,
-                });
-
-                return {
-                  ...c,
-                  progress: { ...c.progress, value: 1, met: true, percentage: 100 },
-                  pointsToday: newPoints,
-                  streak: { ...c.streak, current: newStreak },
-                };
-              }
-
-              return {
-                ...c,
-                progress: { ...c.progress, value: 0, met: false, percentage: 0 },
-                pointsToday: 0,
-              };
-            }
-
-            return c;
-          });
-
-          const newTotal = updatedCards.reduce((sum, c) => sum + c.pointsToday, 0);
-
-          setData({
-            ...data,
-            totalPoints: newTotal,
-            cards: updatedCards,
-          });
-        } else {
-          const response = await fetch("/api/trackables/log", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userTrackableId: cardId,
-              valueNum: action.amount,
-            }),
-          });
-
-          if (!response.ok) throw new Error("Failed to log action");
-
-          const json = await response.json();
-          if (json.data.feedback) {
-            setFeedback(json.data.feedback);
-          }
-
-          await fetchToday();
+        const json = await response.json();
+        if (json.data.feedback) {
+          setFeedback(json.data.feedback);
         }
+
+        await fetchToday();
       } catch (err) {
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }
     },
-    [data, fetchToday, logValue, updateCardWithValue]
+    [data, fetchToday, logValue]
   );
 
   const clearFeedback = useCallback(() => {
@@ -302,6 +170,8 @@ export function useToday(): UseTodayResult {
 
   return {
     data,
+    weekSummary,
+    monthSummary,
     isLoading,
     error,
     feedback,

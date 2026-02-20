@@ -1,98 +1,126 @@
-# Leaderboards & Privacy – Meus Desafios
+# Leaderboards & Privacy - Meus Desafios
 
-## Problem statement
-Users want a social rank, but must not see:
-- who is directly above/below them
-- ordered lists of others
-- any stats of non-accepted relationships
+## Objective
 
-Also: leaderboards must not leak identities via endpoints.
+Provide motivational social ranking for adults 25-35 without exposing other users' identities or detailed behavior.
 
 ---
 
-## Privacy-safe leaderboard strategy (recommended)
-Return **only the requesting user’s**:
-- rank number
+## Privacy guarantees
+
+Leaderboard APIs return only the requesting user's:
+- rank
 - score
 - cohort size
-- optional percentile band
+- percentile
+- rank availability status
 
-Never return:
-- usernames
-- user IDs of others
-- neighbor ranks
-- paginated lists
-
----
-
-## Scopes (two ranks)
-1) **Following rank**: compare user vs accepted users they follow
-2) **Followers rank**: compare user vs accepted users who follow them
-
-> Both scopes are derived from follow_edges where status=accepted.
+Leaderboard APIs never return:
+- usernames or IDs of others
+- ordered participant lists
+- direct neighbors above/below
+- filters that isolate individuals
 
 ---
 
-## Computing rank without leaking data
-### Option A (MVP, simplest)
-Compute rank server-side on request:
-- Determine cohort user IDs (accepted graph)
-- Compute scores for cohort (pre-aggregated daily totals recommended)
-- Determine user rank among cohort
-- Return only the user’s rank fields
+## Visibility states
 
-Security:
-- Ensure the request is authenticated
-- Do not return cohort IDs
-- Add query result caps and caching
+### Relationship rules
 
-### Option B (recommended as scaling grows)
-Nightly (or hourly) job:
-- Precompute each user’s rank for each scope
-- Store only that user’s rank in leaderboard_snapshots
-- API reads from snapshot
+- `pending`: no stats visibility
+- `accepted`: aggregated stats visibility allowed
+- `denied`: no visibility
+- `blocked`: no visibility in either direction; remove from cohorts
 
-This prevents timing attacks and heavy queries.
+### Shared data in MVP
 
----
-
-## Preventing inference attacks
-- Do not provide “rank of a specific other user”.
-- Do not provide endpoints like “top N”.
-- Avoid letting users vary cohort filters that could isolate individuals.
-- Consider minimum cohort size: if cohort_size < 5, return only score and “rank unavailable”.
-
----
-
-## Visibility model
-### Accepted relationship
-If A requests to follow B and B accepts:
-- A can see B’s shared “numbers” (as allowed)
-- B can choose what is shared (MVP: share all core stats)
-
-MVP simplification:
-- Acceptance grants visibility to core aggregated stats only (not raw logs).
-
----
-
-## What is safe to share (MVP)
-- daily totals and streak counts per trackable
+Allowed:
+- per-challenge daily totals (aggregated)
+- physical exercise totals with optional modality split (gym/run/cycling/swim)
+- streak counts
 - total points
-- challenge participation (optional)
-Not safe:
-- exact timestamps of sleep
-- raw logs, notes, location (future)
+
+Not allowed:
+- raw log entries
+- exact timestamps for sensitive behaviors (sleep, location)
+- free-text notes
 
 ---
 
-## API response examples
-See `05_API_Contracts.md` for exact response shape.
+## Leaderboard scopes
+
+1. `following`
+Compare user with accepted users they follow.
+2. `followers`
+Compare user with accepted users who follow them.
+
+Both scopes are derived from accepted `follow_edges`.
 
 ---
 
-## UX copy suggestion
-Leaderboard screen:
-- “Your position this week”
-- “You are #42 out of 315”
-- “Top 15%”
-No names displayed.
+## Rank computation strategy
+
+### MVP option: on-demand with cache
+
+- Build cohort from accepted graph
+- Compute score snapshot for day/week window
+- Compute requester rank
+- Return requester result only
+
+### Scaling option: precomputed snapshots
+
+- periodic rank job (hourly or daily)
+- write one row per user/scope/day in `leaderboard_snapshots`
+- API reads direct snapshot
+
+This reduces timing-based inference risk and query load.
+
+---
+
+## Inference attack prevention
+
+- No top-N or pagination endpoints.
+- No endpoint to query rank of arbitrary user.
+- Minimum cohort size rule: if `< 5`, rank unavailable.
+- Apply rate limiting and response caching to rank endpoints.
+
+---
+
+## API output rules
+
+When cohort is sufficient:
+
+```json
+{
+  "scope": "following",
+  "rank": 42,
+  "score": 1880,
+  "cohortSize": 315,
+  "percentile": 0.87,
+  "rankStatus": "available"
+}
+```
+
+When cohort is too small:
+
+```json
+{
+  "scope": "following",
+  "rank": null,
+  "score": 1880,
+  "cohortSize": 3,
+  "percentile": null,
+  "rankStatus": "insufficient_cohort"
+}
+```
+
+---
+
+## UX copy guidance
+
+Use motivating but privacy-safe language:
+- "Your position this week"
+- "Rank unavailable: not enough participants yet"
+- "You are in the top 15%"
+
+Avoid language that implies named competition.

@@ -10,7 +10,9 @@ export const logMetaSchema = z
       .optional(),
     durationMin: z.number().min(0).max(1440).optional(),
     items: z.array(z.string()).optional(),
+    checklistMet: z.boolean().optional(),
     unit: z.enum(["km", "mi", "min", "ml", "L"]).optional(),
+    exerciseModality: z.enum(["GYM", "RUN", "CYCLING", "SWIM"]).optional(),
   })
   .optional();
 
@@ -28,32 +30,47 @@ export type CreateLogInput = z.infer<typeof createLogSchema>;
 export const LOG_LIMITS = {
   WATER_MAX_ML_PER_DAY: 15000,
   WATER_MAX_ML_PER_LOG: 2000,
-  RUN_MAX_KM_PER_DAY: 200,
-  BIKE_MAX_KM_PER_DAY: 500,
-  SWIM_MAX_KM_PER_DAY: 50,
-  GYM_MAX_MINUTES_PER_DAY: 480,
+  EXERCISE_RUN_MAX_KM_PER_DAY: 200,
+  EXERCISE_CYCLING_MAX_KM_PER_DAY: 500,
+  EXERCISE_SWIM_MAX_KM_PER_DAY: 50,
+  EXERCISE_GYM_MAX_MINUTES_PER_DAY: 480,
   SLEEP_MAX_MINUTES: 1440,
 } as const;
 
 export function validateLogValue(
   category: string,
-  valueNum?: number
+  valueNum?: number,
+  exerciseModality?: string
 ): boolean {
   if (valueNum === undefined) return true;
 
   switch (category) {
     case "WATER":
       return valueNum > 0 && valueNum <= LOG_LIMITS.WATER_MAX_ML_PER_LOG;
-    case "RUN":
-      return valueNum > 0 && valueNum <= LOG_LIMITS.RUN_MAX_KM_PER_DAY;
-    case "BIKE":
-      return valueNum > 0 && valueNum <= LOG_LIMITS.BIKE_MAX_KM_PER_DAY;
-    case "SWIM":
-      return valueNum > 0 && valueNum <= LOG_LIMITS.SWIM_MAX_KM_PER_DAY;
-    case "GYM":
-      return valueNum > 0 && valueNum <= LOG_LIMITS.GYM_MAX_MINUTES_PER_DAY;
+    case "PHYSICAL_EXERCISE":
+      return validateExerciseValue(exerciseModality, valueNum);
     case "SLEEP":
       return valueNum > 0 && valueNum <= LOG_LIMITS.SLEEP_MAX_MINUTES;
+    default:
+      return true;
+  }
+}
+
+function validateExerciseValue(
+  modality: string | undefined,
+  valueNum: number
+): boolean {
+  if (valueNum <= 0) return false;
+
+  switch (modality) {
+    case "RUN":
+      return valueNum <= LOG_LIMITS.EXERCISE_RUN_MAX_KM_PER_DAY;
+    case "CYCLING":
+      return valueNum <= LOG_LIMITS.EXERCISE_CYCLING_MAX_KM_PER_DAY;
+    case "SWIM":
+      return valueNum <= LOG_LIMITS.EXERCISE_SWIM_MAX_KM_PER_DAY;
+    case "GYM":
+      return valueNum <= LOG_LIMITS.EXERCISE_GYM_MAX_MINUTES_PER_DAY;
     default:
       return true;
   }

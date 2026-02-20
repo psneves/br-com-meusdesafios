@@ -1,6 +1,12 @@
 import "reflect-metadata";
+import path from "path";
 import { DataSource } from "typeorm";
 import * as dotenv from "dotenv";
+
+// Try loading .env from multiple possible locations
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../apps/web/.env") });
+
 import {
   User,
   TrackableTemplate,
@@ -12,8 +18,6 @@ import {
   FollowEdge,
   LeaderboardSnapshot,
 } from "./entities";
-
-dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -34,3 +38,10 @@ export const AppDataSource = new DataSource({
   migrations: ["src/migrations/*.ts"],
   subscribers: [],
 });
+
+export async function getDataSource(): Promise<DataSource> {
+  if (!AppDataSource.isInitialized) {
+    await AppDataSource.initialize();
+  }
+  return AppDataSource;
+}

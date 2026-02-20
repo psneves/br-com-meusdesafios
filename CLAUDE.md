@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Meus Desafios – Consistency becomes results.
-Meus Desafios is the app for anyone who wants to build routines and see real progress. With simple goals and straightforward gamification (points and streaks), you can log in just a few taps and track your progress effortlessly. Everything follows the same Tracking pattern—like Running, Cycling, Swimming, Gym, Sleep, Diet, and Water—with a “Today” card, quick actions, and a clear detail screen (Overview / Logs / Rules) so you always understand what counts and how you score. And if you choose to share, social features are optional, with visibility controls to avoid unnecessary exposure.
+Meus Desafios is built for adults aged 25-35 who want to build routines and see measurable progress without complexity. With simple goals and straightforward gamification (points and streaks), you can log in a few taps and track progress effortlessly. The app focuses on 4 key challenges: Water, Diet Control, Sleep, and Physical Exercise. Physical Exercise combines Gym, Running, Cycling, and Swimming into one unified challenge with modality-based logs. Every challenge follows the same Today card, quick actions, and detail screen (Overview / Logs / Rules), so you always know what counts and how you score. Social features stay optional, with visibility controls to avoid unnecessary exposure.
 
 ## Build & Development Commands
 
@@ -55,8 +55,14 @@ Located in `/documentation/`:
 
 ## Core Domain Concepts
 
-### Unified Trackables
-All trackable activities (Run, Bike, Swim, Gym, Sleep, Diet, Water) share:
+### Unified Challenges
+All challenge cards share one trackable model. The product surface is 4 key challenges:
+- Water
+- Diet Control
+- Sleep
+- Physical Exercise (gym/run/cycling/swim modalities)
+
+Each challenge supports:
 - Goal definition (binary/target/range/time window)
 - Logging (quick log + optional detailed log)
 - Streak computation
@@ -79,7 +85,7 @@ All trackable activities (Run, Bike, Swim, Gym, Sleep, Diet, Water) share:
 
 Located in `packages/db/src/entities/`:
 - `User` - basic user info
-- `TrackableTemplate` - standard trackable definitions (7 types)
+- `TrackableTemplate` - core challenge definitions (4 types)
 - `UserTrackable` - user's activated trackables with goal overrides
 - `TrackableLog` - authoritative input events
 - `ComputedDailyStats` - cached daily progress
@@ -99,7 +105,7 @@ Located in `packages/db/src/entities/`:
 - Timezone boundaries for late-night logs
 - Sleep entries spanning midnight
 - Duplicate logs and idempotency
-- User deactivates/reactivates trackables
+- User deactivates/reactivates challenges
 - Cohort too small for leaderboard display (< 5)
 
 ---
@@ -110,7 +116,7 @@ Located in `packages/db/src/entities/`:
 All UI components built with mock data. Run `pnpm dev` and visit http://localhost:3000
 
 **Completed:**
-- Mock data layer (`lib/mock/today-data.ts`) - 7 trackables with various states
+- Mock data layer (`lib/mock/today-data.ts`) - 4 core challenge cards with physical exercise modalities
 - `useToday` hook (`lib/hooks/use-today.ts`) - manages state, has `USE_MOCK` flag
 - Base UI components: Badge, Button, Card, ProgressBar
 - Trackable components: StreakBadge, PointsChip, QuickActionRow, TrackableProgress, TrackableCard
@@ -126,7 +132,7 @@ All UI components built with mock data. Run `pnpm dev` and visit http://localhos
 - Modal base component (`components/ui/Modal.tsx`)
 - WaterLogger modal with quick-select and custom amount input
 - SleepLogger modal with bedtime picker and duration slider
-- ActivityLogger modal for Run/Bike/Swim/Gym with presets
+- ActivityLogger modal for Physical Exercise modalities (Run/Cycling/Swim/Gym)
 - All modals wired to Today page via modal state management
 
 ### Phase 3: API Routes - IN PROGRESS
@@ -137,7 +143,7 @@ All UI components built with mock data. Run `pnpm dev` and visit http://localhos
 
 **Pending endpoints:**
 - `GET /api/trackables/templates` - list templates
-- `POST /api/trackables/activate` - activate a trackable
+- `POST /api/trackables/activate` - activate a challenge card
 - `GET /api/trackables/today` - today's cards with progress
 - `POST /api/trackables/log` - create log entry, trigger recompute
 - `GET /api/trackables/[id]` - detail view

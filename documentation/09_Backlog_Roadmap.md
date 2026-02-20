@@ -1,59 +1,120 @@
-# Backlog & Roadmap – Meus Desafios
+# Backlog & Roadmap - Meus Desafios
 
-## Milestone 0: Foundations (Week 1)
-- [ ] Repo setup + lint/test tooling
+## Product outcomes this roadmap targets
+
+- Help adults 25-35 sustain routine consistency with low-friction logging.
+- Make progress transparent through points, streaks, and rules clarity.
+- Keep social motivation optional and privacy-safe.
+
+---
+
+## Phase plan
+
+## Phase 0 - Foundations (Week 1)
+
+Outcomes:
+- baseline monorepo quality tooling and CI
+- schema and migrations for core challenges + scoring + social graph
+- auth scaffolding
+
+Key tasks:
+- [ ] repo setup, lint, format, test scripts
 - [ ] DB schema + migrations
-- [ ] Auth scaffolding
-- [ ] Seed trackable templates (Run/Bike/Swim/Gym/Sleep/Diet/Water)
+- [ ] seed 4 core challenge templates (`WATER`, `DIET_CONTROL`, `SLEEP`, `PHYSICAL_EXERCISE`)
+- [ ] auth/session middleware baseline
 
-## Milestone 1: Trackables MVP (Week 1–2)
-### Epic: Today screen
-- [ ] GET /trackables/today
-- [ ] TrackableCard UI + quick actions
-- [ ] POST /trackables/log (water, diet, gym first)
+Exit criteria:
+- app boots locally
+- migrations apply cleanly
+- templates are queryable
 
-### Epic: Logs + detail
-- [ ] Trackable detail screen
-- [ ] Log list + add/edit minimal
+## Phase 1 - Tracking MVP (Week 1-2)
 
-## Milestone 2: Scoring engine (Week 2)
-- [ ] Daily aggregation job/function
-- [ ] Streak updates
-- [ ] Points ledger
-- [ ] Scoring explanations endpoint
+Outcomes:
+- fully usable Today flow
+- quick logging for primary categories
+- detail pages with rules visibility
+- combined Physical Exercise experience (gym/run/cycling/swim in one card)
 
-## Milestone 3: Social graph + approvals (Week 3)
-- [ ] Follow request flow
-- [ ] Accept/deny
-- [ ] Connection list
+Key tasks:
+- [ ] `GET /api/trackables/today`
+- [ ] `POST /api/trackables/log`
+- [ ] Today cards + quick actions UI
+- [ ] Challenge detail (`Overview | Logs | Rules`)
+- [ ] Physical Exercise modality logging and aggregation
 
-## Milestone 4: Leaderboards (Week 3–4)
-- [ ] Following rank endpoint (rank only)
-- [ ] Followers rank endpoint (rank only)
-- [ ] Privacy checks + minimum cohort size behavior
-- [ ] Snapshot or cache mechanism
+Exit criteria:
+- common log actions in <= 2 taps
+- UI reflects updated progress after log
+
+## Phase 2 - Scoring engine (Week 2)
+
+Outcomes:
+- deterministic points and streak mechanics
+- explainability endpoint and UI surface
+
+Key tasks:
+- [ ] daily aggregation pipeline
+- [ ] streak evaluator
+- [ ] immutable points ledger writes with dedupe keys
+- [ ] `GET /api/scoring/explanations`
+
+Exit criteria:
+- scoring tests pass for all goal types
+- no duplicate point awards under retries
+
+## Phase 3 - Social graph (Week 3)
+
+Outcomes:
+- follow request controls and accepted visibility gating
+
+Key tasks:
+- [ ] follow request endpoints
+- [ ] accept/deny flows
+- [ ] connections list
+
+Exit criteria:
+- non-accepted relationships cannot access private stats
+
+## Phase 4 - Leaderboards (Week 3-4)
+
+Outcomes:
+- rank-only leaderboard with inference resistance
+
+Key tasks:
+- [ ] `GET /api/leaderboards/following`
+- [ ] `GET /api/leaderboards/followers`
+- [ ] minimum cohort behavior
+- [ ] snapshot/cache strategy
+
+Exit criteria:
+- endpoints expose self-rank only
+- insufficient cohort returns rank unavailable
 
 ---
 
-## Sprint-ready 2-week plan (example)
-### Week 1
-- Day 1: DB schema + template seed
-- Day 2: Activate trackables + Today endpoint
-- Day 3: Today UI + water quick-add
-- Day 4: Diet checklist + gym quick log
-- Day 5: Detail screen + logs list
+## Prioritized backlog (P0/P1)
 
-### Week 2
-- Day 6: Scoring aggregation + base points
-- Day 7: Streak engine + milestone bonuses
-- Day 8: Points explanations UI
-- Day 9: Social follow request + approvals
-- Day 10: Leaderboard rank-only endpoints + privacy hardening
+P0:
+- [ ] timezone-safe day attribution
+- [ ] idempotent logging and point awards
+- [ ] rules tab content generation from config
+- [ ] privacy middleware coverage on all social/rank endpoints
+
+P1:
+- [ ] challenge templates and join flow polish
+- [ ] weekly summary cards
+- [ ] reminder scheduling hooks
 
 ---
 
-## Definition of done (MVP)
-- Users can log daily trackables
-- Points and streaks computed server-side and shown in UI
-- Follow requests and acceptance gate stats visibility
-- Leaderboards show only the requester’s rank/score (no neighbors)
+## Risks and mitigations
+
+- Risk: users lose trust if points look inconsistent.
+Mitigation: deterministic recompute + explanation logs.
+
+- Risk: social features create privacy concerns.
+Mitigation: accepted-only visibility and rank-only leaderboard outputs.
+
+- Risk: friction reduces logging frequency.
+Mitigation: strict interaction budget and quick actions first.

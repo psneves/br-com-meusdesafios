@@ -34,7 +34,7 @@ Pages under `(app)/` share the navigation layout. Routes for `/leaderboard` and 
 The app currently runs entirely on mock data. The toggle is `USE_MOCK = true` in `lib/hooks/use-today.ts`.
 
 1. `use-today.ts` hook manages all state for the Today page (cards, loading, error, feedback)
-2. Mock data comes from `lib/mock/today-data.ts` (7 trackables with various progress states)
+2. Mock data comes from `lib/mock/today-data.ts` (4 core challenge cards, with Physical Exercise modalities)
 3. Quick actions perform optimistic UI updates with simulated delay
 4. When `USE_MOCK = false`, the hook switches to `fetch("/api/trackables/today")` and `POST /api/trackables/log`
 

@@ -6,6 +6,20 @@
   --foreground-rgb: 10, 10, 10;
   --background-rgb: 248, 250, 252;
   --accent-rgb: 14, 165, 233;
+
+  /* Golden Ratio constants */
+  --phi: 1.618;
+  --phi-inv: 0.618;
+  --phi-inv2: 0.382;
+
+  /* φ spacing scale (base 4px) */
+  --phi-1: 0.25rem;   /* 4px */
+  --phi-2: 0.375rem;  /* 6px */
+  --phi-3: 0.625rem;  /* 10px */
+  --phi-4: 1.0625rem; /* 17px */
+  --phi-5: 1.6875rem; /* 27px */
+  --phi-6: 2.75rem;   /* 44px */
+  --phi-7: 4.5rem;    /* 72px */
 }
 
 .dark {

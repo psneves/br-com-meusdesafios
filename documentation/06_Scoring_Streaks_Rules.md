@@ -1,86 +1,140 @@
-# Scoring & Streak Rules – Meus Desafios (Explainable + Deterministic)
+# Scoring & Streak Rules - Meus Desafios
 
 ## Principles
-- **Server-calculated**
-- Deterministic given logs
-- Explainable (store reasons)
-- MVP: avoid complex multipliers
+
+- Server-calculated only
+- Deterministic from logs + config
+- Explainable to users in plain language
+- Idempotent under retries and duplicate submissions
+
+---
+
+## Day attribution
+
+- Every log is mapped to a user-local day based on `users.timezone`.
+- Recompute can be triggered for any affected day when backfilled logs arrive.
+- Cross-midnight activities (for example sleep) are evaluated using challenge-specific rules.
 
 ---
 
 ## Goal types
-1) **Binary**: met/not met (Diet checklist, Gym session done)
-2) **Target amount**: reach >= target (Water ml, Run km)
-3) **Range**: within min/max (Calories range)
-4) **Time window**: do action within window (Sleep before 23:00)
+
+1. `binary`
+Met/not met.
+2. `target`
+Met when value is `>= target`.
+3. `range`
+Met when value is within `[min, max]`.
+4. `time_window`
+Met when event occurs within configured time boundary.
 
 ---
 
-## Default points (MVP)
+## Points model (MVP)
+
 ### Base points
-- Meeting daily goal: **+10**
-- Partial progress: **0** (keep simple for MVP; add partial later)
 
-### Streak bonus
-- Streak day 3: **+5**
-- Streak day 7: **+10**
-- Streak day 14: **+20**
-- Streak day 30: **+50**
+- Meeting daily goal: `+10`
+- Not meeting goal: `+0`
 
-> Bonus awarded once when hitting the milestone day.
+### Weekly bonuses
 
-### Penalties (MVP)
-- None (avoid negative feelings). Consider later as optional.
+- Weekly goal (7/7 days met for a single challenge, Mon–Sun): `+10` per challenge
+- Perfect week (ALL challenges met ALL 7 days, Mon–Sun): `+10`
+
+Weekly bonuses are evaluated at the end of the ISO week (Monday–Sunday).
+
+### Streak milestones
+
+- Day 3: `+5`
+- Day 7: `+10`
+- Day 14: `+20`
+- Day 30: `+50`
+
+Milestones are awarded once when crossing each threshold.
+
+### Penalties
+
+- No penalties in MVP to avoid punitive experience.
 
 ---
 
-## Trackable-specific MVP rules
+## Challenge evaluation rules
 
 ### Water
-- Goal: target ml/day (e.g., 2500 ml)
-- Logs: add ml increments
-- Met if total_ml >= target_ml
-- Streak increments per day met.
 
-### Diet
-**Mode A (MVP default): checklist**
-- Goal: “met” boolean per day
-- Logs: one event marking met/not
-- Met if checklist_met=true
+- Aggregate daily ml sum.
+- Met when `total_ml >= target_ml`.
 
-**Mode B (optional): single numeric**
-- Goal: protein >= target OR calories within range
-- Met if numeric criteria satisfied
+### Diet Control
+
+Mode A (default): checklist compliance event (`MET` / `NOT_MET`).
+
+Mode B (optional): one numeric metric:
+- protein target (`>= target`) or
+- calories range (`min <= value <= max`)
 
 ### Sleep
-- Goal: duration >= X hours AND/OR bedtime <= target time
-- Met if configured condition satisfied
-- Streak per day met
 
-### Run/Bike/Swim
-- Goal: distance OR duration
-- Met if totals meet target
-- Optional later: intensity zones
+Config options:
+- minimum duration
+- latest bedtime
+- both combined
 
-### Gym
-- Goal: sessions/week OR minutes/session
-- MVP: daily met = session logged OR minutes >= target
-- Weekly goals can be represented as daily placeholders or weekly evaluation.
+Met when all configured conditions are true.
 
----
+### Physical Exercise
 
-## Computation flow (server)
-For each (user_trackable, day):
-1. Aggregate logs into a daily progress object
-2. Evaluate met_goal
-3. If met_goal changed from false→true, award base points (if not already awarded)
-4. Update streaks (current/best/last_met_day)
-5. If streak hits milestone, award bonus points
-6. Write all point awards into points_ledger with reason
+One combined exercise challenge with modality-specific logs:
+- `gym`
+- `run`
+- `cycling`
+- `swim`
+
+MVP behavior:
+- goal can be duration, distance, or session completion
+- each exercise log must carry `exercise_modality`
+- met when configured daily target is reached across valid exercise logs
+- detail UI can break down totals per modality, while scoring is challenge-level
 
 ---
 
-## Anti-cheat (lightweight MVP)
-- Rate limits on logging
-- Ignore impossible values (e.g., 50L water/day)
-- Keep meta_json source=manual/import for future trust scoring
+## Computation flow
+
+For each `(user_trackable_id, day)`:
+1. Aggregate raw logs into `progress_json`.
+2. Evaluate `met_goal`.
+3. Upsert `computed_daily_stats`.
+4. Update streak state (`current`, `best`, `last_met_day`).
+5. Write base point event when transitioning to met state.
+6. Write streak bonus events when milestone thresholds are hit.
+7. Ensure all ledger inserts use dedupe keys.
+
+---
+
+## Dedupe and idempotency
+
+- `trackable_logs.idempotency_key` prevents duplicate raw entries.
+- `points_ledger.dedupe_key` prevents double-awarding points.
+- Recompute is safe to run multiple times for the same day.
+
+---
+
+## Anti-abuse controls (MVP)
+
+- Rate limit log creation per user.
+- Clamp input ranges by challenge type (for example max water/day, max exercise duration/day).
+- Reject future timestamps beyond configured tolerance.
+- Tag source in metadata (`manual`, `import`) for auditability.
+
+---
+
+## Explainability contract
+
+Each ledger event must include:
+- `source`
+- `points`
+- `reason`
+- `reason_code`
+
+Rules tab and explanations endpoint should render these without exposing internal implementation details.

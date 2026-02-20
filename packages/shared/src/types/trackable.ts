@@ -1,11 +1,10 @@
 export type TrackableCategory =
-  | "RUN"
-  | "BIKE"
-  | "SWIM"
-  | "GYM"
+  | "WATER"
+  | "DIET_CONTROL"
   | "SLEEP"
-  | "DIET"
-  | "WATER";
+  | "PHYSICAL_EXERCISE";
+
+export type ExerciseModality = "GYM" | "RUN" | "CYCLING" | "SWIM";
 
 export type GoalType = "binary" | "target" | "range" | "time_window";
 

@@ -1,149 +1,196 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronRight, AlertCircle } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { StreakBadge } from "./StreakBadge";
 import { PointsChip } from "./PointsChip";
-import { QuickActionRow, ToggleAction } from "./QuickActionRow";
-import { TrackableProgress } from "./TrackableProgress";
 import { getCategoryConfig } from "@/lib/category-config";
 import type { TodayCard } from "@/lib/types/today";
 import { cn } from "@/lib/utils";
 
+// ── Card ─────────────────────────────────────────────────
+
 interface TrackableCardProps {
   card: TodayCard;
-  onQuickAction: (actionId: string) => Promise<void> | void;
+  onRegister: () => void;
   onViewDetails?: () => void;
   className?: string;
 }
 
 export function TrackableCard({
   card,
-  onQuickAction,
-  onViewDetails,
+  onRegister,
+  onViewDetails: _onViewDetails,
   className,
 }: TrackableCardProps) {
-  const [loadingActionId, setLoadingActionId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
   const cfg = getCategoryConfig(card.category);
   const Icon = cfg.icon;
-  const isBinary = card.goal.type === "binary";
-  const isToggle = card.quickActions.length === 1 && card.quickActions[0]?.type === "toggle";
-
-  const handleAction = async (actionId: string) => {
-    setError(null);
-    setLoadingActionId(actionId);
-    try {
-      await Promise.resolve(onQuickAction(actionId));
-    } catch {
-      setError("Não foi possível atualizar. Tentar novamente");
-    } finally {
-      setLoadingActionId(null);
-    }
-  };
 
   const goalLabel = getGoalLabel(card);
-  const remainingLabel = getRemainingLabel(card);
 
   return (
     <div
       className={cn(
-        "flex flex-col rounded-xl border border-gray-200 border-l-[3px] bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900",
-        cfg.borderAccent,
-        card.progress.met && cn(cfg.bgLight, cfg.bgDark),
+        "grid rounded-2xl border bg-white p-phi-3 dark:bg-gray-900",
+        card.progress.met
+          ? cn(
+              "border-l-[3px]",
+              cfg.borderAccent,
+              cfg.bgLight,
+              cfg.bgDark,
+              "border-gray-200/80 dark:border-gray-700/40"
+            )
+          : cn("border-l-2", cfg.borderAccent, "border-gray-200 dark:border-gray-800"),
         className
       )}
+      style={{ gridTemplateColumns: "48px 1fr auto" }}
     >
-      {/* 1. Header row */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-        <Icon className={cn("h-5 w-5 shrink-0", cfg.color)} />
-        <span className="flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">
-          {card.name}
-        </span>
-        {card.progress.met && (
-          <Check
-            className={cn("h-4 w-4 shrink-0", cfg.metText, cfg.metTextDark)}
-            aria-label="Meta cumprida"
-          />
-        )}
-        <StreakBadge
-          current={card.streak.current}
-          best={card.streak.best}
-          showBest={card.streak.current > 0 && card.streak.current < card.streak.best}
-        />
-        <PointsChip points={card.pointsToday} showZero size="sm" />
+      {/* Left zone: category icon */}
+      <div className="flex items-start pt-0.5">
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg",
+            cfg.activeBg,
+            cfg.activeBgDark
+          )}
+        >
+          <Icon className={cn("h-5 w-5", cfg.color)} />
+        </div>
       </div>
 
-      {/* 2. Goal summary line */}
-      <p className="px-4 text-xs text-gray-500 dark:text-gray-400">
-        {goalLabel}
-      </p>
+      {/* Middle zone: content */}
+      <div className="min-w-0 space-y-1">
+        {/* Row 1: Name + check + streak + points (all inline) */}
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            {card.name}
+          </span>
+          {card.progress.met && (
+            <Check
+              className={cn("h-3.5 w-3.5 shrink-0", cfg.metText, cfg.metTextDark)}
+              aria-label="Meta cumprida"
+            />
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <StreakBadge current={card.streak.current} showBest={false} />
+            <PointsChip points={card.pointsToday} size="sm" />
+          </div>
+        </div>
 
-      {/* 3. Progress block */}
-      <div className="px-4 pt-2">
-        <TrackableProgress
-          goal={card.goal}
-          progress={card.progress}
-          accentColor={cn(cfg.barColor, cfg.barColorDark)}
-          metTextClass={cn(cfg.metText, cfg.metTextDark)}
-        />
-      </div>
-
-      {/* 4. Quick actions */}
-      <div className="px-4 pt-3">
-        {isToggle ? (
-          <ToggleAction
-            label={card.progress.met ? "Desfazer" : card.quickActions[0].label}
-            isActive={card.progress.met}
-            onToggle={() => handleAction(card.quickActions[0].id)}
-            isLoading={loadingActionId === card.quickActions[0].id}
-            categoryAccent={cfg}
-          />
+        {/* Row 2: Goal subtitle OR exercise breakdown (same row, no height change) */}
+        {card.category === "PHYSICAL_EXERCISE" &&
+        card.breakdown &&
+        card.breakdown.length > 0 ? (
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {card.breakdown.map((entry, i) => (
+              <span
+                key={`${entry.actionId}-${i}`}
+                className={cn(
+                  "shrink-0 text-[10px] font-medium leading-tight",
+                  cfg.metText,
+                  cfg.metTextDark
+                )}
+              >
+                {entry.label} {entry.value}′
+              </span>
+            ))}
+          </div>
         ) : (
-          <QuickActionRow
-            actions={card.quickActions}
-            onAction={handleAction}
-            loadingActionId={loadingActionId}
-            categoryAccent={cfg}
+          <p className="text-[10px] leading-tight text-gray-400 dark:text-gray-500">
+            {goalLabel}
+          </p>
+        )}
+
+        {/* Row 3: Progress bar (target-type only) */}
+        {card.goal.type === "target" && (
+          <CompactProgress
+            value={card.progress.value}
+            target={card.goal.target || 0}
+            unit={card.goal.unit || ""}
+            met={card.progress.met}
+            percentage={card.progress.percentage}
+            accentColor={cn(cfg.barColor, cfg.barColorDark)}
+            metTextClass={cn(cfg.metText, cfg.metTextDark)}
+            isSleep={card.category === "SLEEP"}
           />
         )}
       </div>
 
-      {/* Error inline */}
-      {error && (
-        <div className="mx-4 mt-2 flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-900/20">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-        </div>
-      )}
+      {/* Right zone: plus button only */}
+      <div className="flex items-center pl-2">
+        <button
+          onClick={onRegister}
+          aria-label={`Registrar ${card.name}`}
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-full text-white transition-all active:scale-90",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+            cfg.btnBg,
+            cfg.btnHover,
+            cfg.btnBgDark,
+            cfg.btnHoverDark
+          )}
+        >
+          <Plus className="h-4.5 w-4.5" strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
-      {/* 5. Footer state */}
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
-        <div className="min-w-0">
-          {card.progress.met ? (
-            <p className={cn("flex items-center gap-1 text-xs font-medium", cfg.metText, cfg.metTextDark)}>
-              <Check className="h-3.5 w-3.5" />
-              Meta de hoje cumprida!
-              {card.pointsToday > 0 && (
-                <span className="ml-1 text-gray-500 dark:text-gray-400">
-                  (+{card.pointsToday} pts)
-                </span>
-              )}
-            </p>
-          ) : remainingLabel ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">{remainingLabel}</p>
-          ) : null}
-        </div>
-        {onViewDetails && (
-          <button
-            onClick={onViewDetails}
-            className="inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            Ver detalhes
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        )}
+// ── Compact Progress ────────────────────────────────────
+
+function CompactProgress({
+  value,
+  target,
+  unit,
+  met,
+  percentage,
+  accentColor,
+  metTextClass,
+  isSleep = false,
+}: {
+  value: number;
+  target: number;
+  unit: string;
+  met: boolean;
+  percentage: number;
+  accentColor: string;
+  metTextClass: string;
+  isSleep?: boolean;
+}) {
+  const fmt = (v: number) => {
+    if (isSleep) return formatMinAsHours(v);
+    return v >= 1000 ? v.toLocaleString("pt-BR") : v % 1 !== 0 ? v.toFixed(1) : v.toString();
+  };
+
+  const displayUnit = isSleep ? "" : unit;
+  const displayPct = met ? 100 : percentage;
+
+  return (
+    <div className="space-y-0.5">
+      {/* Progress bar */}
+      <div
+        className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
+        role="progressbar"
+        aria-valuenow={Math.min(100, displayPct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Progresso: ${fmt(value)} de ${fmt(target)}${displayUnit ? ` ${displayUnit}` : ""}`}
+      >
+        <div
+          className={cn("h-full rounded-full transition-all duration-500", accentColor)}
+          style={{ width: `${Math.min(100, displayPct)}%` }}
+        />
+      </div>
+      {/* Labels below bar */}
+      <div className="flex items-center">
+        <span
+          className={cn(
+            "ml-auto text-[10px] font-medium tabular-nums",
+            met ? metTextClass : "text-gray-400 dark:text-gray-500"
+          )}
+        >
+          {fmt(value)} / {fmt(target)}{displayUnit ? ` ${displayUnit}` : ""}
+        </span>
       </div>
     </div>
   );
@@ -151,72 +198,75 @@ export function TrackableCard({
 
 // ── Helpers ──────────────────────────────────────────────
 
+function formatMinAsHours(min: number): string {
+  if (min <= 0) return "0 h";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m.toString().padStart(2, "0")}`;
+}
+
 function getGoalLabel(card: TodayCard): string {
   const { goal, category } = card;
 
   if (goal.type === "binary") {
-    if (category === "DIET") return "Meta: Cumprir dieta hoje";
-    return "Meta: Completar hoje";
+    if (category === "DIET_CONTROL") return "Dieta hoje";
+    return "Completar";
   }
 
   if (goal.type === "time_window") {
-    return `Meta: Deitar até ${goal.timeWindowEnd}`;
+    return `Até ${goal.timeWindowEnd}`;
   }
 
   const target = goal.target || 0;
   const unit = goal.unit || "";
-  const formatted = target >= 1000 ? target.toLocaleString() : target.toString();
-  return `Meta: ${formatted} ${unit}`;
-}
 
-function getRemainingLabel(card: TodayCard): string | null {
-  if (card.progress.met) return null;
-  const { goal, progress } = card;
-  if (goal.type === "binary" || goal.type === "time_window") return null;
+  if (category === "SLEEP" && unit === "min") {
+    return `Dormir ${formatMinAsHours(target)} na noite anterior`;
+  }
 
-  const target = goal.target || 0;
-  const remaining = target - progress.value;
-  if (remaining <= 0) return null;
+  if (category === "DIET_CONTROL") {
+    return `Seguir plano nas ${target} refeições`;
+  }
 
-  const unit = goal.unit || "";
-  const formatted =
-    remaining >= 1000
-      ? remaining.toLocaleString()
-      : remaining % 1 !== 0
-        ? remaining.toFixed(1)
-        : remaining.toString();
-  return `Faltam ${formatted} ${unit}`;
+  if (category === "PHYSICAL_EXERCISE") {
+    return `Exercitar-se por ${target}${unit}`;
+  }
+
+  if (category === "WATER") {
+    const formatted = target >= 1000 ? target.toLocaleString("pt-BR") : target.toString();
+    return `Beber ${formatted}${unit}`;
+  }
+
+  const formatted = target >= 1000 ? target.toLocaleString("pt-BR") : target.toString();
+  return `${formatted} ${unit}`;
 }
 
 // ── Skeleton ────────────────────────────────────────────
 
 export function TrackableCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-        <div className="h-5 w-5 rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="flex-1" />
-        <div className="h-4 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
-        <div className="h-4 w-10 rounded bg-gray-200 dark:bg-gray-700" />
+    <div
+      className="animate-pulse grid rounded-2xl border border-gray-200 bg-white p-phi-3 dark:border-gray-800 dark:bg-gray-900"
+      style={{ gridTemplateColumns: "48px 1fr auto" }}
+    >
+      {/* Left: icon placeholder */}
+      <div className="flex items-start pt-0.5">
+        <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700" />
       </div>
-      <div className="px-4 pt-1">
-        <div className="h-3 w-28 rounded bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <div className="px-4 pt-3">
-        <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
-        <div className="mt-1 flex justify-between">
-          <div className="h-3 w-14 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-14 rounded bg-gray-200 dark:bg-gray-700" />
+      {/* Middle: text + bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="ml-auto h-4 w-12 rounded-full bg-gray-200 dark:bg-gray-700" />
         </div>
+        <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="ml-auto h-2.5 w-14 rounded bg-gray-200 dark:bg-gray-700" />
       </div>
-      <div className="grid grid-cols-3 gap-2 px-4 pt-3">
-        <div className="h-[44px] rounded-lg bg-gray-200 dark:bg-gray-700" />
-        <div className="h-[44px] rounded-lg bg-gray-200 dark:bg-gray-700" />
-        <div className="h-[44px] rounded-lg bg-gray-200 dark:bg-gray-700" />
-      </div>
-      <div className="mt-3 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
-        <div className="h-3 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+      {/* Right: button only */}
+      <div className="flex items-center pl-2">
+        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ export class TrackableTemplate {
 
   @Column({
     type: "enum",
-    enum: ["RUN", "BIKE", "SWIM", "GYM", "SLEEP", "DIET", "WATER"],
+    enum: ["WATER", "DIET_CONTROL", "SLEEP", "PHYSICAL_EXERCISE"],
   })
   category!: TrackableCategory;
 

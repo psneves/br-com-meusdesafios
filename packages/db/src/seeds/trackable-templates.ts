@@ -4,7 +4,7 @@ import { DEFAULT_SCORING } from "@meusdesafios/shared";
 interface TemplateSeed {
   code: string;
   name: string;
-  category: "RUN" | "BIKE" | "SWIM" | "GYM" | "SLEEP" | "DIET" | "WATER";
+  category: "WATER" | "DIET_CONTROL" | "SLEEP" | "PHYSICAL_EXERCISE";
   defaultGoal: Goal;
   defaultScoring: ScoringConfig;
   description: string;
@@ -13,7 +13,7 @@ interface TemplateSeed {
 
 export const TRACKABLE_TEMPLATES: TemplateSeed[] = [
   {
-    code: "WATER_DAILY",
+    code: "WATER",
     name: "Water",
     category: "WATER",
     defaultGoal: {
@@ -26,59 +26,18 @@ export const TRACKABLE_TEMPLATES: TemplateSeed[] = [
     icon: "💧",
   },
   {
-    code: "RUN_DISTANCE",
-    name: "Run",
-    category: "RUN",
+    code: "DIET_CONTROL",
+    name: "Diet Control",
+    category: "DIET_CONTROL",
     defaultGoal: {
-      type: "target",
-      target: 5,
-      unit: "km",
+      type: "binary",
     },
     defaultScoring: DEFAULT_SCORING,
-    description: "Track running distance",
-    icon: "🏃",
+    description: "Track daily diet compliance",
+    icon: "🥗",
   },
   {
-    code: "BIKE_DISTANCE",
-    name: "Bike",
-    category: "BIKE",
-    defaultGoal: {
-      type: "target",
-      target: 20,
-      unit: "km",
-    },
-    defaultScoring: DEFAULT_SCORING,
-    description: "Track cycling distance",
-    icon: "🚴",
-  },
-  {
-    code: "SWIM_DISTANCE",
-    name: "Swim",
-    category: "SWIM",
-    defaultGoal: {
-      type: "target",
-      target: 1,
-      unit: "km",
-    },
-    defaultScoring: DEFAULT_SCORING,
-    description: "Track swimming distance",
-    icon: "🏊",
-  },
-  {
-    code: "GYM_SESSION",
-    name: "Gym",
-    category: "GYM",
-    defaultGoal: {
-      type: "target",
-      target: 60,
-      unit: "min",
-    },
-    defaultScoring: DEFAULT_SCORING,
-    description: "Track gym sessions",
-    icon: "🏋️",
-  },
-  {
-    code: "SLEEP_BEDTIME",
+    code: "SLEEP",
     name: "Sleep",
     category: "SLEEP",
     defaultGoal: {
@@ -90,14 +49,16 @@ export const TRACKABLE_TEMPLATES: TemplateSeed[] = [
     icon: "😴",
   },
   {
-    code: "DIET_CHECKLIST",
-    name: "Diet",
-    category: "DIET",
+    code: "PHYSICAL_EXERCISE",
+    name: "Physical Exercise",
+    category: "PHYSICAL_EXERCISE",
     defaultGoal: {
-      type: "binary",
+      type: "target",
+      target: 60,
+      unit: "min",
     },
     defaultScoring: DEFAULT_SCORING,
-    description: "Track daily diet compliance",
-    icon: "🥗",
+    description: "Track physical exercise with modalities (gym, run, cycling, swim)",
+    icon: "💪",
   },
 ];

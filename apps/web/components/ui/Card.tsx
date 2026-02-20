@@ -11,7 +11,7 @@ export function Card({ children, className, hover = false }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900",
+        "rounded-xl border border-gray-200 bg-white p-phi-4 shadow-sm dark:border-gray-800 dark:bg-gray-900",
         hover && "transition-shadow hover:shadow-md",
         className
       )}
@@ -58,7 +58,7 @@ interface CardContentProps {
 }
 
 export function CardContent({ children, className }: CardContentProps) {
-  return <div className={cn("mt-3", className)}>{children}</div>;
+  return <div className={cn("mt-phi-3", className)}>{children}</div>;
 }
 
 interface CardFooterProps {
@@ -70,7 +70,7 @@ export function CardFooter({ children, className }: CardFooterProps) {
   return (
     <div
       className={cn(
-        "mt-4 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-800",
+        "mt-phi-4 flex items-center justify-between border-t border-gray-100 pt-phi-3 dark:border-gray-800",
         className
       )}
     >
