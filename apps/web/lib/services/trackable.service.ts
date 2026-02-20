@@ -38,8 +38,12 @@ function startOfDay(d: Date): Date {
   return r;
 }
 
+/** Format date as YYYY-MM-DD using local timezone (not UTC). */
 function dayString(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function getGreeting(): string {
@@ -472,7 +476,6 @@ export async function createLog(
   }
 
   // Build feedback
-  const previousStreak = streak.currentStreak - (dayResult.metGoal ? 1 : 0);
   const streakChanged = dayResult.metGoal && dayResult.newStreak > 0;
 
   const feedback: LogFeedback = {
@@ -621,7 +624,7 @@ export async function buildWeeklySummary(
     if (!statsMap.has(s.userTrackableId)) {
       statsMap.set(s.userTrackableId, new Map());
     }
-    const dayKey = String(s.day).slice(0, 10);
+    const dayKey = s.day instanceof Date ? dayString(s.day) : String(s.day).slice(0, 10);
     statsMap.get(s.userTrackableId)!.set(dayKey, s);
   }
 
@@ -761,7 +764,7 @@ export async function buildMonthlySummary(
     if (!statsMap.has(s.userTrackableId)) {
       statsMap.set(s.userTrackableId, new Map());
     }
-    const dayKey = String(s.day).slice(0, 10);
+    const dayKey = s.day instanceof Date ? dayString(s.day) : String(s.day).slice(0, 10);
     statsMap.get(s.userTrackableId)!.set(dayKey, s);
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
 import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -65,6 +65,14 @@ export function DietLogger({
     breakdownToMeals(target, currentBreakdown, currentProgress)
   );
   const [isLogging, setIsLogging] = useState(false);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setMeals(breakdownToMeals(target, currentBreakdown, currentProgress));
+      setIsLogging(false);
+    }
+  }, [isOpen, target, currentBreakdown, currentProgress]);
 
   const cfg = getCategoryConfig("DIET_CONTROL");
 

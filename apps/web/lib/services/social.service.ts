@@ -108,14 +108,16 @@ export async function getPendingRequests(
     .orderBy("e.created_at", "DESC")
     .getMany();
 
-  return edges.map((e) => ({
-    edgeId: e.id,
-    requesterId: e.requesterId,
-    displayName: e.requester.displayName,
-    handle: e.requester.handle,
-    avatarUrl: e.requester.avatarUrl,
-    createdAt: e.createdAt.toISOString(),
-  }));
+  return edges
+    .filter((e) => e.requester != null)
+    .map((e) => ({
+      edgeId: e.id,
+      requesterId: e.requesterId,
+      displayName: e.requester.displayName,
+      handle: e.requester.handle,
+      avatarUrl: e.requester.avatarUrl,
+      createdAt: e.createdAt.toISOString(),
+    }));
 }
 
 // ── sendFollowRequest ─────────────────────────────────────

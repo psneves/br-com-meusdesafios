@@ -144,6 +144,13 @@ export function useProfile(): UseProfileResult {
     }, 400);
   }, []);
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   return {
     profile,
     isLoading,

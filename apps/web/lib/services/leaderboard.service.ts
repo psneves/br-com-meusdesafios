@@ -75,6 +75,14 @@ async function buildNearbyCohort(
   };
 }
 
+/** Format date as YYYY-MM-DD using local timezone (not UTC). */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function getDateRange(period: Period): { start: string; end: string } {
   const now = new Date();
 
@@ -86,8 +94,8 @@ function getDateRange(period: Period): { start: string; end: string } {
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6);
     return {
-      start: monday.toISOString().slice(0, 10),
-      end: sunday.toISOString().slice(0, 10),
+      start: localDateStr(monday),
+      end: localDateStr(sunday),
     };
   }
 
@@ -95,8 +103,8 @@ function getDateRange(period: Period): { start: string; end: string } {
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   return {
-    start: start.toISOString().slice(0, 10),
-    end: end.toISOString().slice(0, 10),
+    start: localDateStr(start),
+    end: localDateStr(end),
   };
 }
 

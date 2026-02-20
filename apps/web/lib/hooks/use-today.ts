@@ -3,6 +3,14 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { TodayResponse, LogFeedback, WeeklySummary, MonthlySummary } from "../types/today";
 
+/** Format date as YYYY-MM-DD using local timezone (not UTC). */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface UseTodayResult {
   data: TodayResponse | null;
   weekSummary: WeeklySummary | null;
@@ -32,7 +40,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
 
     try {
       const params = selectedDate
-        ? `?date=${selectedDate.toISOString().slice(0, 10)}`
+        ? `?date=${localDateStr(selectedDate)}`
         : "";
 
       const [todayRes, summaryRes] = await Promise.all([
@@ -67,7 +75,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       if (!card) return;
 
       const dateStr = selectedDate
-        ? selectedDate.toISOString().slice(0, 10)
+        ? localDateStr(selectedDate)
         : undefined;
 
       try {
@@ -107,7 +115,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       // Check for custom action IDs (from modals)
       if (actionId.startsWith("water-custom-")) {
         const amount = parseInt(actionId.replace("water-custom-", ""), 10);
-        if (!isNaN(amount)) {
+        if (!Number.isNaN(amount)) {
           await logValue(cardId, amount);
           return;
         }
@@ -115,7 +123,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
 
       if (actionId.startsWith("diet-meal-delta-")) {
         const delta = parseInt(actionId.replace("diet-meal-delta-", ""), 10);
-        if (!isNaN(delta)) {
+        if (!Number.isNaN(delta)) {
           await logValue(cardId, delta);
           return;
         }
@@ -123,7 +131,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
 
       if (actionId.startsWith("activity-log-")) {
         const value = parseFloat(actionId.replace("activity-log-", ""));
-        if (!isNaN(value)) {
+        if (!Number.isNaN(value)) {
           await logValue(cardId, value);
           return;
         }
@@ -133,7 +141,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       if (actionId.startsWith("exercise-")) {
         const parts = actionId.split("-");
         const minutes = parseFloat(parts[parts.length - 1]);
-        if (!isNaN(minutes)) {
+        if (!Number.isNaN(minutes)) {
           const modality = parts.slice(1, -1).join("-").toUpperCase();
           await logValue(cardId, minutes, { exerciseModality: modality });
           return;
@@ -150,7 +158,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       if (!action) return;
 
       const dateStr = selectedDate
-        ? selectedDate.toISOString().slice(0, 10)
+        ? localDateStr(selectedDate)
         : undefined;
 
       try {

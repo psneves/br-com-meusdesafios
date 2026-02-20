@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Trophy } from "lucide-react";
@@ -26,6 +26,15 @@ export function WaterLogger({
   const [customAmount, setCustomAmount] = useState("");
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [isLogging, setIsLogging] = useState(false);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCustomAmount("");
+      setSelectedAmount(null);
+      setIsLogging(false);
+    }
+  }, [isOpen]);
 
   const handleQuickSelect = (amount: number) => {
     setSelectedAmount(amount);

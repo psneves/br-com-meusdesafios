@@ -7,7 +7,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
-    const state = searchParams.get("state") || "/today";
+    const rawState = searchParams.get("state") || "/today";
+    // Prevent open redirect: only allow relative paths starting with /
+    const state = rawState.startsWith("/") && !rawState.startsWith("//") ? rawState : "/today";
 
     if (!code) {
       return NextResponse.redirect(

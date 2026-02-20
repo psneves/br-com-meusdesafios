@@ -10,7 +10,7 @@ export function formatNumber(num: number): string {
 }
 
 export function formatDate(date: Date): string {
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("pt-BR", {
     weekday: "long",
     month: "long",
     day: "numeric",

@@ -94,13 +94,13 @@ export function TodayHeader({
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
-              alt=""
+              alt={userName || "Avatar"}
               className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
             />
           ) : (
             <Image
               src={avatarUrl}
-              alt=""
+              alt={userName || "Avatar"}
               width={40}
               height={40}
               className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let date: Date;
     if (dateParam) {
       date = new Date(dateParam + "T00:00:00");
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         return errors.badRequest("Invalid date format. Use YYYY-MM-DD.");
       }
     } else {

@@ -11,7 +11,15 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get("date");
-    const date = dateParam ? new Date(`${dateParam}T12:00:00`) : new Date();
+    let date: Date;
+    if (dateParam) {
+      date = new Date(`${dateParam}T12:00:00`);
+      if (Number.isNaN(date.getTime())) {
+        return errors.badRequest("Invalid date format. Use YYYY-MM-DD.");
+      }
+    } else {
+      date = new Date();
+    }
 
     const [weekSummary, monthSummary] = await Promise.all([
       buildWeeklySummary(session.id, date),

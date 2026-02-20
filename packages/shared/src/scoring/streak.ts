@@ -7,6 +7,15 @@ export interface StreakUpdateResult {
   milestoneReached?: number;
 }
 
+/** Compare two dates by local year/month/day only (timezone-safe). */
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export function updateStreak(
   currentStreak: Streak,
   metGoalToday: boolean,
@@ -18,10 +27,7 @@ export function updateStreak(
   yesterday.setDate(yesterday.getDate() - 1);
 
   // Check if last met day was yesterday (streak continues)
-  const isConsecutive =
-    lastMetDay &&
-    lastMetDay.toISOString().slice(0, 10) ===
-      yesterday.toISOString().slice(0, 10);
+  const isConsecutive = lastMetDay && sameLocalDay(lastMetDay, yesterday);
 
   let newStreak: number;
 

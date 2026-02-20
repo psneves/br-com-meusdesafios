@@ -1,5 +1,4 @@
-import { getDataSource, User } from "@meusdesafios/db";
-import { ILike, Not } from "typeorm";
+import { getDataSource, User, ILike, Not } from "@meusdesafios/db";
 
 export interface ProfileData {
   id: string;

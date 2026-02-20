@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, ModalFooter } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,14 @@ export function SleepLogger({
 }: SleepLoggerProps) {
   const [duration, setDuration] = useState(420);
   const [isLogging, setIsLogging] = useState(false);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setDuration(targetMin);
+      setIsLogging(false);
+    }
+  }, [isOpen, targetMin]);
 
   const handleSubmit = async () => {
     setIsLogging(true);
