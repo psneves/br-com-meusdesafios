@@ -314,6 +314,7 @@ export async function buildTodayResponse(
 interface CreateLogInput {
   userTrackableId: string;
   valueNum: number;
+  date?: string;
   meta?: LogMeta;
 }
 
@@ -337,12 +338,14 @@ export async function createLog(
     throw new Error("UserTrackable not found or does not belong to user");
   }
 
-  // Insert log
-  const now = new Date();
+  // Insert log — use provided date or default to now
+  const targetDate = input.date
+    ? new Date(`${input.date}T12:00:00`)
+    : new Date();
   const log = logRepo.create({
     userId,
     userTrackableId: input.userTrackableId,
-    occurredAt: now,
+    occurredAt: targetDate,
     valueNum: input.valueNum,
     meta: input.meta,
   });
@@ -350,7 +353,7 @@ export async function createLog(
 
   // ── Recompute pipeline ──────────────────────────────────
 
-  const dayStart = startOfDay(now);
+  const dayStart = startOfDay(targetDate);
   const dayEnd = new Date(dayStart);
   dayEnd.setHours(23, 59, 59, 999);
   const dayStr = dayString(dayStart);

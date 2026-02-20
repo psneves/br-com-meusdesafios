@@ -7,6 +7,7 @@ import { successResponse, errors } from "@/lib/api/response";
 const logSchema = z.object({
   userTrackableId: z.string().uuid(),
   valueNum: z.number(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   meta: z.record(z.unknown()).optional(),
 });
 

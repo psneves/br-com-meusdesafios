@@ -10,7 +10,20 @@ import type { ProgressBreakdown } from "@/lib/types/today";
 
 type MealState = "neutral" | "success" | "fail";
 
-const MEAL_LABELS = ["Café", "Lanche 1", "Almoço", "Lanche 2", "Jantar"];
+const MEAL_LABELS_BY_COUNT: Record<number, string[]> = {
+  3: ["Café da manhã", "Almoço", "Jantar"],
+  4: ["Café da manhã", "Almoço", "Lanche", "Jantar"],
+  5: ["Café da manhã", "Lanche 1", "Almoço", "Lanche 2", "Jantar"],
+  6: ["Café da manhã", "Lanche 1", "Almoço", "Lanche 2", "Jantar", "Ceia"],
+  7: ["Café da manhã", "Lanche 1", "Almoço", "Lanche 2", "Lanche 3", "Jantar", "Ceia"],
+};
+
+function getMealLabels(count: number): string[] {
+  return (
+    MEAL_LABELS_BY_COUNT[count] ??
+    Array.from({ length: count }, (_, i) => `Refeição ${i + 1}`)
+  );
+}
 
 interface DietLoggerProps {
   isOpen: boolean;
@@ -22,18 +35,19 @@ interface DietLoggerProps {
 }
 
 function breakdownToMeals(
+  target: number,
   breakdown?: ProgressBreakdown[],
   currentProgress = 0
 ): MealState[] {
-  if (breakdown?.length === 5) {
+  if (breakdown?.length === target) {
     return breakdown.map((b) => {
       if (b.value === 1) return "success";
       if (b.value === -1) return "fail";
       return "neutral";
     });
   }
-  const successCount = Math.min(Math.max(0, currentProgress), 5);
-  return Array.from({ length: 5 }, (_, i) =>
+  const successCount = Math.min(Math.max(0, currentProgress), target);
+  return Array.from({ length: target }, (_, i) =>
     i < successCount ? "success" : "neutral"
   );
 }
@@ -46,8 +60,9 @@ export function DietLogger({
   currentBreakdown,
   target = 5,
 }: DietLoggerProps) {
+  const mealLabels = getMealLabels(target);
   const [meals, setMeals] = useState<MealState[]>(() =>
-    breakdownToMeals(currentBreakdown, currentProgress)
+    breakdownToMeals(target, currentBreakdown, currentProgress)
   );
   const [isLogging, setIsLogging] = useState(false);
 
@@ -95,7 +110,7 @@ export function DietLogger({
           <span><span className="text-red-500">●</span> Fora do plano</span>
           <span><span className="text-gray-400">●</span> Não realizada</span>
         </div>
-        {MEAL_LABELS.map((label, i) => (
+        {mealLabels.map((label, i) => (
           <button
             key={label}
             onClick={() => cycleMeal(i)}

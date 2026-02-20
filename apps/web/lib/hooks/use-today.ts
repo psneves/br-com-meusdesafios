@@ -54,6 +54,10 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       const card = data.cards.find((c) => c.userTrackableId === cardId);
       if (!card) return;
 
+      const dateStr = selectedDate
+        ? selectedDate.toISOString().slice(0, 10)
+        : undefined;
+
       try {
         const response = await fetch("/api/trackables/log", {
           method: "POST",
@@ -61,6 +65,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
           body: JSON.stringify({
             userTrackableId: cardId,
             valueNum: value,
+            date: dateStr,
             meta,
           }),
         });
@@ -77,7 +82,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }
     },
-    [data, fetchToday]
+    [data, selectedDate, fetchToday]
   );
 
   const logQuickAction = useCallback(
@@ -132,6 +137,10 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       const action = card.quickActions.find((a) => a.id === actionId);
       if (!action) return;
 
+      const dateStr = selectedDate
+        ? selectedDate.toISOString().slice(0, 10)
+        : undefined;
+
       try {
         const response = await fetch("/api/trackables/log", {
           method: "POST",
@@ -139,6 +148,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
           body: JSON.stringify({
             userTrackableId: cardId,
             valueNum: action.amount,
+            date: dateStr,
             meta: action.exerciseModality
               ? { exerciseModality: action.exerciseModality }
               : undefined,
@@ -157,7 +167,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }
     },
-    [data, fetchToday, logValue]
+    [data, selectedDate, fetchToday, logValue]
   );
 
   const clearFeedback = useCallback(() => {
