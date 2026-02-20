@@ -51,10 +51,36 @@ export function useChallengeSettings() {
   const [settings, setSettings] = useState<ChallengeSettings>(DEFAULTS);
   const [mounted, setMounted] = useState(false);
 
-  // Hydrate from localStorage after mount
+  // Hydrate from DB on mount, fall back to localStorage
   useEffect(() => {
-    setSettings(loadSettings());
+    let aborted = false;
+    const localSettings = loadSettings();
+    setSettings(localSettings);
     setMounted(true);
+
+    // Fetch all trackable settings (active + inactive) from DB
+    fetch("/api/trackables/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (aborted || !json?.data?.settings) return;
+        const dbSettings = { ...localSettings };
+        for (const item of json.data.settings) {
+          const cat = item.category as TrackableCategory;
+          if (dbSettings[cat]) {
+            dbSettings[cat] = {
+              active: item.isActive,
+              target: item.target,
+            };
+          }
+        }
+        setSettings(dbSettings);
+        saveSettings(dbSettings);
+      })
+      .catch(() => {
+        // Keep localStorage values on failure
+      });
+
+    return () => { aborted = true; };
   }, []);
 
   // Persist on change (skip initial mount to avoid writing defaults)
@@ -80,6 +106,15 @@ export function useChallengeSettings() {
       ...prev,
       [category]: { ...prev[category], active: !prev[category].active },
     }));
+
+    // Persist to database
+    fetch("/api/trackables/active", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category }),
+    }).catch(() => {
+      // Silent fail — localStorage is the optimistic fallback
+    });
   }, []);
 
   const updateTarget = useCallback((category: TrackableCategory, target: number) => {
@@ -87,6 +122,15 @@ export function useChallengeSettings() {
       ...prev,
       [category]: { ...prev[category], target },
     }));
+
+    // Persist to database
+    fetch("/api/trackables/goal", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, target }),
+    }).catch(() => {
+      // Silent fail — localStorage is the optimistic fallback
+    });
   }, []);
 
   return { settings, mounted, toggleActive, updateTarget };

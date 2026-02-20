@@ -483,3 +483,78 @@ export async function createLog(
 
   return feedback;
 }
+
+// ── 1d. updateGoal ──────────────────────────────────────────
+
+interface UpdateGoalInput {
+  category: TrackableCategory;
+  target: number;
+}
+
+export async function updateGoal(
+  userId: string,
+  input: UpdateGoalInput
+): Promise<void> {
+  const ds = await getDataSource();
+  const utRepo = ds.getRepository(UserTrackable);
+
+  const ut = await utRepo
+    .createQueryBuilder("ut")
+    .innerJoin("ut.template", "t")
+    .where("ut.user_id = :userId", { userId })
+    .andWhere("t.category = :category", { category: input.category })
+    .getOne();
+
+  if (!ut) {
+    throw new Error("UserTrackable not found");
+  }
+
+  ut.goal = { ...ut.goal, target: input.target };
+  await utRepo.save(ut);
+}
+
+// ── 1e. toggleActive ─────────────────────────────────────────
+
+export async function toggleActive(
+  userId: string,
+  category: TrackableCategory
+): Promise<{ isActive: boolean }> {
+  const ds = await getDataSource();
+  const utRepo = ds.getRepository(UserTrackable);
+
+  const ut = await utRepo
+    .createQueryBuilder("ut")
+    .innerJoin("ut.template", "t")
+    .where("ut.user_id = :userId", { userId })
+    .andWhere("t.category = :category", { category })
+    .getOne();
+
+  if (!ut) {
+    throw new Error("UserTrackable not found");
+  }
+
+  ut.isActive = !ut.isActive;
+  await utRepo.save(ut);
+
+  return { isActive: ut.isActive };
+}
+
+// ── 1f. getUserSettings ──────────────────────────────────────
+
+export interface UserTrackableSetting {
+  category: TrackableCategory;
+  isActive: boolean;
+  target: number;
+}
+
+export async function getUserSettings(
+  userId: string
+): Promise<UserTrackableSetting[]> {
+  const userTrackables = await ensureUserTrackables(userId);
+
+  return userTrackables.map((ut) => ({
+    category: ut.template.category,
+    isActive: ut.isActive,
+    target: ut.goal.target ?? 0,
+  }));
+}
