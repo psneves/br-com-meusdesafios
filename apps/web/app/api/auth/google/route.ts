@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const redirectTo = searchParams.get("redirectTo") || "/today";
 
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const redirectUri = `${appUrl}/api/auth/google/callback`;
     const authUrl = getGoogleAuthUrl(redirectUri);
 

@@ -27,7 +27,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm dev",
-    url: "http://localhost:3000",
+    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },

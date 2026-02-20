@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const redirectUri = `${appUrl}/api/auth/google/callback`;
     const tokens = await exchangeCodeForTokens(code, redirectUri);
 
