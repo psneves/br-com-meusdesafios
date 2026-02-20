@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     session.lastName = body.lastName ?? "User";
     session.displayName = body.displayName ?? "Test User";
     session.email = body.email ?? "test@example.com";
-    session.avatarUrl = body.avatarUrl ?? null;
+    // avatarUrl is read from DB by /api/auth/me (too large for cookie when base64)
     session.isLoggedIn = true;
 
     await session.save();

@@ -90,6 +90,13 @@ export function TodayHeader({
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
               <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
             </div>
+          ) : avatarUrl.startsWith("data:") ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={avatarUrl}
+              alt=""
+              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
+            />
           ) : (
             <Image
               src={avatarUrl}

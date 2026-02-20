@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     session.lastName = user.lastName;
     session.displayName = user.displayName;
     session.email = user.email;
-    session.avatarUrl = user.avatarUrl || undefined;
+    // avatarUrl is read from DB by /api/auth/me (too large for cookie when base64)
     session.isLoggedIn = true;
     session.provider = "google";
     await session.save();

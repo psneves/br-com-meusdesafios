@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight,
-  Pencil, Check, X, Loader2,
+  Pencil, Check, X, Loader2, Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
@@ -83,11 +82,14 @@ export default function ProfilePage() {
     isSaving,
     error: profileError,
     updateProfile,
+    uploadAvatar,
+    isUploadingAvatar,
     checkHandle,
     handleAvailable,
     isCheckingHandle,
   } = useProfile();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
@@ -116,6 +118,14 @@ export default function ProfilePage() {
       handle: (editHandle || "").trim().toLowerCase(),
     });
     if (ok) setIsEditing(false);
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadAvatar(file);
+    // Reset so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function onHandleChange(value: string) {
@@ -163,13 +173,27 @@ export default function ProfilePage() {
           </>
         ) : isEditing ? (
           <>
-            <Image
-              src={avatarUrl}
-              alt="Foto de perfil"
-              width={80}
-              height={80}
-              className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
-            />
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatarUrl}
+                alt="Foto de perfil"
+                className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+              />
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label="Alterar foto de perfil"
+              >
+                <Camera className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="w-full max-w-xs space-y-3">
               <div>
                 <label htmlFor="edit-firstName" className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -251,17 +275,36 @@ export default function ProfilePage() {
           </>
         ) : (
           <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
             <div className="relative">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={avatarUrl}
                 alt="Foto de perfil"
-                width={80}
-                height={80}
                 className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
               />
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                aria-label="Alterar foto de perfil"
+              >
+                <Camera className="h-3.5 w-3.5" />
+              </button>
               <button
                 onClick={startEditing}
-                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                className="absolute -bottom-1 -left-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 dark:border-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                 aria-label="Editar perfil"
               >
                 <Pencil className="h-3.5 w-3.5" />

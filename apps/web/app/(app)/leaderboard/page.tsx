@@ -57,7 +57,7 @@ export default function LeaderboardPage() {
             Sua Posição
           </h1>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Ranking privado entre conexões
+            Compare seu desempenho com suas conexões
           </p>
         </div>
       </div>
@@ -130,10 +130,7 @@ export default function LeaderboardPage() {
               {session.user?.displayName ?? "—"}
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {rankData?.cohortSize ?? 0}{" "}
-              {(rankData?.cohortSize ?? 0) === 1
-                ? "participante"
-                : "participantes"}
+              @{session.user?.handle ?? "—"}
             </p>
           </div>
           <div className="text-right">
@@ -170,7 +167,7 @@ export default function LeaderboardPage() {
             <div className="flex items-center gap-2 px-5 py-4 text-sm text-gray-400 dark:text-gray-500">
               <Lock className="h-4 w-4 shrink-0" />
               <span>
-                Ranking indisponível: poucos participantes no grupo.
+                Adicione pelo menos 4 conexões para desbloquear seu ranking.
               </span>
             </div>
           )}
@@ -237,8 +234,8 @@ export default function LeaderboardPage() {
       <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
         <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          Seu ranking é privado. Apenas sua posição é mostrada — nenhum dado de
-          outros participantes é exposto.
+          Seu ranking é privado. Apenas sua posição e pontuação são visíveis
+          para você — ninguém mais tem acesso a esses dados.
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ export interface SessionData {
   lastName: string;
   displayName: string;
   email: string;
-  avatarUrl?: string;
+  // avatarUrl is stored only in DB (base64 too large for cookies)
   isLoggedIn: boolean;
   provider?: "google";
 }

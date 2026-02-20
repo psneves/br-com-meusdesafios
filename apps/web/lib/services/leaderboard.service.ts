@@ -25,16 +25,16 @@ const CATEGORY_NAMES: Record<TrackableCategory, string> = {
 
 // ── Helpers ───────────────────────────────────────────────
 
-function buildCohortQuery(userId: string, scope: Scope): { sql: string; params: Record<string, string> } {
+function buildCohortQuery(userId: string, scope: Scope): { sql: string; params: string[] } {
   if (scope === "following") {
     return {
-      sql: `SELECT e.target_id AS uid FROM follow_edges e WHERE e.requester_id = :userId AND e.status = 'accepted'`,
-      params: { userId },
+      sql: `SELECT e.target_id AS uid FROM follow_edges e WHERE e.requester_id = $1 AND e.status = 'accepted'`,
+      params: [userId],
     };
   }
   return {
-    sql: `SELECT e.requester_id AS uid FROM follow_edges e WHERE e.target_id = :userId AND e.status = 'accepted'`,
-    params: { userId },
+    sql: `SELECT e.requester_id AS uid FROM follow_edges e WHERE e.target_id = $1 AND e.status = 'accepted'`,
+    params: [userId],
   };
 }
 
@@ -77,7 +77,7 @@ export async function computeLeaderboard(
   const cohortQuery = buildCohortQuery(userId, scope);
   const cohortRows: { uid: string }[] = await edgeRepo.query(
     cohortQuery.sql,
-    [cohortQuery.params.userId]
+    cohortQuery.params
   );
   const cohortIds = [userId, ...cohortRows.map((r) => r.uid)];
   const cohortSize = cohortIds.length;
@@ -85,14 +85,49 @@ export async function computeLeaderboard(
   // 2. Date range
   const { start, end } = getDateRange(period);
 
-  // 3. If insufficient cohort, return early
+  const ledgerRepo = ds.getRepository(PointsLedger);
+
+  // 3. If insufficient cohort, still calculate user's actual score but hide rank
   if (cohortSize < MIN_COHORT) {
-    const challengeRanks = buildEmptyChallengeRanks(cohortSize);
+    // Get user's overall score
+    const scoreResult: { total: string }[] = await ledgerRepo
+      .createQueryBuilder("pl")
+      .select("COALESCE(SUM(pl.points), 0)", "total")
+      .where("pl.user_id = :userId", { userId })
+      .andWhere("pl.day >= :start", { start })
+      .andWhere("pl.day <= :end", { end })
+      .getRawMany();
+    const userScore = Number(scoreResult[0]?.total ?? 0);
+
+    // Get per-challenge scores
+    const catScores: { category: TrackableCategory; total: string }[] = await ledgerRepo
+      .createQueryBuilder("pl")
+      .innerJoin(UserTrackable, "ut", "ut.id = pl.user_trackable_id")
+      .innerJoin(TrackableTemplate, "tt", "tt.id = ut.template_id")
+      .select("tt.category", "category")
+      .addSelect("COALESCE(SUM(pl.points), 0)", "total")
+      .where("pl.user_id = :userId", { userId })
+      .andWhere("pl.day >= :start", { start })
+      .andWhere("pl.day <= :end", { end })
+      .groupBy("tt.category")
+      .getRawMany();
+
+    const catMap = new Map(catScores.map((r) => [r.category, Number(r.total)]));
+    const categories: TrackableCategory[] = ["WATER", "DIET_CONTROL", "PHYSICAL_EXERCISE", "SLEEP"];
+    const challengeRanks: ChallengeRank[] = categories.map((cat) => ({
+      category: cat,
+      name: CATEGORY_NAMES[cat],
+      rank: null,
+      score: catMap.get(cat) ?? 0,
+      cohortSize,
+      percentile: null,
+    }));
+
     return {
       overall: {
         scope,
         rank: null,
-        score: 0,
+        score: userScore,
         cohortSize,
         percentile: null,
         rankStatus: "insufficient_cohort",
@@ -100,8 +135,6 @@ export async function computeLeaderboard(
       challengeRanks,
     };
   }
-
-  const ledgerRepo = ds.getRepository(PointsLedger);
 
   // 4. Overall rank: sum points per user in cohort for the period
   const overallScores: { user_id: string; total: string }[] = await ledgerRepo
@@ -140,7 +173,6 @@ export async function computeLeaderboard(
   };
 
   // 5. Per-challenge ranks
-  const utRepo = ds.getRepository(UserTrackable);
   const challengeScores: {
     user_id: string;
     category: TrackableCategory;
@@ -193,19 +225,3 @@ export async function computeLeaderboard(
   return { overall, challengeRanks };
 }
 
-function buildEmptyChallengeRanks(cohortSize: number): ChallengeRank[] {
-  const categories: TrackableCategory[] = [
-    "WATER",
-    "DIET_CONTROL",
-    "PHYSICAL_EXERCISE",
-    "SLEEP",
-  ];
-  return categories.map((cat) => ({
-    category: cat,
-    name: CATEGORY_NAMES[cat],
-    rank: null,
-    score: 0,
-    cohortSize,
-    percentile: null,
-  }));
-}

@@ -70,6 +70,22 @@ export async function updateProfile(
   };
 }
 
+export async function updateAvatar(
+  userId: string,
+  dataUri: string
+): Promise<string> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(User);
+
+  const user = await repo.findOneBy({ id: userId });
+  if (!user) throw new Error("User not found");
+
+  user.avatarUrl = dataUri;
+  await repo.save(user);
+
+  return dataUri;
+}
+
 export async function isHandleAvailable(
   handle: string,
   excludeUserId?: string
