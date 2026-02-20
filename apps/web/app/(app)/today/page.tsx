@@ -100,7 +100,7 @@ export default function TodayPage() {
 
   const handleActivityLog = useCallback(
     async (value: number, _unit?: string, modality?: string) => {
-      if (activeModal) await logValue(activeModal.cardId, value, modality ? { modality } : undefined);
+      if (activeModal) await logValue(activeModal.cardId, value, modality ? { exerciseModality: modality } : undefined);
     },
     [activeModal, logValue]
   );

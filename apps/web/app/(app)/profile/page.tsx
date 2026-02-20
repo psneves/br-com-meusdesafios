@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Sun, Moon, Minus, Plus, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { useChallengeSettings } from "@/lib/hooks/use-challenge-settings";
@@ -224,6 +225,31 @@ export default function ProfilePage() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* Sobre */}
+      <section className="rounded-xl border border-gray-200 bg-white p-phi-4 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-phi-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Sobre
+        </h2>
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <Link
+            href="/terms"
+            className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/50"
+          >
+            <FileText className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            Termos de Uso
+            <ChevronRight className="ml-auto h-4 w-4 text-gray-300 dark:text-gray-600" />
+          </Link>
+          <Link
+            href="/privacy"
+            className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/50"
+          >
+            <Shield className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            Política de Privacidade
+            <ChevronRight className="ml-auto h-4 w-4 text-gray-300 dark:text-gray-600" />
+          </Link>
         </div>
       </section>
 

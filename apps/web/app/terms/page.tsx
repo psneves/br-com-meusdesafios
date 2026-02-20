@@ -1,20 +1,32 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { getSession } from "@/lib/auth/session";
 
 export const metadata = {
   title: "Termos de Uso – Meus Desafios",
 };
 
-export default function TermsPage() {
-  return (
-    <div className="min-h-[100dvh] bg-slate-50 px-6 py-12 dark:bg-[#0a0a0a]">
-      <article className="mx-auto max-w-2xl space-y-6 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-        <Link
-          href="/login"
-          className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-        >
-          &larr; Voltar
-        </Link>
+export default async function TermsPage() {
+  const session = await getSession();
+  const backHref = session.isLoggedIn ? "/today" : "/login";
+  const backLabel = session.isLoggedIn ? "Voltar ao painel" : "Voltar ao login";
 
+  return (
+    <div className="min-h-[100dvh] bg-slate-50 dark:bg-[#0a0a0a]">
+      {/* Sticky top bar */}
+      <nav className="sticky top-0 z-10 border-b border-gray-200 bg-slate-50/90 backdrop-blur-sm dark:border-gray-800 dark:bg-[#0a0a0a]/90">
+        <div className="mx-auto flex max-w-2xl items-center px-6 py-3">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3.5 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
+        </div>
+      </nav>
+
+      <article className="mx-auto max-w-2xl space-y-6 px-6 py-8 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Termos de Uso
         </h1>
@@ -132,7 +144,7 @@ export default function TermsPage() {
             </a>
           </p>
         </section>
-      </article>
+        </article>
     </div>
   );
 }
