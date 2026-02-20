@@ -1,5 +1,6 @@
 "use client";
 
+import { Star } from "lucide-react";
 import { TrackableCard, TrackableCardSkeleton } from "@/components/trackables/TrackableCard";
 import { EmptyState, CustomizeCTA } from "./EmptyState";
 import type { TodayCard } from "@/lib/types/today";
@@ -31,8 +32,11 @@ export function TrackableList({
     (a, b) => (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99)
   );
 
+  const isPerfectDay = cards.length >= 4 && cards.every((c) => c.progress.met);
+
   return (
     <div className={cn("grid grid-cols-1 gap-phi-2", className)}>
+      {isPerfectDay && <PerfectDayBanner />}
       {sortedCards.map((card) => (
         <TrackableCard
           key={card.userTrackableId}
@@ -41,6 +45,20 @@ export function TrackableList({
         />
       ))}
       {cards.length > 0 && cards.length < 4 && <CustomizeCTA />}
+    </div>
+  );
+}
+
+function PerfectDayBanner() {
+  return (
+    <div className="flex items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-amber-50 px-4 py-2.5 dark:border-amber-500/20 dark:bg-amber-900/15">
+      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+      <span className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+        Dia Perfeito!
+      </span>
+      <span className="text-xs text-amber-600/80 dark:text-amber-400/70">
+        Todos os desafios concluídos
+      </span>
     </div>
   );
 }

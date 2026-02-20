@@ -115,21 +115,24 @@ export function TrackableCard({
         )}
       </div>
 
-      {/* Right zone: plus button only */}
+      {/* Right zone: action button */}
       <div className="flex items-center pl-2">
         <button
           onClick={onRegister}
-          aria-label={`Registrar ${card.name}`}
+          aria-label={card.progress.met ? `Editar ${card.name}` : `Registrar ${card.name}`}
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full text-white transition-all active:scale-90",
+            "flex h-10 w-10 items-center justify-center rounded-full transition-all active:scale-90",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-            cfg.btnBg,
-            cfg.btnHover,
-            cfg.btnBgDark,
-            cfg.btnHoverDark
+            card.progress.met
+              ? "bg-gray-200/60 text-gray-400 hover:bg-gray-200 dark:bg-gray-700/40 dark:text-gray-500 dark:hover:bg-gray-700/60"
+              : cn("text-white", cfg.btnBg, cfg.btnHover, cfg.btnBgDark, cfg.btnHoverDark)
           )}
         >
-          <Plus className="h-4.5 w-4.5" strokeWidth={2.5} />
+          {card.progress.met ? (
+            <Check className="h-5 w-5" strokeWidth={2.5} />
+          ) : (
+            <Plus className="h-4.5 w-4.5" strokeWidth={2.5} />
+          )}
         </button>
       </div>
     </div>
@@ -169,7 +172,7 @@ function CompactProgress({
     <div className="space-y-0.5">
       {/* Progress bar */}
       <div
-        className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
+        className="h-2.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
         role="progressbar"
         aria-valuenow={Math.min(100, displayPct)}
         aria-valuemin={0}
@@ -177,7 +180,7 @@ function CompactProgress({
         aria-label={`Progresso: ${fmt(value)} de ${fmt(target)}${displayUnit ? ` ${displayUnit}` : ""}`}
       >
         <div
-          className={cn("h-full rounded-full transition-all duration-500", accentColor)}
+          className={cn("h-2.5 rounded-full transition-all duration-500", accentColor)}
           style={{ width: `${Math.min(100, displayPct)}%` }}
         />
       </div>

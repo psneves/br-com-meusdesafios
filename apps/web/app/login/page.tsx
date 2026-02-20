@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -69,8 +70,15 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 dark:text-gray-600">
-          Ao continuar, você concorda com nossos Termos de Uso e Política de
-          Privacidade.
+          Ao continuar, você concorda com nossos{" "}
+          <Link href="/terms" className="underline hover:text-gray-600 dark:hover:text-gray-400">
+            Termos de Uso
+          </Link>{" "}
+          e{" "}
+          <Link href="/privacy" className="underline hover:text-gray-600 dark:hover:text-gray-400">
+            Política de Privacidade
+          </Link>
+          .
         </p>
       </div>
     </div>
