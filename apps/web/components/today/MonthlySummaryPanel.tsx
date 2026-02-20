@@ -1,5 +1,6 @@
 "use client";
 
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import type { MonthlySummary } from "@/lib/types/today";
@@ -126,6 +127,10 @@ export function MonthlySummaryPanel({ summary }: MonthlySummaryPanelProps) {
                         );
                       })}
                     </div>
+                    {/* Perfect day star */}
+                    {allMet && (
+                      <Star className="mt-0.5 h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                    )}
                   </div>
                 );
               })}
