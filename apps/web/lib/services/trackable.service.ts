@@ -23,6 +23,11 @@ import type {
   QuickAction,
   ProgressBreakdown,
   LogFeedback,
+  WeeklySummary,
+  WeekDayStatus,
+  WeekChallengeSummary,
+  MonthlySummary,
+  MonthChallengeSummary,
 } from "../types/today";
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -560,4 +565,289 @@ export async function getUserSettings(
     isActive: ut.isActive,
     target: ut.goal.target ?? 0,
   }));
+}
+
+// ── 2a. buildWeeklySummary ──────────────────────────────────
+
+function weekMonday(d: Date): Date {
+  const day = d.getDay(); // 0=Sun
+  const offset = day === 0 ? -6 : 1 - day;
+  const mon = new Date(d);
+  mon.setDate(mon.getDate() + offset);
+  mon.setHours(0, 0, 0, 0);
+  return mon;
+}
+
+export async function buildWeeklySummary(
+  userId: string,
+  date: Date
+): Promise<WeeklySummary> {
+  const ds = await getDataSource();
+  const statsRepo = ds.getRepository(ComputedDailyStats);
+  const ledgerRepo = ds.getRepository(PointsLedger);
+  const userTrackables = await ensureUserTrackables(userId);
+  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+
+  const selected = startOfDay(date);
+  const today = startOfDay(new Date());
+  const monday = weekMonday(selected);
+
+  // Build 7 day dates
+  const weekDates: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    weekDates.push(d);
+  }
+
+  // Fetch all stats for this week for all user trackables
+  const utIds = activeUTs.map((ut) => ut.id);
+  const mondayStr = dayString(monday);
+  const sundayStr = dayString(weekDates[6]);
+
+  let allStats: ComputedDailyStats[] = [];
+  if (utIds.length > 0) {
+    allStats = await statsRepo
+      .createQueryBuilder("s")
+      .where("s.user_trackable_id IN (:...utIds)", { utIds })
+      .andWhere("s.day >= :start", { start: mondayStr })
+      .andWhere("s.day <= :end", { end: sundayStr })
+      .getMany();
+  }
+
+  // Index stats: utId -> dayStr -> stats
+  const statsMap = new Map<string, Map<string, ComputedDailyStats>>();
+  for (const s of allStats) {
+    if (!statsMap.has(s.userTrackableId)) {
+      statsMap.set(s.userTrackableId, new Map());
+    }
+    const dayKey = String(s.day).slice(0, 10);
+    statsMap.get(s.userTrackableId)!.set(dayKey, s);
+  }
+
+  // Build per-day status and per-challenge data
+  const days: WeekDayStatus[] = [];
+  const challengeRows: { daysMet: boolean[]; metCount: number; totalDays: number; weeklyProgress: number }[] =
+    activeUTs.map(() => ({ daysMet: [], metCount: 0, totalDays: 0, weeklyProgress: 0 }));
+
+  let totalDone = 0;
+  let perfectDays = 0;
+  const perfectFlags: boolean[] = [];
+
+  for (let i = 0; i < 7; i++) {
+    const day = weekDates[i];
+    const dayKey = dayString(day);
+    const isFuture = day > today;
+    const isSelected = day.getTime() === selected.getTime();
+
+    let metCount = 0;
+
+    activeUTs.forEach((ut, ti) => {
+      const s = statsMap.get(ut.id)?.get(dayKey);
+      const met = !isFuture && (s?.metGoal ?? false);
+      challengeRows[ti].daysMet.push(met);
+      if (!isFuture) {
+        challengeRows[ti].totalDays++;
+        if (met) {
+          challengeRows[ti].metCount++;
+          totalDone++;
+          metCount++;
+        }
+        const progressNum = typeof s?.progress === "object" ? (s.progress.total ?? 0) : 0;
+        challengeRows[ti].weeklyProgress += progressNum;
+      }
+    });
+
+    const isPerfect = !isFuture && metCount === activeUTs.length && activeUTs.length > 0;
+    if (isPerfect) perfectDays++;
+    perfectFlags.push(isPerfect);
+
+    days.push({ date: dayKey, dayOfMonth: day.getDate(), metCount, total: activeUTs.length, isSelected, isFuture });
+  }
+
+  // Best streak of perfect days
+  let bestStreak = 0;
+  let run = 0;
+  for (const perfect of perfectFlags) {
+    if (perfect) { run++; if (run > bestStreak) bestStreak = run; } else { run = 0; }
+  }
+
+  const nonFutureDays = days.filter((d) => !d.isFuture).length;
+  const totalPossible = nonFutureDays * activeUTs.length;
+  const percentMet = totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
+
+  const isComplete = nonFutureDays === 7;
+
+  // Weekly XP
+  const totalXP = await ledgerRepo
+    .createQueryBuilder("pl")
+    .select("COALESCE(SUM(pl.points), 0)", "total")
+    .where("pl.user_id = :userId", { userId })
+    .andWhere("pl.day >= :start", { start: mondayStr })
+    .andWhere("pl.day <= :end", { end: sundayStr })
+    .getRawOne()
+    .then((r) => Number(r?.total ?? 0));
+
+  // Build challenge summaries
+  const challenges: WeekChallengeSummary[] = activeUTs.map((ut, i) => ({
+    category: ut.template.category,
+    name: CATEGORY_NAMES[ut.template.category],
+    icon: ut.template.icon ?? "",
+    daysMet: challengeRows[i].daysMet,
+    metCount: challengeRows[i].metCount,
+    totalDays: challengeRows[i].totalDays,
+    weeklyTarget: (ut.goal.target ?? 0) * 7,
+    weeklyProgress: challengeRows[i].weeklyProgress,
+    unit: ut.goal.unit ?? "",
+  }));
+
+  // Bonus calculations
+  const weeklyGoalBonusXP = isComplete
+    ? challenges.filter((c) => c.metCount === 7).length * 10
+    : 0;
+  const perfectWeekBonusXP =
+    isComplete && challenges.every((c) => c.metCount === 7) ? 10 : 0;
+
+  return {
+    days,
+    challenges,
+    totalXP,
+    percentMet,
+    perfectDays,
+    totalDone,
+    bestStreak,
+    isComplete,
+    weeklyGoalBonusXP,
+    perfectWeekBonusXP,
+  };
+}
+
+// ── 2b. buildMonthlySummary ─────────────────────────────────
+
+export async function buildMonthlySummary(
+  userId: string,
+  date: Date
+): Promise<MonthlySummary> {
+  const ds = await getDataSource();
+  const statsRepo = ds.getRepository(ComputedDailyStats);
+  const ledgerRepo = ds.getRepository(PointsLedger);
+  const userTrackables = await ensureUserTrackables(userId);
+  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+
+  const selected = startOfDay(date);
+  const today = startOfDay(new Date());
+  const year = selected.getFullYear();
+  const month = selected.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const monthStartStr = dayString(new Date(year, month, 1));
+  const monthEndStr = dayString(new Date(year, month, daysInMonth));
+
+  // Fetch all stats for this month
+  const utIds = activeUTs.map((ut) => ut.id);
+  let allStats: ComputedDailyStats[] = [];
+  if (utIds.length > 0) {
+    allStats = await statsRepo
+      .createQueryBuilder("s")
+      .where("s.user_trackable_id IN (:...utIds)", { utIds })
+      .andWhere("s.day >= :start", { start: monthStartStr })
+      .andWhere("s.day <= :end", { end: monthEndStr })
+      .getMany();
+  }
+
+  // Index stats
+  const statsMap = new Map<string, Map<string, ComputedDailyStats>>();
+  for (const s of allStats) {
+    if (!statsMap.has(s.userTrackableId)) {
+      statsMap.set(s.userTrackableId, new Map());
+    }
+    const dayKey = String(s.day).slice(0, 10);
+    statsMap.get(s.userTrackableId)!.set(dayKey, s);
+  }
+
+  const challengeRows: { daysMet: boolean[]; metCount: number; totalDays: number }[] =
+    activeUTs.map(() => ({ daysMet: [], metCount: 0, totalDays: 0 }));
+
+  let totalDone = 0;
+  let perfectDays = 0;
+  let futureDayStart = daysInMonth + 1;
+  let foundFuture = false;
+  const perfectFlags: boolean[] = [];
+
+  for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+    const day = new Date(year, month, dayNum);
+    const dayKey = dayString(day);
+    const isFuture = day > today;
+
+    if (isFuture && !foundFuture) {
+      futureDayStart = dayNum;
+      foundFuture = true;
+    }
+
+    let dayMetCount = 0;
+
+    activeUTs.forEach((ut, ti) => {
+      const s = statsMap.get(ut.id)?.get(dayKey);
+      const met = !isFuture && (s?.metGoal ?? false);
+      challengeRows[ti].daysMet.push(met);
+      if (!isFuture) {
+        challengeRows[ti].totalDays++;
+        if (met) {
+          challengeRows[ti].metCount++;
+          totalDone++;
+          dayMetCount++;
+        }
+      }
+    });
+
+    const isPerfect = !isFuture && dayMetCount === activeUTs.length && activeUTs.length > 0;
+    if (isPerfect) perfectDays++;
+    perfectFlags.push(isPerfect);
+  }
+
+  // Best streak
+  let bestStreak = 0;
+  let run = 0;
+  for (const perfect of perfectFlags) {
+    if (perfect) { run++; if (run > bestStreak) bestStreak = run; } else { run = 0; }
+  }
+
+  const totalPossible = (challengeRows[0]?.totalDays ?? 0) * activeUTs.length;
+  const percentMet = totalPossible > 0 ? Math.round((totalDone / totalPossible) * 100) : 0;
+
+  const totalXP = await ledgerRepo
+    .createQueryBuilder("pl")
+    .select("COALESCE(SUM(pl.points), 0)", "total")
+    .where("pl.user_id = :userId", { userId })
+    .andWhere("pl.day >= :start", { start: monthStartStr })
+    .andWhere("pl.day <= :end", { end: monthEndStr })
+    .getRawOne()
+    .then((r) => Number(r?.total ?? 0));
+
+  const challenges: MonthChallengeSummary[] = activeUTs.map((ut, i) => ({
+    category: ut.template.category,
+    name: CATEGORY_NAMES[ut.template.category],
+    icon: ut.template.icon ?? "",
+    daysMet: challengeRows[i].daysMet,
+    metCount: challengeRows[i].metCount,
+    totalDays: challengeRows[i].totalDays,
+    percentMet:
+      challengeRows[i].totalDays > 0
+        ? Math.round((challengeRows[i].metCount / challengeRows[i].totalDays) * 100)
+        : 0,
+  }));
+
+  return {
+    year,
+    month,
+    daysInMonth,
+    futureDayStart,
+    selectedDay: selected.getDate(),
+    challenges,
+    perfectDays,
+    percentMet,
+    totalDone,
+    bestStreak,
+    totalXP,
+  };
 }

@@ -21,8 +21,8 @@ export function useToday(selectedDate?: Date): UseTodayResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [feedback, setFeedback] = useState<LogFeedback | null>(null);
-  const [weekSummary] = useState<WeeklySummary | null>(null);
-  const [monthSummary] = useState<MonthlySummary | null>(null);
+  const [weekSummary, setWeekSummary] = useState<WeeklySummary | null>(null);
+  const [monthSummary, setMonthSummary] = useState<MonthlySummary | null>(null);
   const initialLoadDone = useRef(false);
 
   const fetchToday = useCallback(async () => {
@@ -34,10 +34,22 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       const params = selectedDate
         ? `?date=${selectedDate.toISOString().slice(0, 10)}`
         : "";
-      const response = await fetch(`/api/trackables/today${params}`);
-      if (!response.ok) throw new Error("Failed to fetch today data");
-      const json = await response.json();
-      setData(json.data);
+
+      const [todayRes, summaryRes] = await Promise.all([
+        fetch(`/api/trackables/today${params}`),
+        fetch(`/api/trackables/summary${params}`),
+      ]);
+
+      if (!todayRes.ok) throw new Error("Failed to fetch today data");
+      const todayJson = await todayRes.json();
+      setData(todayJson.data);
+
+      if (summaryRes.ok) {
+        const summaryJson = await summaryRes.json();
+        setWeekSummary(summaryJson.data.weekSummary ?? null);
+        setMonthSummary(summaryJson.data.monthSummary ?? null);
+      }
+
       initialLoadDone.current = true;
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Unknown error"));
