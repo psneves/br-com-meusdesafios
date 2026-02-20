@@ -31,7 +31,7 @@ export function FeedbackToast({
   return (
     <div
       className={cn(
-        "fixed bottom-4 left-1/2 z-50 -translate-x-1/2 transform",
+        "fixed bottom-24 left-1/2 z-50 -translate-x-1/2 transform",
         "animate-in fade-in slide-in-from-bottom-4 duration-300"
       )}
     >

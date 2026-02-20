@@ -1,17 +1,17 @@
 {
-  "name": "challengeos",
+  "name": "meusdesafios",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @challengeos/web dev",
-    "build": "pnpm --filter @challengeos/web build",
-    "start": "pnpm --filter @challengeos/web start",
+    "dev": "pnpm --filter @meusdesafios/web dev",
+    "build": "pnpm --filter @meusdesafios/web build",
+    "start": "pnpm --filter @meusdesafios/web start",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "db:migration:generate": "pnpm --filter @challengeos/db migration:generate",
-    "db:migration:run": "pnpm --filter @challengeos/db migration:run",
-    "db:migration:revert": "pnpm --filter @challengeos/db migration:revert",
-    "db:seed": "pnpm --filter @challengeos/db seed"
+    "db:migration:generate": "pnpm --filter @meusdesafios/db migration:generate",
+    "db:migration:run": "pnpm --filter @meusdesafios/db migration:run",
+    "db:migration:revert": "pnpm --filter @meusdesafios/db migration:revert",
+    "db:seed": "pnpm --filter @meusdesafios/db seed"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

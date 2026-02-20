@@ -17,8 +17,11 @@ export interface LogMeta {
   durationMin?: number;
   // Diet-specific
   items?: string[];
+  checklistMet?: boolean;
   // Activity-specific
   unit?: "km" | "mi" | "min" | "ml" | "L";
+  // Physical Exercise modality
+  exerciseModality?: "GYM" | "RUN" | "CYCLING" | "SWIM";
 }
 
 export interface CreateLogInput {

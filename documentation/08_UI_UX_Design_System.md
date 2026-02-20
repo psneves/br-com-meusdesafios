@@ -1,74 +1,105 @@
-# UI/UX Design System – Consistent Trackables UI
+# UI/UX Design System - Consistent Challenge UI
 
 ## Primary UX goal
-A user-friendly app with **one mental model**:
-> “Everything I track is a Trackable with a goal.”
+
+Deliver a low-friction consistency loop for adults 25-35:
+- cue: Today card shows what matters now
+- action: quick log in 1-2 taps
+- reward: immediate feedback (progress + points + streak)
+
+Mental model:
+"Everything I track is a challenge with a goal."
+
+Product simplification:
+- 4 core challenge cards: Water, Diet Control, Sleep, Physical Exercise
+- Physical Exercise combines gym, run, cycling, and swim in one card
 
 ---
 
-## Core screens (MVP)
-### 1) Today (Home)
-A list of **Trackable Cards** for active trackables.
+## Experience principles
 
-Each card shows:
-- Trackable name + icon
-- Goal summary (e.g., 7km, 2500ml, bedtime <= 23:00)
-- Progress bar / indicator
-- Streak badge
-- Points earned today
-- Quick actions (1 tap)
+- Consistency over novelty in MVP
+- Clarity over dense data views
+- Fast logging over perfect detail capture
+- Explain rewards immediately after each action
+- Keep most daily interactions under 30 seconds
 
-**Quick actions examples**
-- Water: +250 / +500 / +750 / custom
-- Diet: Mark “Met” (toggle)
-- Sleep: Mark sleep entry (bedtime + duration)
-- Gym: Log session (quick)
-- Run/Bike/Swim: Log distance or duration
+---
 
-### 2) Trackable Detail
+## Core screens
+
+### 1. Today (home)
+
+A vertically scannable list of core challenge cards.
+
+Each card includes:
+- challenge identity (name + icon)
+- goal summary with unit
+- progress indicator
+- streak badge
+- points earned today
+- quick actions
+
+### 2. Challenge detail
+
 Tabs:
-- Overview: weekly trend + current stats
-- Log: entries list + add button
-- Rules: how to earn points/streaks (explainable)
+- `Overview`: trends, status, and summary metrics
+- `Logs`: entries list and add interaction
+- `Rules`: transparent scoring logic
 
-### 3) Social
-- Requests: pending follower requests (accept/deny)
-- Connections: accepted followers/following list (names allowed here)
-- Leaderboards: following/followers rank cards (rank only)
+### 3. Social
 
-### 4) Challenges
-- Browse templates
-- Join challenge
-- See what trackables it activates
+- requests inbox (accept/deny)
+- accepted connections list
+- rank cards (self rank only)
 
----
+### 4. Challenges
 
-## Design principles
-- Consistency > customization in MVP
-- Fewer taps > perfect accuracy
-- Explain rewards immediately (points + streak)
+- challenge template list (built around the 4 core challenges)
+- join action
+- clear list of activated challenges
 
 ---
 
-## Component inventory (MVP)
-- TrackableCard
-- ProgressIndicator (bar/ring)
-- QuickActionRow
-- StreakBadge
-- PointsChip
-- DetailHeader
-- Tabs (Overview / Log / Rules)
-- LeaderboardRankCard
+## Interaction patterns
+
+### Quick actions by category
+
+- Water: `+250`, `+500`, `+750`, `Custom`
+- Diet Control: `Met today` toggle/action
+- Sleep: bedtime + duration quick form
+- Physical Exercise: modality picker (`gym`, `run`, `cycling`, `swim`) + duration/distance/session input
+
+### Feedback states
+
+After logging, always show:
+- success confirmation
+- updated progress
+- point delta (if any)
+- streak impact (if any)
 
 ---
 
-## Empty states
-- No active trackables → prompt to join a template challenge
-- No logs today → show simplest quick action
+## Content and copy rules
+
+- Always display units (`ml`, `km`, `min`, `h`).
+- Keep labels short and direct.
+- Use plain-language rules; avoid internal jargon.
+- Never use copy that reveals other users' identities in ranking contexts.
 
 ---
 
-## Accessibility & clarity
-- Always show units (km, ml, hours)
-- Use color + text (don’t rely on color alone)
-- Keep copy short; “Rules” tab clarifies details
+## Accessibility baseline
+
+- Never rely on color alone for status.
+- Keep contrast and legibility high.
+- Provide clear touch targets for one-thumb usage.
+- Support keyboard and screen-reader-friendly semantics for web.
+
+---
+
+## Empty and edge states
+
+- No active challenges: prompt core challenge activation.
+- No logs today: emphasize quickest next action.
+- Rank unavailable: explain minimum cohort requirement.

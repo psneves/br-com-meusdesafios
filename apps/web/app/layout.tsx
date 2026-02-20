@@ -1,13 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: "Meus Desafios",
-  description: "Acompanha os teus desafios diários de forma gamificada",
+  description: "Consistência vira resultado",
   icons: {
     icon: [
       { url: "/logo-256x256.png", sizes: "256x256", type: "image/png" },

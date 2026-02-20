@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { UserTrackable } from "./user-trackable.entity";
-import type { DailyProgress } from "@challengeos/shared";
+import type { DailyProgress } from "@meusdesafios/shared";
 
 @Entity("computed_daily_stats")
 @Index(["userTrackableId", "day"])

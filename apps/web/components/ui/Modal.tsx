@@ -50,14 +50,14 @@ export function Modal({
       {/* Modal content */}
       <div
         className={cn(
-          "relative z-50 w-full max-w-md rounded-t-2xl bg-white p-6 shadow-xl dark:bg-gray-900 sm:rounded-2xl",
+          "relative z-50 w-full max-w-md rounded-t-2xl bg-white p-phi-5 shadow-xl dark:bg-gray-900 sm:rounded-2xl",
           "animate-in fade-in slide-in-from-bottom-4 duration-200",
           className
         )}
       >
         {/* Header */}
         {title && (
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-phi-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {title}
             </h2>
@@ -98,7 +98,7 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
   return (
     <div
       className={cn(
-        "mt-6 flex justify-end gap-3",
+        "mt-phi-5 flex justify-end gap-phi-3",
         className
       )}
     >

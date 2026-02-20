@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   OneToMany,
 } from "typeorm";
 import { UserTrackable } from "./user-trackable.entity";
@@ -22,11 +23,29 @@ export class User {
   @Column({ unique: true, length: 255 })
   email!: string;
 
-  @Column({ name: "password_hash", length: 255, select: false })
-  passwordHash!: string;
+  @Column({ name: "password_hash", type: "varchar", length: 255, nullable: true, select: false })
+  passwordHash!: string | null;
+
+  @Column({ name: "google_id", type: "varchar", unique: true, nullable: true })
+  googleId!: string | null;
+
+  @Column({ type: "varchar", nullable: true, length: 20 })
+  provider!: string | null;
+
+  @Column({ name: "avatar_url", type: "varchar", nullable: true })
+  avatarUrl!: string | null;
+
+  @Column({ name: "is_active", default: true })
+  isActive!: boolean;
+
+  @Column({ name: "last_login_at", type: "timestamptz", nullable: true })
+  lastLoginAt!: Date | null;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: "updated_at" })
+  updatedAt!: Date;
 
   @OneToMany(() => UserTrackable, (ut) => ut.user)
   trackables!: UserTrackable[];

@@ -1,130 +1,176 @@
-# Data Model – ChallengeOS (Postgres-first)
+# Data Model - Meus Desafios (Postgres-first)
 
 ## Overview
-Model around:
-- Users
-- Trackables (templates + user instances)
-- Logs (entries)
-- Computed stats (streaks, points)
-- Social graph (follow requests + approvals)
-- Leaderboard snapshots (privacy-safe)
+
+Data model supports:
+- routine tracking and daily evaluation
+- deterministic points/streak computation
+- optional social visibility controls
+- privacy-safe leaderboard outputs
 
 ---
 
-## Entities (suggested)
+## Core entities
 
 ### users
-- id (uuid, pk)
-- handle (unique)
-- display_name
-- created_at
+
+- `id` (uuid, pk)
+- `handle` (text, unique)
+- `display_name` (text)
+- `timezone` (text, default `UTC`)
+- `created_at` (timestamptz)
 
 ### trackable_templates
-Defines standard Trackables (Run/Bike/Swim/Gym/Sleep/Diet/Water).
-- id (uuid, pk)
-- code (unique, e.g., "WATER_DAILY")
-- name
-- category (enum)
-- default_goal_json (jsonb)
-- default_scoring_json (jsonb)
+
+Standard system templates map to 4 core challenges:
+- `WATER`
+- `DIET_CONTROL`
+- `SLEEP`
+- `PHYSICAL_EXERCISE`
+
+- `id` (uuid, pk)
+- `code` (text, unique)
+- `name` (text)
+- `category` (enum: `water`, `diet_control`, `sleep`, `physical_exercise`)
+- `default_goal_json` (jsonb)
+- `default_schedule_json` (jsonb)
+- `default_scoring_json` (jsonb)
+- `is_active` (bool)
 
 ### user_trackables
-A user’s activated instance of a template.
-- id (uuid, pk)
-- user_id (fk users)
-- template_id (fk trackable_templates)
-- goal_json (jsonb)          -- user override
-- schedule_json (jsonb)      -- daily/weekly, timezone, active days
-- scoring_json (jsonb)       -- user override (rare)
-- is_active (bool)
-- start_date
+
+User-specific activation and overrides.
+
+- `id` (uuid, pk)
+- `user_id` (fk users)
+- `template_id` (fk trackable_templates)
+- `goal_json` (jsonb)
+- `schedule_json` (jsonb)
+- `scoring_json` (jsonb)
+- `is_active` (bool)
+- `start_date` (date)
+- `created_at` (timestamptz)
+
+Recommended constraints:
+- one active challenge/trackable per `(user_id, template_id)`
 
 ### trackable_logs
-Authoritative input events.
-- id (uuid, pk)
-- user_id
-- user_trackable_id
-- occurred_at (timestamptz)  -- when it happened
-- value_num (numeric, nullable)
-- value_text (text, nullable)
-- meta_json (jsonb, nullable) -- e.g., source, notes
-- created_at
 
-Examples:
-- Water: value_num=500 (ml)
-- Run: value_num=6.2 (km) or 35 (minutes) + meta_json unit
-- Diet checklist: value_text="MET" or meta_json {items:[...]}
-- Sleep: meta_json {bedtime:"22:45", duration_min:420}
+Authoritative input events.
+
+- `id` (uuid, pk)
+- `user_id` (fk users)
+- `user_trackable_id` (fk user_trackables)
+- `occurred_at` (timestamptz)
+- `value_num` (numeric, nullable)
+- `value_text` (text, nullable)
+- `meta_json` (jsonb, nullable)
+- `meta_json.exercise_modality` (enum when category is physical exercise: `gym`, `run`, `cycling`, `swim`)
+- `idempotency_key` (text, nullable)
+- `created_at` (timestamptz)
+
+Recommended constraints:
+- unique `(user_id, idempotency_key)` when key is present
 
 ### computed_daily_stats
-Cache daily progress by trackable for speed.
-- id (uuid)
-- user_id
-- user_trackable_id
-- day (date)
-- progress_json (jsonb)      -- totals, flags
-- met_goal (bool)
-- points_earned (int)
-- updated_at
+
+Daily cache for fast reads.
+
+- `id` (uuid, pk)
+- `user_id` (fk users)
+- `user_trackable_id` (fk user_trackables)
+- `day` (date)
+- `progress_json` (jsonb)
+- `met_goal` (bool)
+- `points_earned` (int)
+- `updated_at` (timestamptz)
+
+Recommended constraints:
+- unique `(user_trackable_id, day)`
 
 ### streaks
-- id (uuid)
-- user_id
-- user_trackable_id
-- current_streak (int)
-- best_streak (int)
-- last_met_day (date)
-- updated_at
+
+Current and best streak state.
+
+- `id` (uuid, pk)
+- `user_id` (fk users)
+- `user_trackable_id` (fk user_trackables)
+- `current_streak` (int)
+- `best_streak` (int)
+- `last_met_day` (date, nullable)
+- `updated_at` (timestamptz)
+
+Recommended constraints:
+- unique `(user_trackable_id)`
 
 ### points_ledger
-Immutable points events.
-- id (uuid)
-- user_id
-- day (date)
-- source (enum: trackable_goal, streak_bonus, penalty, admin)
-- user_trackable_id (nullable)
-- points (int)
-- reason (text)
-- created_at
+
+Immutable point awards.
+
+- `id` (uuid, pk)
+- `user_id` (fk users)
+- `day` (date)
+- `source` (enum: `trackable_goal`, `streak_bonus`, `admin_adjustment`)
+- `user_trackable_id` (fk user_trackables, nullable)
+- `points` (int)
+- `reason` (text)
+- `reason_code` (text)
+- `dedupe_key` (text)
+- `created_at` (timestamptz)
+
+Recommended constraints:
+- unique `(dedupe_key)`
 
 ### follow_edges
-Controls visibility.
-- id (uuid)
-- requester_id (fk users)  -- who wants to follow
-- target_id (fk users)     -- who is being followed
-- status (enum: pending, accepted, denied, blocked)
-- created_at
-- updated_at
 
-### leaderboard_memberships
-Defines which “network leaderboard” a user participates in (accepted-only).
-Option A (simpler): derive at query time from follow_edges accepted.
-Option B (faster): materialize accepted graph periodically.
+Relationship state controlling visibility.
+
+- `id` (uuid, pk)
+- `requester_id` (fk users)
+- `target_id` (fk users)
+- `status` (enum: `pending`, `accepted`, `denied`, `blocked`)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+
+Recommended constraints:
+- unique `(requester_id, target_id)`
+- disallow self-follow (`requester_id != target_id`)
 
 ### leaderboard_snapshots
-Privacy-safe snapshots per scope (following/followers).
-- id (uuid)
-- scope_user_id (uuid)     -- user for whom this snapshot is computed
-- scope_type (enum: following, followers)
-- day (date)
-- rank (int)
-- score (int)
-- cohort_size (int)
-- percentile (numeric, nullable)
-- created_at
 
-> Important: store only the requesting user’s rank/score in the snapshot for privacy.
+Privacy-safe rank snapshots per user and scope.
 
----
+- `id` (uuid, pk)
+- `scope_user_id` (fk users)
+- `scope_type` (enum: `following`, `followers`)
+- `day` (date)
+- `rank` (int, nullable)
+- `score` (int)
+- `cohort_size` (int)
+- `percentile` (numeric, nullable)
+- `rank_status` (enum: `available`, `insufficient_cohort`)
+- `created_at` (timestamptz)
 
-## Indexing
-- trackable_logs (user_trackable_id, occurred_at desc)
-- computed_daily_stats (user_trackable_id, day)
-- follow_edges (requester_id, target_id, status)
-- points_ledger (user_id, day)
+Recommended constraints:
+- unique `(scope_user_id, scope_type, day)`
 
 ---
 
-## Notes
-- Keep points_ledger immutable to audit scoring.
-- Use computed_daily_stats and streaks as caches; recompute from logs if needed.
+## Indexing strategy
+
+- `trackable_logs (user_trackable_id, occurred_at desc)`
+- `trackable_logs (user_id, occurred_at desc)`
+- `computed_daily_stats (user_trackable_id, day)`
+- `points_ledger (user_id, day)`
+- `follow_edges (requester_id, status)`
+- `follow_edges (target_id, status)`
+- `leaderboard_snapshots (scope_user_id, day)`
+
+---
+
+## Invariants
+
+- `points_ledger` is immutable.
+- `computed_daily_stats` and `streaks` are caches; logs are source of truth.
+- Day evaluation uses `users.timezone`.
+- Leaderboard snapshots never store other users' identities.
