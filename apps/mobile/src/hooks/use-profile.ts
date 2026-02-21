@@ -25,7 +25,7 @@ export function useProfile(): UseProfileResult {
   const [error, setError] = useState<string | null>(null);
   const [handleAvailable, setHandleAvailable] = useState<boolean | null>(null);
   const [isCheckingHandle, setIsCheckingHandle] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchProfile = useCallback(async () => {
     try {

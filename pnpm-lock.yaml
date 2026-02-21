@@ -14,6 +14,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@expo/vector-icons':
+        specifier: ^15.0.3
+        version: 15.0.3(expo-font@14.0.11)(react-native@0.81.5)(react@19.1.0)
       '@meusdesafios/shared':
         specifier: workspace:*
         version: link:../../packages/shared
