@@ -38,7 +38,6 @@ Validation layer:
 
 - friend request status access matrix (`pending`, `accepted`, `denied`, `blocked`)
 - leaderboard endpoints return self result only
-- minimum cohort behavior
 - no top-N, no pagination, no neighbor leakage
 
 ### 5. UI behavior tests

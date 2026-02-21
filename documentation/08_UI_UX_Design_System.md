@@ -108,4 +108,4 @@ After logging, always show:
 
 - No active challenges: prompt core challenge activation.
 - No logs today: emphasize quickest next action.
-- Rank unavailable: explain minimum cohort requirement.
+- Rank unavailable: explain that location is required for nearby scope.

@@ -90,7 +90,6 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 ### Privacy Model (Critical)
 - Leaderboards return ONLY the requesting user's rank/score/cohort_size
 - Never expose: usernames, user IDs, neighbor ranks, or paginated lists
-- Minimum cohort size = 5 (below this, hide rank with `rankStatus: "insufficient_cohort"`)
 
 ### Timezone Safety (Critical)
 All date-to-string conversions MUST use local timezone getters (`getFullYear()`/`getMonth()`/`getDate()`), NOT `toISOString()` which converts to UTC. The standard pattern:

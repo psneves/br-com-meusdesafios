@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { HeartPulse, Droplets, Utensils, Moon, ArrowRight, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
+import { Modal } from "@/components/ui/Modal";
 
 const ONBOARDING_KEY = "meusdesafios-onboarding-done";
 
@@ -278,93 +279,91 @@ export function OnboardingModal({ onComplete }: OnboardingModalProps) {
     }
   }, [waterTarget, dietTarget, exerciseTarget, sleepTarget, onComplete]);
 
-  if (!visible) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="w-full max-w-sm rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl dark:bg-gray-900">
-        <div className="p-6">
-          <StepDots current={step} total={2} />
+    <Modal
+      isOpen={visible}
+      onClose={handleSkip}
+      className="max-w-sm"
+    >
+      <StepDots current={step} total={2} />
 
-          {step === 0 && (
-            <>
-              {/* Welcome */}
-              <div className="mt-8 flex flex-col items-center text-center">
-                <div className="mb-3 flex gap-2">
-                  <Droplets className="h-6 w-6 text-blue-500" />
-                  <Utensils className="h-6 w-6 text-emerald-500" />
-                  <Moon className="h-6 w-6 text-violet-500" />
-                  <HeartPulse className="h-6 w-6 text-rose-500" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Bem-vindo ao Meus Desafios!
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                  Vamos personalizar os seus 4 desafios para que se adaptem ao seu estilo de vida.
-                </p>
-              </div>
+      {step === 0 && (
+        <>
+          {/* Welcome */}
+          <div className="mt-8 flex flex-col items-center text-center">
+            <div className="mb-3 flex gap-2">
+              <Droplets className="h-6 w-6 text-blue-500" />
+              <Utensils className="h-6 w-6 text-emerald-500" />
+              <Moon className="h-6 w-6 text-violet-500" />
+              <HeartPulse className="h-6 w-6 text-rose-500" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              Bem-vindo ao Meus Desafios!
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+              Vamos personalizar os seus 4 desafios para que se adaptem ao seu estilo de vida.
+            </p>
+          </div>
 
-              <div className="mt-8 flex items-center justify-between">
-                <button
-                  onClick={handleSkip}
-                  className="text-sm font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  Usar padrões
-                </button>
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-                >
-                  Personalizar <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </>
-          )}
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              onClick={handleSkip}
+              className="text-sm font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+              Usar padrões
+            </button>
+            <button
+              onClick={() => setStep(1)}
+              className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              Personalizar <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </>
+      )}
 
-          {step === 1 && (
-            <>
-              {/* Configure all 4 challenges */}
-              <h2 className="mt-4 text-center text-base font-bold text-gray-900 dark:text-white">
-                Configure os seus desafios
-              </h2>
+      {step === 1 && (
+        <>
+          {/* Configure all 4 challenges */}
+          <h2 className="mt-4 text-center text-base font-bold text-gray-900 dark:text-white">
+            Configure os seus desafios
+          </h2>
 
-              <div className="mt-4 max-h-[60vh] space-y-5 overflow-y-auto">
-                <WaterSection weight={weight} onWeightChange={setWeight} />
-                <div className="border-t border-gray-100 dark:border-gray-800" />
-                <DietSection target={dietTarget} onTargetChange={setDietTarget} />
-                <div className="border-t border-gray-100 dark:border-gray-800" />
-                <ExerciseSection target={exerciseTarget} onTargetChange={setExerciseTarget} />
-                <div className="border-t border-gray-100 dark:border-gray-800" />
-                <SleepSection target={sleepTarget} onTargetChange={setSleepTarget} />
-              </div>
+          <div className="mt-4 max-h-[60vh] space-y-5 overflow-y-auto">
+            <WaterSection weight={weight} onWeightChange={setWeight} />
+            <div className="border-t border-gray-100 dark:border-gray-800" />
+            <DietSection target={dietTarget} onTargetChange={setDietTarget} />
+            <div className="border-t border-gray-100 dark:border-gray-800" />
+            <ExerciseSection target={exerciseTarget} onTargetChange={setExerciseTarget} />
+            <div className="border-t border-gray-100 dark:border-gray-800" />
+            <SleepSection target={sleepTarget} onTargetChange={setSleepTarget} />
+          </div>
 
-              <div className="mt-5 flex items-center justify-between">
-                <button
-                  onClick={() => setStep(0)}
-                  className="text-sm font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  Voltar
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {isSaving ? (
-                    <>
-                      Salvando <Loader2 className="h-4 w-4 animate-spin" />
-                    </>
-                  ) : (
-                    <>
-                      Começar <Check className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          <div className="mt-5 flex items-center justify-between">
+            <button
+              onClick={() => setStep(0)}
+              className="text-sm font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+              Voltar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  Salvando <Loader2 className="h-4 w-4 animate-spin" />
+                </>
+              ) : (
+                <>
+                  Começar <Check className="h-4 w-4" />
+                </>
+              )}
+            </button>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }

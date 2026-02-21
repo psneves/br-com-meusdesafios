@@ -81,12 +81,10 @@ Outcomes:
 
 Key tasks:
 - [x] `GET /api/leaderboards/rank?scope=friends|nearby`
-- [x] minimum cohort behavior
 - [ ] snapshot/cache strategy — not yet implemented
 
 Exit criteria:
 - endpoints expose self-rank only
-- insufficient cohort returns rank unavailable
 
 ---
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Trophy, Users, MapPin, Loader2, Info } from "lucide-react";
+import { Trophy, Users, MapPin, Loader2, Info, UserMinus } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
@@ -35,7 +35,15 @@ function LeaderboardSkeleton() {
 
 // ── Participant Row ──────────────────────────────────────
 
-function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
+function ParticipantCard({
+  row,
+  me,
+  onUnfriend,
+}: {
+  row: ParticipantRow;
+  me: boolean;
+  onUnfriend?: () => void;
+}) {
   return (
     <div
       className={cn(
@@ -57,9 +65,21 @@ function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
 
       {/* Name + handle + active challenges */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-          {row.user.displayName}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900 dark:text-white">
+            {row.user.displayName}
+          </p>
+          {!me && onUnfriend && (
+            <button
+              onClick={onUnfriend}
+              aria-label={`Desfazer amizade com ${row.user.displayName}`}
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+            >
+              <UserMinus className="h-3 w-3" />
+              Remover
+            </button>
+          )}
+        </div>
         {row.user.handle && (
           <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">@{row.user.handle}</p>
         )}
@@ -102,6 +122,19 @@ export default function LeaderboardPage() {
   const [isActivatingLocation, setIsActivatingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showPointsInfo, setShowPointsInfo] = useState(false);
+  const [unfriendTarget, setUnfriendTarget] = useState<{ userId: string; displayName: string } | null>(null);
+
+  const handleUnfriend = useCallback(async () => {
+    if (!unfriendTarget) return;
+    try {
+      await fetch(`/api/social/friends/${unfriendTarget.userId}`, { method: "DELETE" });
+      leaderboard.refresh();
+    } catch (err) {
+      console.error("[unfriend]", err);
+    } finally {
+      setUnfriendTarget(null);
+    }
+  }, [unfriendTarget, leaderboard]);
 
   const activateLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -463,6 +496,11 @@ export default function LeaderboardPage() {
                           key={`top-${row.user.id}`}
                           row={row}
                           me={row.user.id === session.user?.id}
+                          onUnfriend={
+                            !isNearby && row.user.id !== session.user?.id
+                              ? () => setUnfriendTarget({ userId: row.user.id, displayName: row.user.displayName })
+                              : undefined
+                          }
                         />
                       ))}
                     </div>
@@ -480,6 +518,11 @@ export default function LeaderboardPage() {
                             key={`around-${row.user.id}`}
                             row={row}
                             me={row.user.id === session.user?.id}
+                            onUnfriend={
+                              !isNearby && row.user.id !== session.user?.id
+                                ? () => setUnfriendTarget({ userId: row.user.id, displayName: row.user.displayName })
+                                : undefined
+                            }
                           />
                         ))}
                       </div>
@@ -503,6 +546,11 @@ export default function LeaderboardPage() {
                         key={`all-${row.user.id}`}
                         row={row}
                         me={row.user.id === session.user?.id}
+                        onUnfriend={
+                          !isNearby && row.user.id !== session.user?.id
+                            ? () => setUnfriendTarget({ userId: row.user.id, displayName: row.user.displayName })
+                            : undefined
+                        }
                       />
                     ))}
                   </div>
@@ -522,6 +570,31 @@ export default function LeaderboardPage() {
           </section>
         </>
       )}
+
+      {/* Unfriend confirmation modal */}
+      <Modal
+        isOpen={unfriendTarget !== null}
+        onClose={() => setUnfriendTarget(null)}
+        title="Desfazer amizade"
+      >
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Deseja desfazer a amizade com <strong className="text-gray-900 dark:text-white">{unfriendTarget?.displayName}</strong>?
+        </p>
+        <div className="mt-phi-4 flex justify-end gap-phi-3">
+          <button
+            onClick={() => setUnfriendTarget(null)}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleUnfriend}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Desfazer amizade
+          </button>
+        </div>
+      </Modal>
 
       {/* XP rules modal */}
       <Modal

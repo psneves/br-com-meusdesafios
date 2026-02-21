@@ -11,7 +11,7 @@ export interface RankData {
   score: number;
   cohortSize: number;
   percentile: number | null;
-  rankStatus: "available" | "insufficient_cohort" | "no_location";
+  rankStatus: "available" | "no_location";
 }
 
 export interface ChallengeRank {

@@ -79,16 +79,12 @@ export default async function PrivacyPage() {
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>
-              Solicitações de seguir requerem aceitação explícita para que outro
+              Solicitações de amizade requerem aceitação explícita para que outro
               usuário veja suas estatísticas
             </li>
             <li>
-              Rankings exibem apenas sua própria posição, pontuação e tamanho do
-              grupo — nunca expondo nomes, IDs ou posições de outros usuários
-            </li>
-            <li>
-              Se seu grupo tiver menos de 5 participantes, a posição será
-              ocultada para proteção adicional
+              Rankings exibem sua posição, pontuação e tamanho do grupo entre
+              seus amigos — sem expor dados detalhados de outros usuários
             </li>
           </ul>
         </section>
@@ -139,8 +135,14 @@ export default async function PrivacyPage() {
             <li>Solicitar portabilidade dos dados</li>
           </ul>
           <p>
-            Para exercer qualquer desses direitos, entre em contato pelo e-mail
-            indicado abaixo.
+            Para exercer qualquer desses direitos, incluindo a exclusão da sua
+            conta e de todos os dados associados, envie um e-mail para{" "}
+            <a
+              href="mailto:contato@meusdesafios.com.br"
+              className="text-indigo-600 hover:underline dark:text-indigo-400"
+            >
+              contato@meusdesafios.com.br
+            </a>.
           </p>
         </section>
 
@@ -149,7 +151,7 @@ export default async function PrivacyPage() {
             7. Retenção de Dados
           </h2>
           <p>
-            Mantemos seus dados enquanto sua conta estiver ativa. Após a
+            Mantemos seus dados enquanto sua conta estiver ativa. Ao solicitar a
             exclusão da conta, seus dados pessoais serão removidos em até 30
             dias, exceto quando a retenção for necessária por obrigação legal.
           </p>

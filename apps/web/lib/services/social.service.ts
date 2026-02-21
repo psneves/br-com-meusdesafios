@@ -304,6 +304,31 @@ export async function acceptFollowRequest(
   await edgeRepo.save(edge);
 }
 
+// ── unfriend ─────────────────────────────────────────────
+
+export async function unfriend(
+  currentUserId: string,
+  friendUserId: string
+): Promise<void> {
+  const ds = await getDataSource();
+  const edgeRepo = ds.getRepository(FollowEdge);
+
+  const edge = await edgeRepo
+    .createQueryBuilder("e")
+    .where("e.status = :status", { status: "accepted" })
+    .andWhere(
+      "((e.requester_id = :a AND e.target_id = :b) OR (e.requester_id = :b AND e.target_id = :a))",
+      { a: currentUserId, b: friendUserId }
+    )
+    .getOne();
+
+  if (!edge) {
+    throw new Error("Friend not found");
+  }
+
+  await edgeRepo.remove(edge);
+}
+
 // ── denyFollowRequest ─────────────────────────────────────
 
 export async function denyFollowRequest(

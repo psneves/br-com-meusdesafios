@@ -81,7 +81,6 @@ This reduces timing-based inference risk and query load.
 
 - No top-N or pagination endpoints.
 - No endpoint to query rank of arbitrary user.
-- Minimum cohort size rule: if `< 5`, rank unavailable.
 - Rate limiting and response caching for rank endpoints are not yet implemented.
 
 ---
@@ -90,9 +89,9 @@ This reduces timing-based inference risk and query load.
 
 The response contains `overall` (aggregate rank) and `challengeRanks` (per-category ranks).
 
-`rankStatus` values: `"available"`, `"insufficient_cohort"` (cohort < 5), `"no_location"` (nearby scope without user location).
+`rankStatus` values: `"available"`, `"no_location"` (nearby scope without user location).
 
-When cohort is sufficient:
+When cohort is available:
 
 ```json
 {
@@ -117,29 +116,12 @@ When cohort is sufficient:
 }
 ```
 
-When cohort is too small:
-
-```json
-{
-  "overall": {
-    "scope": "friends",
-    "rank": null,
-    "score": 1880,
-    "cohortSize": 3,
-    "percentile": null,
-    "rankStatus": "insufficient_cohort"
-  },
-  "challengeRanks": []
-}
-```
-
 ---
 
 ## UX copy guidance
 
 Use motivating but privacy-safe language:
 - "Your position this week"
-- "Rank unavailable: not enough participants yet"
 - "You are in the top 15%"
 
 Avoid language that implies named competition.

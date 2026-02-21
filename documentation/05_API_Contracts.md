@@ -298,11 +298,7 @@ Example:
 }
 ```
 
-`rankStatus` values: `"available"`, `"insufficient_cohort"` (cohort < 5), `"no_location"` (nearby scope without user location).
-
-If `cohortSize < 5`, return:
-- `rank = null`
-- `rankStatus = "insufficient_cohort"`
+`rankStatus` values: `"available"`, `"no_location"` (nearby scope without user location).
 
 Never return:
 - usernames of others
