@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useProfile } from "../../src/hooks/use-profile";
 import { useAuthStore } from "../../src/stores/auth.store";
 import { AvatarPicker } from "../../src/components/AvatarPicker";
+import { NotificationSettings } from "../../src/components/NotificationSettings";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
 import { typography } from "../../src/theme/typography";
@@ -178,6 +179,9 @@ export default function ProfileScreen() {
             <Text style={styles.editButtonText}>Editar perfil</Text>
           </Pressable>
         )}
+
+        {/* Notification Preferences */}
+        <NotificationSettings />
 
         {/* Logout */}
         <Pressable style={styles.logoutButton} onPress={handleLogout}>

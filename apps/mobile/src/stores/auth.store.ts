@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Crypto from "expo-crypto";
 import { Platform } from "react-native";
 import type { SessionUser } from "@meusdesafios/shared";
-import { api, AuthError } from "../api/client";
+import { api, AuthError, NetworkError } from "../api/client";
 
 const DEVICE_ID_KEY = "meusdesafios_device_id";
 
@@ -103,9 +103,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       const user = await api.get<SessionUser>("/api/mobile/auth/me");
       set({ user, isAuthenticated: true, isLoading: false });
-    } catch {
-      await api.clearTokens();
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        // Network error — keep tokens, assume offline
+        set({ isLoading: false });
+      } else {
+        // Auth error or other — clear tokens
+        await api.clearTokens();
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      }
     }
   },
 }));

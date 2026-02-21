@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useAuthStore } from "../src/stores/auth.store";
+import { startQueueFlushListener } from "../src/services/queue-flush";
+import { registerForPushNotifications } from "../src/services/push-notifications";
 import { colors } from "../src/theme/colors";
 
 function AuthGate() {
@@ -14,6 +16,14 @@ function AuthGate() {
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
+
+  // Start offline queue flush listener and register push notifications
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const unsubscribe = startQueueFlushListener();
+    registerForPushNotifications();
+    return unsubscribe;
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isLoading) return;

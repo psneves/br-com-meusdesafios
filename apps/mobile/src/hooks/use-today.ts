@@ -5,7 +5,8 @@ import type {
   WeeklySummary,
   MonthlySummary,
 } from "@meusdesafios/shared";
-import { api } from "../api/client";
+import { api, NetworkError } from "../api/client";
+import { useOfflineQueueStore } from "../stores/offline-queue.store";
 
 /** Format date as YYYY-MM-DD using local timezone (not UTC). */
 function localDateStr(d: Date): string {
@@ -140,7 +141,17 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         // Reconcile with server state in background
         fetchToday();
       } catch (err) {
-        // Revert optimistic update on error
+        if (err instanceof NetworkError) {
+          // Keep optimistic update, queue for later
+          useOfflineQueueStore.getState().enqueue({
+            userTrackableId: cardId,
+            valueNum: value,
+            date: dateStr,
+            meta,
+          });
+          return;
+        }
+        // Revert optimistic update on other errors
         applyOptimisticUpdate(cardId, -value);
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }

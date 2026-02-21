@@ -29,3 +29,13 @@ export async function upsertMobileDevice(
     await repo.save(device);
   }
 }
+
+export async function updatePushToken(
+  userId: string,
+  deviceId: string,
+  pushToken: string
+): Promise<void> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(MobileDevice);
+  await repo.update({ userId, deviceId }, { pushToken });
+}

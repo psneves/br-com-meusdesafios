@@ -5,6 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "Meus Desafios",
   slug: "meusdesafios",
   scheme: "meusdesafios",
+  owner: "meusdesafios",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -19,6 +20,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: false,
     bundleIdentifier: "com.meusdesafios.app",
     usesAppleSignIn: true,
+    infoPlist: {
+      UIBackgroundModes: ["remote-notification"],
+    },
   },
   android: {
     adaptiveIcon: {
@@ -27,8 +31,25 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     package: "com.meusdesafios.app",
   },
-  plugins: ["expo-router", "expo-secure-store", "expo-image-picker"],
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-image-picker",
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "Permitir que $(PRODUCT_NAME) use sua localização para o ranking perto de você.",
+      },
+    ],
+    "expo-notifications",
+  ],
   extra: {
     apiBaseUrl: process.env.API_BASE_URL || "http://localhost:3000",
+    privacyPolicyUrl: "https://meusdesafios.com.br/privacy",
+    termsOfUseUrl: "https://meusdesafios.com.br/terms",
+    eas: {
+      projectId: "YOUR_EAS_PROJECT_ID",
+    },
   },
 });

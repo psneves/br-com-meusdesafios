@@ -14,6 +14,13 @@ export class AuthError extends Error {
   }
 }
 
+export class NetworkError extends Error {
+  constructor(message = "Network request failed") {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
 export class ApiError extends Error {
   code: string;
   statusCode: number;
@@ -123,7 +130,13 @@ class ApiClient {
     if (this.accessToken) {
       headers.set("Authorization", `Bearer ${this.accessToken}`);
     }
-    return fetch(`${BASE_URL}${path}`, { ...options, headers });
+    try {
+      return await fetch(`${BASE_URL}${path}`, { ...options, headers });
+    } catch (err) {
+      throw new NetworkError(
+        err instanceof Error ? err.message : "Network request failed"
+      );
+    }
   }
 
   private async parseResponse<T>(res: Response): Promise<T> {
@@ -169,8 +182,11 @@ class ApiClient {
 
       await this.setTokens(json.data.accessToken, json.data.refreshToken);
       return true;
-    } catch {
-      return false;
+    } catch (err) {
+      // Network error during refresh — don't treat as invalid token
+      throw new NetworkError(
+        err instanceof Error ? err.message : "Network request failed"
+      );
     }
   }
 }
