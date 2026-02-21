@@ -1,22 +1,9 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import type { ProfileData, UpdateProfileInput } from "@meusdesafios/shared";
 
-export interface ProfileData {
-  id: string;
-  handle: string;
-  firstName: string;
-  lastName: string;
-  displayName: string;
-  email: string;
-  avatarUrl: string | null;
-}
-
-export interface UpdateProfileInput {
-  firstName: string;
-  lastName: string;
-  handle: string;
-}
+export type { ProfileData, UpdateProfileInput } from "@meusdesafios/shared";
 
 interface UseProfileResult {
   profile: ProfileData | null;
