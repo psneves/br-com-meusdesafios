@@ -40,12 +40,14 @@ Each card includes:
 - points earned today
 - quick actions
 
-### 2. Challenge detail
+### 2. Challenge detail (not yet implemented)
 
-Tabs:
+Planned tabs:
 - `Overview`: trends, status, and summary metrics
 - `Logs`: entries list and add interaction
 - `Rules`: transparent scoring logic
+
+Currently, logging is done via modal dialogs on the Today page.
 
 ### 3. Social
 
@@ -54,11 +56,14 @@ Tabs:
 - suggested users with "Adicionar" action
 - rank cards (self rank only)
 
-### 4. Challenges
+### 4. Challenges (not yet implemented)
 
+Planned:
 - challenge template list (built around the 4 core challenges)
 - join action
 - clear list of activated challenges
+
+Currently, challenges are auto-provisioned on first login.
 
 ---
 
@@ -66,10 +71,10 @@ Tabs:
 
 ### Quick actions by category
 
-- Water: `+250`, `+500`, `+750`, `Custom`
-- Diet Control: `Met today` toggle/action
-- Sleep: bedtime + duration quick form
-- Physical Exercise: modality picker (`gym`, `run`, `cycling`, `swim`) + duration/distance/session input
+- Water: `+100`, `+200`, `+250`, `+300`, `+500`, `+750`, `+1000`
+- Diet Control: multi-meal checklist (per-meal compliant/non-compliant toggle)
+- Sleep: duration presets and slider (hours)
+- Physical Exercise: modality picker (`gym`, `run`, `cycling`, `swim`) + duration input
 
 ### Feedback states
 

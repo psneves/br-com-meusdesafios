@@ -12,8 +12,8 @@ interface EmptyStateProps {
 export function EmptyState({
   title = "Sem desafios ativos",
   description = "Começa a tua jornada ativando alguns desafios para acompanhar o teu progresso.",
-  actionLabel = "Entrar em um desafio",
-  actionHref = "/trackables/activate",
+  actionLabel = "Configurar perfil",
+  actionHref = "/profile",
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center dark:border-gray-700 dark:bg-gray-900/50">

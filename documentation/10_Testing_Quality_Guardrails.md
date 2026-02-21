@@ -4,7 +4,7 @@
 
 - Scoring and streak logic is deterministic and auditable.
 - Privacy constraints are enforced at API and data-access layers.
-- Logging flows remain fast, stable, and idempotent.
+- Logging flows remain fast and stable. Idempotency at the raw-log level is not yet implemented.
 
 ---
 
@@ -25,7 +25,7 @@ Validation layer:
 ### 2. Integration tests (service + DB)
 
 - log creation -> daily recompute -> ledger writes
-- idempotency key behavior for repeated submissions
+- duplicate log handling and rate limiting
 - recompute correctness after backfilled logs
 
 ### 3. API contract tests
@@ -64,7 +64,7 @@ Validation layer:
 ## Operational guardrails
 
 - server is source of truth for points, streaks, and rank
-- points ledger is immutable
+- points ledger entries are deleted/rewritten per trackable+day during recompute (not append-only)
 - all schema changes use migrations
 - scoring jobs emit audit logs and error telemetry
 
@@ -74,7 +74,7 @@ Validation layer:
 
 - P95 latency targets for Today and logging endpoints
 - leaderboard endpoint caching strategy validated
-- recompute jobs retry safely without double-awards
+- recompute jobs delete/rewrite ledger safely without double-awards
 
 ---
 

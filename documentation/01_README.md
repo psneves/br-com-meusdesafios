@@ -57,6 +57,6 @@ Quality gates, test matrix, and release checklist.
 
 - API examples use `/api/*` routes.
 - Scoring, streaks, and ranks are server-authoritative.
-- "Day" is user-local day based on configured timezone.
+- "Day" is determined using server-local date math (currently assumes `America/Sao_Paulo`). Per-user timezone configuration is not yet implemented.
 - Social visibility is opt-in via accepted relationships only.
 - Physical Exercise is one combined challenge with modalities: gym, run, cycling, and swim.

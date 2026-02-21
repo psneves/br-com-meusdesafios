@@ -40,7 +40,7 @@ All core challenges must follow the same structure:
 - logging entry points (quick + optional detailed)
 - daily evaluation
 - streak and point calculation
-- Today card + Detail page with `Overview | Logs | Rules`
+- Today card with quick logging (Detail page with `Overview | Logs | Rules` is not yet implemented)
 
 Core challenges for MVP:
 - Water

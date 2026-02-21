@@ -12,7 +12,7 @@ pnpm build        # Production build (also validates TypeScript)
 pnpm lint         # ESLint with next/core-web-vitals
 ```
 
-No web-specific tests exist yet. Shared package tests are run from the monorepo root with `pnpm --filter @meusdesafios/shared test`.
+E2E tests exist in `__tests__/e2e.spec.ts` (Playwright). Shared package tests are run from the monorepo root with `pnpm --filter @meusdesafios/shared test`.
 
 ## Architecture
 
@@ -25,24 +25,28 @@ app/
   (app)/
     layout.tsx        # Authenticated shell (sticky nav, max-w-5xl container)
     today/page.tsx    # Main dashboard (client component)
+    explore/page.tsx  # Social explore (search, friend requests)
+    leaderboard/page.tsx  # Privacy-safe rank display
+    profile/page.tsx  # Profile editing, avatar, settings
 ```
 
-Pages under `(app)/` share the navigation layout. Routes for `/leaderboard` and `/profile` are linked in the nav but not yet implemented.
+Pages under `(app)/` share the navigation layout. All four pages (today, explore, leaderboard, profile) are fully implemented.
 
-### Data Flow (Mock Mode)
+### Data Flow
 
-The app currently runs entirely on mock data. The toggle is `USE_MOCK = true` in `lib/hooks/use-today.ts`.
+The app fetches data from API routes. Each page has a corresponding client hook:
 
 1. `use-today.ts` hook manages all state for the Today page (cards, loading, error, feedback)
-2. Mock data comes from `lib/mock/today-data.ts` (4 core challenge cards, with Physical Exercise modalities)
-3. Quick actions perform optimistic UI updates with simulated delay
-4. When `USE_MOCK = false`, the hook switches to `fetch("/api/trackables/today")` and `POST /api/trackables/log`
+2. Data is fetched from `/api/trackables/today` and logs are posted to `POST /api/trackables/log`
+3. Quick actions perform optimistic UI updates
+4. Feedback toast shows points/streak changes after logging
 
 ### Component Organization
 
 - `components/ui/` — Reusable primitives (Button, Card, Badge, ProgressBar). All support variant/size props via `cn()` utility.
 - `components/trackables/` — Domain components for trackable cards (TrackableCard, StreakBadge, PointsChip, QuickActionRow, TrackableProgress).
 - `components/today/` — Page-level composition (TodayHeader, TrackableList, EmptyState, FeedbackToast).
+- `components/onboarding/` — Onboarding modal flow.
 
 Both `ui/` and `trackables/` have barrel `index.ts` exports.
 

@@ -18,10 +18,10 @@ Outcomes:
 - auth scaffolding
 
 Key tasks:
-- [ ] repo setup, lint, format, test scripts
-- [ ] DB schema + migrations
-- [ ] seed 4 core challenge templates (`WATER`, `DIET_CONTROL`, `SLEEP`, `PHYSICAL_EXERCISE`)
-- [ ] auth/session middleware baseline
+- [x] repo setup, lint, format, test scripts
+- [x] DB schema + migrations
+- [x] seed 4 core challenge templates (`WATER`, `DIET_CONTROL`, `SLEEP`, `PHYSICAL_EXERCISE`)
+- [x] auth/session middleware baseline
 
 Exit criteria:
 - app boots locally
@@ -33,15 +33,14 @@ Exit criteria:
 Outcomes:
 - fully usable Today flow
 - quick logging for primary categories
-- detail pages with rules visibility
 - combined Physical Exercise experience (gym/run/cycling/swim in one card)
 
 Key tasks:
-- [ ] `GET /api/trackables/today`
-- [ ] `POST /api/trackables/log`
-- [ ] Today cards + quick actions UI
-- [ ] Challenge detail (`Overview | Logs | Rules`)
-- [ ] Physical Exercise modality logging and aggregation
+- [x] `GET /api/trackables/today`
+- [x] `POST /api/trackables/log`
+- [x] Today cards + quick actions UI
+- [ ] Challenge detail (`Overview | Logs | Rules`) — not yet implemented
+- [x] Physical Exercise modality logging and aggregation
 
 Exit criteria:
 - common log actions in <= 2 taps
@@ -51,13 +50,12 @@ Exit criteria:
 
 Outcomes:
 - deterministic points and streak mechanics
-- explainability endpoint and UI surface
 
 Key tasks:
-- [ ] daily aggregation pipeline
-- [ ] streak evaluator
-- [ ] immutable points ledger writes with dedupe keys
-- [ ] `GET /api/scoring/explanations`
+- [x] daily aggregation pipeline
+- [x] streak evaluator
+- [x] points ledger writes (delete/rewrite per trackable+day during recompute)
+- [ ] `GET /api/scoring/explanations` — not yet implemented
 
 Exit criteria:
 - scoring tests pass for all goal types
@@ -69,9 +67,9 @@ Outcomes:
 - friend request controls and accepted visibility gating (mutual/symmetric model)
 
 Key tasks:
-- [ ] friend request endpoints (send/accept/deny/cancel)
-- [ ] accept/deny flows with auto-accept for mutual requests
-- [ ] friends list and explore page
+- [x] friend request endpoints (send/accept/deny/cancel)
+- [x] accept/deny flows with auto-accept for mutual requests
+- [x] friends list and explore page
 
 Exit criteria:
 - non-accepted relationships cannot access private stats
@@ -82,9 +80,9 @@ Outcomes:
 - rank-only leaderboard with inference resistance
 
 Key tasks:
-- [ ] `GET /api/leaderboards/rank?scope=friends|nearby`
-- [ ] minimum cohort behavior
-- [ ] snapshot/cache strategy
+- [x] `GET /api/leaderboards/rank?scope=friends|nearby`
+- [x] minimum cohort behavior
+- [ ] snapshot/cache strategy — not yet implemented
 
 Exit criteria:
 - endpoints expose self-rank only
@@ -95,15 +93,16 @@ Exit criteria:
 ## Prioritized backlog (P0/P1)
 
 P0:
-- [ ] timezone-safe day attribution
-- [ ] idempotent logging and point awards
+- [ ] timezone-safe day attribution (currently uses server-local time)
+- [ ] idempotent logging (no idempotency key yet)
 - [ ] rules tab content generation from config
-- [ ] privacy middleware coverage on all social/rank endpoints
+- [ ] challenge detail page (`Overview | Logs | Rules`)
 
 P1:
 - [ ] challenge templates and join flow polish
-- [ ] weekly summary cards
+- [x] weekly summary cards
 - [ ] reminder scheduling hooks
+- [ ] rate limiting and caching for leaderboard endpoint
 
 ---
 

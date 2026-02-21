@@ -63,8 +63,8 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 
 ### API Routes (21 endpoints)
 **Auth:** `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/logout`
-**Profile:** `GET|PATCH /api/profile`, `POST /api/profile/avatar`, `GET /api/profile/check-handle`, `PATCH /api/profile/location`
-**Trackables:** `GET /api/trackables/today`, `POST /api/trackables/log`, `PUT /api/trackables/active`, `PATCH /api/trackables/goal`, `GET /api/trackables/settings`, `GET /api/trackables/summary`
+**Profile:** `GET|PATCH /api/profile`, `POST /api/profile/avatar`, `GET /api/profile/check-handle`, `GET|PUT /api/profile/location`
+**Trackables:** `GET /api/trackables/today`, `POST /api/trackables/log`, `PUT /api/trackables/active`, `PUT /api/trackables/goal`, `GET /api/trackables/settings`, `GET /api/trackables/summary`
 **Social:** `GET /api/social/explore`, `POST /api/social/follow-request`, `GET /api/social/search`, `POST /api/social/follow-requests/[id]/accept`, `POST /api/social/follow-requests/[id]/deny`, `POST /api/social/follow-requests/[id]/cancel`
 **Leaderboard:** `GET /api/leaderboards/rank`
 
@@ -73,9 +73,11 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 ### Server-Authoritative Scoring
 - Points, streaks, and ranks calculated server-side only
 - Base points: +10 XP for meeting daily goal
-- Streak bonuses: +5 (day 3), +10 (day 7), +20 (day 14), +50 (day 30)
+- Streak bonuses: configurable per trackable via `ScoringConfig.streakBonuses` (default is empty — no milestone bonuses)
+- Perfect day bonus: +10 XP when all active challenges are met on the same day
+- Weekly bonuses: awarded for completed weeks
 - Scoring engine: `packages/shared/src/scoring/` — `evaluateGoal()`, `updateStreak()`, `calculateStreakBonus()`, `computeDayResult()`
-- Recompute pipeline in `trackable.service.ts#createLog()`: insert log → evaluate goal → update ComputedDailyStats → update Streak → write PointsLedger
+- Recompute pipeline in `trackable.service.ts#createLog()`: insert log → evaluate goal → update ComputedDailyStats → update Streak → delete/rewrite PointsLedger entries for that trackable+day
 
 ### Social Model (Friends — Mutual/Symmetric)
 - Uses a symmetric friends model: when A sends a request and B accepts, they become mutual friends via a single edge in `follow_edges`
@@ -103,11 +105,11 @@ function dayString(d: Date): string {
 
 ## Key TypeORM Entities (`packages/db/src/entities/`)
 
-`User`, `TrackableTemplate` (4 challenge types), `UserTrackable` (activated with goal overrides), `TrackableLog` (input events), `ComputedDailyStats` (cached daily progress), `Streak` (current/best per trackable), `PointsLedger` (immutable point audit trail), `FollowEdge` (friends graph: pending/accepted/denied/blocked — symmetric model), `LeaderboardSnapshot`
+`User`, `TrackableTemplate` (4 challenge types), `UserTrackable` (activated with goal overrides), `TrackableLog` (input events), `ComputedDailyStats` (cached daily progress), `Streak` (current/best per trackable), `PointsLedger` (point audit trail, delete/rewrite per trackable+day during recompute), `FollowEdge` (friends graph: pending/accepted/denied/blocked — symmetric model), `LeaderboardSnapshot`
 
 ## Environment Variables
 
-Required: `DATABASE_URL` (PostgreSQL), `NEXTAUTH_URL` (app base URL), `SECRET_COOKIE_PASSWORD` (32+ chars for iron-session), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+Required: `DATABASE_URL` (PostgreSQL), `SECRET_COOKIE_PASSWORD` (32+ chars for iron-session), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
 ## Key Documentation Files (`/documentation/`)
 
@@ -119,13 +121,13 @@ Required: `DATABASE_URL` (PostgreSQL), `NEXTAUTH_URL` (app base URL), `SECRET_CO
 
 ## Testing
 
-Tests live in `packages/shared/tests/`. 18 scoring tests cover goal evaluation, streak transitions, and point calculation. Run with `pnpm --filter @meusdesafios/shared test:run`.
+Tests live in `packages/shared/tests/`. 19 scoring tests cover goal evaluation, streak transitions, and point calculation. E2E tests exist in `apps/web/__tests__/e2e.spec.ts`. Run scoring tests with `pnpm --filter @meusdesafios/shared test:run`.
 
 ## Edge Cases to Handle
 
 - Timezone boundaries for late-night logs (use local date, not UTC)
 - Sleep entries spanning midnight
-- Duplicate logs and idempotency
+- Duplicate logs (no idempotency key yet — relies on rate limiting)
 - User deactivates/reactivates challenges
 - Cohort too small for leaderboard display (< 5)
 - `ComputedDailyStats.day` may be a Date object or string depending on context — always normalize with `dayString()`

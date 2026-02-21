@@ -82,22 +82,38 @@ This reduces timing-based inference risk and query load.
 - No top-N or pagination endpoints.
 - No endpoint to query rank of arbitrary user.
 - Minimum cohort size rule: if `< 5`, rank unavailable.
-- Apply rate limiting and response caching to rank endpoints.
+- Rate limiting and response caching for rank endpoints are not yet implemented.
 
 ---
 
 ## API output rules
 
+The response contains `overall` (aggregate rank) and `challengeRanks` (per-category ranks).
+
+`rankStatus` values: `"available"`, `"insufficient_cohort"` (cohort < 5), `"no_location"` (nearby scope without user location).
+
 When cohort is sufficient:
 
 ```json
 {
-  "scope": "friends",
-  "rank": 42,
-  "score": 1880,
-  "cohortSize": 315,
-  "percentile": 0.87,
-  "rankStatus": "available"
+  "overall": {
+    "scope": "friends",
+    "rank": 42,
+    "score": 1880,
+    "cohortSize": 315,
+    "percentile": 0.87,
+    "rankStatus": "available"
+  },
+  "challengeRanks": [
+    {
+      "category": "WATER",
+      "name": "Água",
+      "rank": 10,
+      "score": 500,
+      "cohortSize": 315,
+      "percentile": 0.97
+    }
+  ]
 }
 ```
 
@@ -105,12 +121,15 @@ When cohort is too small:
 
 ```json
 {
-  "scope": "friends",
-  "rank": null,
-  "score": 1880,
-  "cohortSize": 3,
-  "percentile": null,
-  "rankStatus": "insufficient_cohort"
+  "overall": {
+    "scope": "friends",
+    "rank": null,
+    "score": 1880,
+    "cohortSize": 3,
+    "percentile": null,
+    "rankStatus": "insufficient_cohort"
+  },
+  "challengeRanks": []
 }
 ```
 

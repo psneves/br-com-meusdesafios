@@ -62,7 +62,7 @@ A predefined bundle of core challenges and starter configurations that accelerat
 
 ### Day boundary
 
-A "day" is evaluated in the user's configured timezone.
+A "day" is currently evaluated using server-local date math (assumes `America/Sao_Paulo`). Per-user timezone configuration is not yet implemented.
 
 ---
 
@@ -80,12 +80,14 @@ A "day" is evaluated in the user's configured timezone.
 - Users can log common actions in 1-2 taps.
 - Users can see immediate feedback: progress, points, streak impact.
 
-### Detail experience
+### Detail experience (not yet implemented)
 
-Each challenge detail screen includes:
+Each challenge detail screen will include:
 - `Overview`: current week trend and status
 - `Logs`: entries + add flow
 - `Rules`: exact scoring and streak criteria
+
+Currently, logging is done via modal dialogs on the Today page.
 
 ### Scoring + streaks
 
@@ -111,13 +113,12 @@ Each challenge detail screen includes:
 
 ### Sleep
 
-- As a user, I can track bedtime and/or sleep duration.
+- As a user, I can track sleep duration.
 - As a user, I can see streaks tied to sleep consistency.
 
 ### Diet Control
 
-- As a user, I can mark diet compliance with a checklist.
-- As a user, I can optionally log one numeric nutrition metric.
+- As a user, I can mark per-meal diet compliance with a multi-meal checklist.
 
 ### Water
 
@@ -138,7 +139,7 @@ Each challenge detail screen includes:
 ## Non-functional requirements
 
 - Privacy-controlled by default.
-z- Explainable scoring outputs.
+- Explainable scoring outputs.
 - Deterministic recomputation from logs.
 - API schema validation on all inputs and outputs.
 

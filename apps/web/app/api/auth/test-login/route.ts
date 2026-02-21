@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { successResponse, errors } from "@/lib/api/response";
 
 /**
  * Test-only login endpoint. Creates a session without Google OAuth.
@@ -8,14 +8,14 @@ import { getSession } from "@/lib/auth/session";
 export async function POST(request: Request) {
   const testKey = process.env.TEST_LOGIN_KEY;
   if (!testKey || process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Not available" }, { status: 404 });
+    return errors.notFound("Endpoint");
   }
 
   try {
     const body = await request.json();
 
     if (body.key !== testKey) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return errors.unauthorized();
     }
 
     const session = await getSession();
@@ -30,9 +30,9 @@ export async function POST(request: Request) {
 
     await session.save();
 
-    return NextResponse.json({ ok: true });
+    return successResponse({ authenticated: true });
   } catch (err) {
     console.error("[POST /api/auth/test-login]", err);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
+    return errors.serverError("Failed to create test session");
   }
 }

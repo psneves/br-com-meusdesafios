@@ -11,7 +11,7 @@
 
 ## Day attribution
 
-- Every log is mapped to a user-local day based on `users.timezone`.
+- Every log is mapped to a day using server-local date math (currently assumes `America/Sao_Paulo`). Per-user timezone via `users.timezone` is not yet implemented.
 - Recompute can be triggered for any affected day when backfilled logs arrive.
 - Cross-midnight activities (for example sleep) are evaluated using challenge-specific rules.
 
@@ -39,7 +39,7 @@ Met when event occurs within configured time boundary.
 
 ### Streak bonuses
 
-- Perfect day (ALL challenges met on current day): `+10`)
+- Perfect day (ALL challenges met on current day): `+10`
 - Weekly goal (7/7 days met for a single challenge, Mon–Sun): `+10` per challenge
 - Perfect week (ALL challenges met ALL 7 days, Mon–Sun): `+10`
 
@@ -60,18 +60,11 @@ Weekly bonuses are evaluated at the end of the ISO week (Monday–Sunday).
 
 ### Diet Control
 
-Mode A (default): checklist compliance event (`MET` / `NOT_MET`).
-
-Mode B (optional): one numeric metric:
-- protein target (`>= target`) or
-- calories range (`min <= value <= max`)
+Multi-meal checklist: user configures number of meals per day (3-7). Each meal can be marked as compliant or non-compliant. Met when compliant meals count reaches the configured target.
 
 ### Sleep
 
-Config options:
-- minimum duration
-
-Met when all configured conditions are true.
+Duration-only logging: user logs hours of sleep via presets or slider. Met when `total_hours >= target_hours`. Bedtime tracking is not yet implemented.
 
 ### Physical Exercise
 
@@ -82,10 +75,9 @@ One combined exercise challenge with modality-specific logs:
 - `swim`
 
 MVP behavior:
-- goal can be duration, distance, or session completion
-- each exercise log must carry `exercise_modality`
-- met when configured daily target is reached across valid exercise logs
-- detail UI can break down totals per modality, while scoring is challenge-level
+- goal is duration-based (minutes)
+- exercise logs carry an optional `exerciseModality` field in metadata
+- met when configured daily duration target is reached across valid exercise logs
 
 ---
 
@@ -98,15 +90,15 @@ For each `(user_trackable_id, day)`:
 4. Update streak state (`current`, `best`, `last_met_day`).
 5. Write base point event when transitioning to met state.
 6. Write streak bonus events when milestone thresholds are hit.
-7. Ensure all ledger inserts use dedupe keys.
+7. Delete existing ledger entries for the same trackable+day+source before inserting new ones.
 
 ---
 
-## Dedupe and idempotency
+## Recompute and idempotency
 
-- `trackable_logs.idempotency_key` prevents duplicate raw entries.
-- `points_ledger.dedupe_key` prevents double-awarding points.
-- Recompute is safe to run multiple times for the same day.
+- Idempotency at the raw-log level (`trackable_logs.idempotency_key`) is **not yet implemented**. Duplicate prevention relies on client-side guards and rate limiting.
+- Points ledger entries for `trackable_goal` and `streak_bonus` are **deleted and rewritten** during recompute for the same trackable+day (not append-only).
+- Recompute is safe to run multiple times for the same day — the delete/rewrite approach ensures consistency.
 
 ---
 

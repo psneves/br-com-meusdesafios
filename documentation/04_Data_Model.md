@@ -146,7 +146,7 @@ Snapshot table available in schema (currently not used by leaderboard service lo
 
 - `id` (uuid, pk, default `uuid_generate_v4()`)
 - `scope_user_id` (uuid, fk `users.id`, not null)
-- `scope_type` (enum: `friends`)
+- `scope_type` (enum: `friends`; legacy values `following`/`followers` may still exist in the DB type from pre-migration)
 - `day` (date, not null)
 - `rank` (int, not null)
 - `score` (int, not null)
