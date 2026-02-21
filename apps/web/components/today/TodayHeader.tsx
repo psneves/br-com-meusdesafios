@@ -9,6 +9,118 @@ import { WeeklySummaryPanel } from "@/components/today/WeeklySummaryPanel";
 import { MonthlySummaryPanel } from "@/components/today/MonthlySummaryPanel";
 import type { WeeklySummary, MonthlySummary } from "@/lib/types/today";
 
+// ── KPI pill styling helper ─────────────────────────────
+
+type KpiState = "primary" | "active" | "dimmed" | "default";
+
+function getKpiState(
+  pill: "today" | "week" | "month",
+  expandedKpi: "week" | "month" | null
+): KpiState {
+  if (pill === "today") return expandedKpi ? "dimmed" : "primary";
+  if (expandedKpi === pill) return "active";
+  if (expandedKpi !== null) return "dimmed";
+  return "default";
+}
+
+const KPI_PILL_BG: Record<KpiState, string> = {
+  primary: "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40",
+  active:  "bg-indigo-50 dark:bg-indigo-950/25",
+  dimmed:  "bg-white/40 dark:bg-gray-900/20",
+  default: "bg-white/80 dark:bg-gray-900/40",
+};
+
+const KPI_VALUE_COLOR: Record<KpiState, string> = {
+  primary: "text-indigo-600 dark:text-indigo-400",
+  active:  "text-indigo-600 dark:text-indigo-400",
+  dimmed:  "text-gray-300 dark:text-gray-600",
+  default: "text-gray-800 dark:text-gray-100",
+};
+
+const KPI_LABEL_COLOR: Record<KpiState, string> = {
+  primary: "text-indigo-500/80 dark:text-indigo-400/70",
+  active:  "text-indigo-500/80 dark:text-indigo-400/70",
+  dimmed:  "text-gray-300 dark:text-gray-600",
+  default: "text-gray-400 dark:text-gray-500",
+};
+
+// ── Avatar helper ───────────────────────────────────────
+
+function HeaderAvatar({
+  url,
+  name,
+  onError,
+}: {
+  url?: string;
+  name?: string;
+  onError: () => void;
+}) {
+  const cls = "h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800";
+
+  if (!url) {
+    return (
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+        <User className="h-7 w-7 text-gray-400 dark:text-gray-500" />
+      </div>
+    );
+  }
+
+  if (url.startsWith("data:")) {
+    /* eslint-disable-next-line @next/next/no-img-element */
+    return <img src={url} alt={name || "Avatar"} className={cls} />;
+  }
+
+  return (
+    <Image
+      src={url}
+      alt={name || "Avatar"}
+      width={56}
+      height={56}
+      className={cls}
+      onError={onError}
+    />
+  );
+}
+
+// ── Expanded KPI panel ──────────────────────────────────
+
+function KpiDetailPanel({
+  expandedKpi,
+  weekSummary,
+  monthSummary,
+  pointsWeek,
+  pointsMonth,
+}: {
+  expandedKpi: "week" | "month";
+  weekSummary?: WeeklySummary;
+  monthSummary?: MonthlySummary;
+  pointsWeek: number;
+  pointsMonth: number;
+}) {
+  if (expandedKpi === "week" && weekSummary) {
+    return <WeeklySummaryPanel summary={weekSummary} />;
+  }
+  if (expandedKpi === "month" && monthSummary) {
+    return <MonthlySummaryPanel summary={monthSummary} />;
+  }
+
+  const points = expandedKpi === "week" ? pointsWeek : pointsMonth;
+  const goalsMet = points > 0 ? Math.ceil(points / 10) : 0;
+
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className="text-gray-500 dark:text-gray-400">
+        {goalsMet} {goalsMet === 1 ? "meta batida" : "metas batidas"}
+      </span>
+      <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-300">
+        {points} XP
+      </span>
+    </div>
+  );
+}
+
+// ── Component ───────────────────────────────────────────
+
 interface TodayHeaderProps {
   greeting: string;
   date: string;
@@ -80,37 +192,17 @@ export function TodayHeader({
     });
   };
 
-  // Mock detail data derived from points
-  const weekGoalsMet = pointsWeek > 0 ? Math.ceil(pointsWeek / 10) : 0;
-  const monthGoalsMet = pointsMonth > 0 ? Math.ceil(pointsMonth / 10) : 0;
-
   return (
     <header className={cn("space-y-3 pt-2", className)}>
       {/* Top row: avatar + info (left)  |  day nav (right) */}
       <div className="flex items-center">
         {/* Avatar + name + follow counts */}
         <div className="flex min-w-0 items-center gap-phi-3">
-          {!avatarUrl || avatarError ? (
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-              <User className="h-7 w-7 text-gray-400 dark:text-gray-500" />
-            </div>
-          ) : avatarUrl.startsWith("data:") ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={avatarUrl}
-              alt={userName || "Avatar"}
-              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
-            />
-          ) : (
-            <Image
-              src={avatarUrl}
-              alt={userName || "Avatar"}
-              width={56}
-              height={56}
-              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
-              onError={() => setAvatarError(true)}
-            />
-          )}
+          <HeaderAvatar
+            url={avatarError ? undefined : avatarUrl}
+            name={userName}
+            onError={() => setAvatarError(true)}
+          />
           <div className="min-w-0">
             {userName && (
               <p className="truncate text-[15px] font-bold leading-tight text-gray-900 dark:text-white">
@@ -167,94 +259,104 @@ export function TodayHeader({
       <div className="rounded-2xl bg-gray-50 p-phi-2 dark:bg-gray-800/30">
         <div className="grid gap-phi-2" style={{ gridTemplateColumns: "1.618fr 1fr 1fr" }}>
           {/* Primary: Pontos hoje */}
-          <button
-            onClick={() => {
-              if (expandedKpi) {
-                setExpandedKpi(null);
-                onKpiChange?.(null);
-              } else {
-                setShowPointsInfo(true);
-              }
-            }}
-            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-indigo-50 px-phi-2 py-phi-3 transition-colors hover:bg-indigo-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1 dark:bg-indigo-950/25 dark:hover:bg-indigo-950/40"
-            aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
-          >
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tabular-nums leading-none text-indigo-600 dark:text-indigo-400">
-                {totalPoints}
-              </span>
-              <span className="text-sm font-bold text-indigo-500/80 dark:text-indigo-400/70">XP</span>
-              <Info className="mb-auto mt-0.5 h-3 w-3 text-indigo-400/50 dark:text-indigo-500/50" />
-            </div>
-            <span className="mt-1 text-[11px] font-medium leading-none text-indigo-500/80 dark:text-indigo-400/70">
-              {dayLabel}
-            </span>
-          </button>
+          {(() => {
+            const s = getKpiState("today", expandedKpi);
+            return (
+              <button
+                onClick={() => {
+                  if (expandedKpi) {
+                    setExpandedKpi(null);
+                    onKpiChange?.(null);
+                  } else {
+                    setShowPointsInfo(true);
+                  }
+                }}
+                className={cn(
+                  "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-phi-2 py-phi-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1",
+                  KPI_PILL_BG[s]
+                )}
+                aria-label={`${totalPoints} XP ${dayLabel}. Toque para saber mais`}
+              >
+                <div className="flex items-baseline gap-1">
+                  <span className={cn("text-3xl font-extrabold tabular-nums leading-none transition-colors duration-200", KPI_VALUE_COLOR[s])}>
+                    {totalPoints}
+                  </span>
+                  <span className={cn("text-sm font-bold transition-colors duration-200", KPI_LABEL_COLOR[s])}>XP</span>
+                  <Info className={cn("mb-auto mt-0.5 h-3 w-3 transition-colors duration-200", KPI_LABEL_COLOR[s])} />
+                </div>
+                <span className={cn("mt-1 text-[11px] font-medium leading-none transition-colors duration-200", KPI_LABEL_COLOR[s])}>
+                  {dayLabel}
+                </span>
+              </button>
+            );
+          })()}
           {/* Secondary: Semana */}
-          <button
-            onClick={() => toggleKpi("week")}
-            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-white/80 px-phi-2 py-phi-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1 dark:bg-gray-900/40"
-            aria-label={`${pointsWeek} XP na semana`}
-            aria-expanded={expandedKpi === "week"}
-          >
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-                {pointsWeek}
-              </span>
-              <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
-            </div>
-            <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
-              Semana
-              <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "week" && "rotate-180")} />
-            </span>
-          </button>
+          {(() => {
+            const s = getKpiState("week", expandedKpi);
+            return (
+              <button
+                onClick={() => toggleKpi("week")}
+                className={cn(
+                  "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-phi-2 py-phi-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+                  s === "active" ? "focus-visible:ring-indigo-400" : "focus-visible:ring-gray-400",
+                  KPI_PILL_BG[s]
+                )}
+                aria-label={`${pointsWeek} XP na semana`}
+                aria-expanded={expandedKpi === "week"}
+              >
+                <div className="flex items-baseline gap-1">
+                  <span className={cn("text-xl font-extrabold tabular-nums leading-none transition-colors duration-200", KPI_VALUE_COLOR[s])}>
+                    {pointsWeek}
+                  </span>
+                  <span className={cn("text-sm font-bold transition-colors duration-200", KPI_LABEL_COLOR[s])}>XP</span>
+                </div>
+                <span className={cn("mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none transition-colors duration-200", KPI_LABEL_COLOR[s])}>
+                  Semana
+                  <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-200", expandedKpi === "week" && "rotate-180")} />
+                </span>
+              </button>
+            );
+          })()}
           {/* Secondary: Mês */}
-          <button
-            onClick={() => toggleKpi("month")}
-            className="flex min-h-[60px] flex-col items-center justify-center rounded-2xl bg-white/80 px-phi-2 py-phi-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-1 dark:bg-gray-900/40"
-            aria-label={`${pointsMonth} XP no mês`}
-            aria-expanded={expandedKpi === "month"}
-          >
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-extrabold tabular-nums leading-none text-gray-800 dark:text-gray-100">
-                {pointsMonth}
-              </span>
-              <span className="text-sm font-bold text-gray-400 dark:text-gray-500">XP</span>
-            </div>
-            <span className="mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none text-gray-400 dark:text-gray-500">
-              Mês
-              <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", expandedKpi === "month" && "rotate-180")} />
-            </span>
-          </button>
+          {(() => {
+            const s = getKpiState("month", expandedKpi);
+            return (
+              <button
+                onClick={() => toggleKpi("month")}
+                className={cn(
+                  "flex min-h-[60px] flex-col items-center justify-center rounded-2xl px-phi-2 py-phi-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+                  s === "active" ? "focus-visible:ring-indigo-400" : "focus-visible:ring-gray-400",
+                  KPI_PILL_BG[s]
+                )}
+                aria-label={`${pointsMonth} XP no mês`}
+                aria-expanded={expandedKpi === "month"}
+              >
+                <div className="flex items-baseline gap-1">
+                  <span className={cn("text-xl font-extrabold tabular-nums leading-none transition-colors duration-200", KPI_VALUE_COLOR[s])}>
+                    {pointsMonth}
+                  </span>
+                  <span className={cn("text-sm font-bold transition-colors duration-200", KPI_LABEL_COLOR[s])}>XP</span>
+                </div>
+                <span className={cn("mt-1 flex items-center gap-0.5 text-[11px] font-medium leading-none transition-colors duration-200", KPI_LABEL_COLOR[s])}>
+                  Mês
+                  <ChevronDown className={cn("h-2.5 w-2.5 transition-transform duration-200", expandedKpi === "month" && "rotate-180")} />
+                </span>
+              </button>
+            );
+          })()}
         </div>
       </div>
 
       {/* Expanded KPI detail */}
       {expandedKpi && (
         <div className="rounded-xl bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
-          {expandedKpi === "week" && weekSummary ? (
-            <WeeklySummaryPanel summary={weekSummary} />
-          ) : expandedKpi === "week" ? (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400">
-                {weekGoalsMet} {weekGoalsMet === 1 ? "meta batida" : "metas batidas"}
-              </span>
-              <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-300">
-                {pointsWeek} XP
-              </span>
-            </div>
-          ) : expandedKpi === "month" && monthSummary ? (
-            <MonthlySummaryPanel summary={monthSummary} />
-          ) : (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500 dark:text-gray-400">
-                {monthGoalsMet} {monthGoalsMet === 1 ? "meta batida" : "metas batidas"}
-              </span>
-              <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-300">
-                {pointsMonth} XP
-              </span>
-            </div>
-          )}
+          <KpiDetailPanel
+            expandedKpi={expandedKpi}
+            weekSummary={weekSummary}
+            monthSummary={monthSummary}
+            pointsWeek={pointsWeek}
+            pointsMonth={pointsMonth}
+          />
         </div>
       )}
 
