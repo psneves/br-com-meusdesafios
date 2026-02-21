@@ -498,7 +498,7 @@ export default function ProfilePage() {
               </p>
               <p className="text-[11px] text-gray-400 dark:text-gray-500">
                 {locationActive && locationStatus?.updatedAt
-                  ? `Célula aproximada (~${locationStatus.precisionKm} km). Atualizada em ${new Date(locationStatus.updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}`
+                  ? `Localização aproximada (~${locationStatus.precisionKm} km). Atualizada em ${new Date(locationStatus.updatedAt).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}.`
                   : "Usada no ranking regional sem salvar localização precisa"}
               </p>
             </div>

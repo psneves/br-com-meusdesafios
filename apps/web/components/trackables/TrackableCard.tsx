@@ -59,7 +59,7 @@ export function TrackableCard({
       <div className="min-w-0 space-y-1">
         {/* Row 1: Name + check + streak + points (all inline) */}
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 dark:text-white">
             {card.name}
           </span>
           {card.progress.met && (
@@ -68,7 +68,7 @@ export function TrackableCard({
               aria-label="Meta cumprida"
             />
           )}
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <StreakBadge current={card.streak.current} showBest={false} />
             <PointsChip points={card.pointsToday} size="sm" />
           </div>

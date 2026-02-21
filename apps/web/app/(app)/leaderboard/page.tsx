@@ -307,7 +307,7 @@ export default function LeaderboardPage() {
             <div>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">Ative sua localização</p>
               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                Usamos apenas célula aproximada (~5 km), sem salvar coordenadas precisas.
+                Usamos apenas localização aproximada (~5 km), sem salvar coordenadas precisas.
               </p>
             </div>
             <button
