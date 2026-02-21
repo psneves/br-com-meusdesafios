@@ -16,8 +16,9 @@ export function middleware(request: NextRequest) {
   ) {
     const origin = request.headers.get("origin");
     if (origin) {
-      const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-      const allowedOrigin = new URL(appUrl).origin;
+      const host = request.headers.get("host") ?? "";
+      const proto = request.headers.get("x-forwarded-proto") ?? "https";
+      const allowedOrigin = `${proto}://${host}`;
       if (origin !== allowedOrigin) {
         return NextResponse.json(
           { success: false, error: { code: "FORBIDDEN", message: "Invalid origin" } },
