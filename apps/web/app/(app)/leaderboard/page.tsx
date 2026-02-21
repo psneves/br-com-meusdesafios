@@ -511,14 +511,6 @@ export default function LeaderboardPage() {
           </section>
         </>
       )}
-
-      {/* Privacy / location notice */}
-      <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
-        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
-        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          No ranking &quot;Perto de mim&quot;, apenas a localização aproximada (~5 km) é usada. Coordenadas precisas não são armazenadas.
-        </p>
-      </div>
     </div>
   );
 }
