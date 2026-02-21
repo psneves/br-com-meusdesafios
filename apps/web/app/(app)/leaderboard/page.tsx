@@ -58,11 +58,6 @@ function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
           {row.user.displayName}
-          {me && (
-            <span className="ml-1 text-[10px] font-semibold text-indigo-500 dark:text-indigo-400">
-              você
-            </span>
-          )}
         </p>
         {row.user.handle && (
           <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">@{row.user.handle}</p>
