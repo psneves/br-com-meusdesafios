@@ -23,7 +23,8 @@ pnpm db:seed                # Seed trackable templates
 ## Repository Structure
 
 ```
-/apps/web                   # Next.js 14 App Router (UI + API routes)
+/apps/web                   # Next.js 14 App Router (UI + API routes + backend)
+/apps/mobile                # Expo SDK 54 React Native app (iOS + Android)
 /packages/shared            # TypeScript types, Zod schemas, scoring engine
 /packages/db                # TypeORM entities, migrations, seeds
 /documentation              # Product specs and requirements
@@ -31,12 +32,16 @@ pnpm db:seed                # Seed trackable templates
 
 ## Architecture
 
-### Auth System
-- **iron-session** (NOT NextAuth) — encrypted HTTP-only cookie `meusdesafios-session`, 7-day expiry
-- Google OAuth flow: `/api/auth/google` → Google → `/api/auth/google/callback`
-- Session fields: `id`, `handle`, `firstName`, `lastName`, `displayName`, `email`, `isLoggedIn`, `provider`
-- Middleware (`apps/web/middleware.ts`) protects `/today`, `/explore`, `/leaderboard`, `/profile`, `/settings`
-- Auth helpers: `apps/web/lib/auth/{session,oauth,user}.ts`
+### Dual-Platform Auth
+- **Web:** iron-session (NOT NextAuth) — encrypted HTTP-only cookie `meusdesafios-session`, 7-day expiry
+- **Mobile:** JWT Bearer tokens — stored in expo-secure-store, auto-refresh on 401
+- **Web auth flow:** `/api/auth/google` → Google → `/api/auth/google/callback`
+- **Mobile auth flow:** Google/Apple native sign-in → `POST /api/mobile/auth/google` (or `/apple`) with idToken → receive accessToken + refreshToken
+- **Backend accepts both:** cookie-based (web) and Bearer token (mobile) via `authenticateMobileRequest()` middleware
+- **Google OAuth audience:** Backend accepts both web and iOS client IDs as valid audiences in `verifyGoogleToken()`
+- Session fields: `id`, `handle`, `firstName`, `lastName`, `displayName`, `email`, `isLoggedIn`, `provider`, `friendsCount`
+- Web middleware (`apps/web/middleware.ts`) protects `/today`, `/explore`, `/leaderboard`, `/profile`, `/settings`
+- Auth helpers: `apps/web/lib/auth/{session,oauth,user,mobile-token}.ts`
 
 ### Request Flow
 ```
@@ -61,8 +66,17 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 - **use-explore.ts** — Social explore, search, friend request management
 - **use-challenge-settings.ts** — Challenge settings dialog
 
-### API Routes (21 endpoints)
-**Auth:** `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/logout`
+### Mobile Client Hooks (`apps/mobile/src/hooks/`)
+Mirror the web hooks but use JWT Bearer auth via `api.get/post/put/delete()`:
+- **use-today.ts** — Today data + logging + optimistic updates + offline queue
+- **use-profile.ts** — Profile CRUD + avatar upload + handle availability
+- **use-explore.ts** — Social search + friend requests + unfriend
+- **use-leaderboard.ts** — Ranking with period/scope/radius/pagination
+- **use-location.ts** — Geolocation + geohash for nearby ranking
+
+### API Routes (21+ endpoints)
+**Auth (Web):** `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/logout`
+**Auth (Mobile):** `POST /api/mobile/auth/google`, `POST /api/mobile/auth/apple`, `POST /api/mobile/auth/refresh`, `GET /api/mobile/auth/me`, `POST /api/mobile/auth/logout`, `POST /api/mobile/devices/push-token`
 **Profile:** `GET|PATCH /api/profile`, `POST /api/profile/avatar`, `GET /api/profile/check-handle`, `GET|PUT /api/profile/location`
 **Trackables:** `GET /api/trackables/today`, `POST /api/trackables/log`, `PUT /api/trackables/active`, `PUT /api/trackables/goal`, `GET /api/trackables/settings`, `GET /api/trackables/summary`
 **Social:** `GET /api/social/explore`, `POST /api/social/follow-request`, `GET /api/social/search`, `POST /api/social/follow-requests/[id]/accept`, `POST /api/social/follow-requests/[id]/deny`, `POST /api/social/follow-requests/[id]/cancel`
@@ -108,7 +122,8 @@ function dayString(d: Date): string {
 
 ## Environment Variables
 
-Required: `DATABASE_URL` (PostgreSQL), `SECRET_COOKIE_PASSWORD` (32+ chars for iron-session), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+**Web (`apps/web/.env`):** `DATABASE_URL` (PostgreSQL), `SECRET_COOKIE_PASSWORD` (32+ chars), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_IOS_CLIENT_ID`
+**Mobile (`apps/mobile/.env`):** `API_BASE_URL`, `GOOGLE_WEB_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`, `SENTRY_DSN`
 
 ## Key Documentation Files (`/documentation/`)
 
@@ -122,6 +137,14 @@ Required: `DATABASE_URL` (PostgreSQL), `SECRET_COOKIE_PASSWORD` (32+ chars for i
 
 Tests live in `packages/shared/tests/`. 19 scoring tests cover goal evaluation, streak transitions, and point calculation. E2E tests exist in `apps/web/__tests__/e2e.spec.ts`. Run scoring tests with `pnpm --filter @meusdesafios/shared test:run`.
 
+## Category Display Order
+
+Challenges always display in this fixed order (enforced server-side via `CATEGORY_ORDER` in `trackable.service.ts`):
+1. Água (WATER)
+2. Dieta (DIET_CONTROL)
+3. Exercício Físico (PHYSICAL_EXERCISE)
+4. Sono (SLEEP)
+
 ## Edge Cases to Handle
 
 - Timezone boundaries for late-night logs (use local date, not UTC)
@@ -130,3 +153,5 @@ Tests live in `packages/shared/tests/`. 19 scoring tests cover goal evaluation, 
 - User deactivates/reactivates challenges
 - Cohort too small for leaderboard display (< 5)
 - `ComputedDailyStats.day` may be a Date object or string depending on context — always normalize with `dayString()`
+- **iOS app icon/splash caching:** Changing `assets/icon.png` may not update the native build — must also replace `ios/MeusDesafios/Images.xcassets/` assets and delete app from simulator
+- **`@meusdesafios/db` rebuild:** After modifying `packages/db/src/`, run `cd packages/db && pnpm build` — mobile and web import from `dist/`

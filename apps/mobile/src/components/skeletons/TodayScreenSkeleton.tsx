@@ -6,7 +6,7 @@ import { spacing } from "../../theme/spacing";
 
 export function TodayScreenSkeleton() {
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.content}>
         {/* Header: avatar + user info + settings gear */}
         <View style={styles.header}>

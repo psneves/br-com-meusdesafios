@@ -1,8 +1,39 @@
 import { Tabs } from "expo-router";
+import { View, Image, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { haptics } from "../../src/utils/haptics";
 import { colors } from "../../src/theme/colors";
 import { useOfflineQueueStore } from "../../src/stores/offline-queue.store";
+
+function AppHeaderTitle() {
+  return (
+    <View style={headerStyles.container}>
+      <Image
+        source={require("../../assets/icon.png")}
+        style={headerStyles.logo}
+      />
+      <Text style={headerStyles.title}>Meus Desafios</Text>
+    </View>
+  );
+}
+
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  logo: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: colors.gray[900],
+  },
+});
 
 export default function TabLayout() {
   const queueCount = useOfflineQueueStore((s) => s.queue.length);
@@ -30,6 +61,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Hoje",
+          headerTitle: () => <AppHeaderTitle />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="today-outline" size={size} color={color} />
           ),
@@ -49,6 +81,7 @@ export default function TabLayout() {
         name="leaderboard"
         options={{
           title: "Ranking",
+          headerTitle: () => <AppHeaderTitle />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trophy-outline" size={size} color={color} />
           ),

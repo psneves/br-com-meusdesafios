@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#0ea5e9",
+    backgroundColor: "#ffffff",
   },
   ios: {
     supportsTablet: false,
@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "expo-notifications",
+    "@react-native-community/datetimepicker",
     [
       "@react-native-google-signin/google-signin",
       {

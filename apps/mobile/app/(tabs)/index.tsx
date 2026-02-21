@@ -19,8 +19,13 @@ import { WeeklySummaryCard } from "../../src/components/WeeklySummaryCard";
 import { MonthlySummaryCard } from "../../src/components/MonthlySummaryCard";
 import { ChallengeSettingsSheet } from "../../src/components/ChallengeSettingsSheet";
 import { TodayScreenSkeleton } from "../../src/components/skeletons/TodayScreenSkeleton";
+import { WaterLoggerSheet } from "../../src/components/logging/WaterLoggerSheet";
+import { SleepLoggerSheet } from "../../src/components/logging/SleepLoggerSheet";
+import { ActivityLoggerSheet } from "../../src/components/logging/ActivityLoggerSheet";
+import { DietLoggerSheet } from "../../src/components/logging/DietLoggerSheet";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
+import type { TrackableCategory, ExerciseModality } from "@meusdesafios/shared";
 
 function startOfDay(date: Date): Date {
   const d = new Date(date);
@@ -79,7 +84,7 @@ export default function TodayScreen() {
     monthSummary,
     isLoading,
     feedback,
-    logQuickAction,
+    logValue,
     clearFeedback,
     refresh,
   } = useToday(selectedDate);
@@ -88,6 +93,18 @@ export default function TodayScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
+  // ── Logging modal state ───────────────────────────────────
+  const [activeModal, setActiveModal] = useState<{
+    cardId: string;
+    category: TrackableCategory;
+  } | null>(null);
+
+  const activeCard = activeModal
+    ? data?.cards.find((c) => c.userTrackableId === activeModal.cardId) ?? null
+    : null;
+
+  const handleCloseModal = useCallback(() => setActiveModal(null), []);
+
   const onRefresh = async () => {
     haptics.light();
     setRefreshing(true);
@@ -95,14 +112,49 @@ export default function TodayScreen() {
     setRefreshing(false);
   };
 
-  // Card action: trigger the first quick action
+  // Card action: open category-specific logging sheet (matching web pattern)
   const handleRegister = useCallback(
     (cardId: string) => {
       const card = data?.cards.find((c) => c.userTrackableId === cardId);
-      if (!card || card.quickActions.length === 0) return;
-      logQuickAction(cardId, card.quickActions[0].id);
+      if (card) {
+        haptics.light();
+        setActiveModal({ cardId, category: card.category });
+      }
     },
-    [data, logQuickAction]
+    [data]
+  );
+
+  // ── Modal log handlers ───────────────────────────────────
+  const handleWaterLog = useCallback(
+    (amount: number) => {
+      if (activeModal) logValue(activeModal.cardId, amount);
+    },
+    [activeModal, logValue]
+  );
+
+  const handleSleepLog = useCallback(
+    (durationMin: number) => {
+      if (activeModal) logValue(activeModal.cardId, durationMin);
+    },
+    [activeModal, logValue]
+  );
+
+  const handleActivityLog = useCallback(
+    (value: number, modality: ExerciseModality) => {
+      if (activeModal) logValue(activeModal.cardId, value, { exerciseModality: modality });
+    },
+    [activeModal, logValue]
+  );
+
+  const handleDietLog = useCallback(
+    (successCount: number) => {
+      if (!activeModal || !data) return;
+      const card = data.cards.find((c) => c.userTrackableId === activeModal.cardId);
+      if (!card) return;
+      const delta = successCount - card.progress.value;
+      if (delta !== 0) logValue(activeModal.cardId, delta);
+    },
+    [activeModal, data, logValue]
   );
 
   if (isLoading) {
@@ -110,7 +162,7 @@ export default function TodayScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -184,6 +236,44 @@ export default function TodayScreen() {
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
       />
+
+      {/* ── Category Logging Sheets ── */}
+      {activeCard && activeModal?.category === "WATER" && (
+        <WaterLoggerSheet
+          visible
+          currentProgress={activeCard.progress.value}
+          target={activeCard.goal.target}
+          onLog={handleWaterLog}
+          onClose={handleCloseModal}
+        />
+      )}
+      {activeCard && activeModal?.category === "SLEEP" && (
+        <SleepLoggerSheet
+          visible
+          targetMin={activeCard.goal.target}
+          onLog={handleSleepLog}
+          onClose={handleCloseModal}
+        />
+      )}
+      {activeCard && activeModal?.category === "PHYSICAL_EXERCISE" && (
+        <ActivityLoggerSheet
+          visible
+          currentProgress={activeCard.progress.value}
+          target={activeCard.goal.target}
+          onLog={handleActivityLog}
+          onClose={handleCloseModal}
+        />
+      )}
+      {activeCard && activeModal?.category === "DIET_CONTROL" && (
+        <DietLoggerSheet
+          visible
+          currentProgress={activeCard.progress.value}
+          currentBreakdown={activeCard.breakdown}
+          target={activeCard.goal.target}
+          onLog={handleDietLog}
+          onClose={handleCloseModal}
+        />
+      )}
     </SafeAreaView>
   );
 }
