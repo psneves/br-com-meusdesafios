@@ -127,48 +127,60 @@ export async function ensureUserTrackables(
   const ds = await getDataSource();
   const utRepo = ds.getRepository(UserTrackable);
 
+  // Fast path — user already has trackables
   let userTrackables = await utRepo.find({
     where: { userId },
     relations: ["template"],
   });
-
   if (userTrackables.length > 0) return userTrackables;
 
-  // New user — provision all 4 templates (race-safe with ON CONFLICT)
-  const templateRepo = ds.getRepository(TrackableTemplate);
-  const templates = await templateRepo.find();
-  const today = dayString(new Date());
+  // New user — provision inside a transaction with advisory lock to prevent duplicates
+  // Advisory lock key: hash the userId to a stable int (auto-released on tx end)
+  const lockKey = Math.trunc(userId.split("").reduce((acc, c) => (acc << 5) - acc + (c.codePointAt(0) ?? 0), 0));
 
-  for (const template of templates) {
-    const goal =
-      GOAL_OVERRIDES[template.category] ?? template.defaultGoal;
+  await ds.transaction(async (manager) => {
+    await manager.query(`SELECT pg_advisory_xact_lock($1)`, [lockKey]);
 
-    const schedule = { type: "daily", timezone: "America/Sao_Paulo" };
+    // Re-check inside lock — another request may have already provisioned
+    const existing = await manager.getRepository(UserTrackable).find({
+      where: { userId },
+    });
+    if (existing.length > 0) return;
 
-    // ON CONFLICT prevents duplicates when concurrent requests race
-    await ds.query(
-      `INSERT INTO user_trackables (user_id, template_id, goal, schedule, scoring, start_date)
-       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6)
-       ON CONFLICT (user_id, template_id) DO NOTHING`,
-      [userId, template.id, JSON.stringify(goal), JSON.stringify(schedule), JSON.stringify(template.defaultScoring), today]
-    );
-  }
+    const templates = await manager.getRepository(TrackableTemplate).find();
+    const today = dayString(new Date());
+    const utRepo2 = manager.getRepository(UserTrackable);
+    const streakRepo = manager.getRepository(StreakEntity);
 
-  // Fetch the (possibly just-created) records
+    for (const template of templates) {
+      const goal =
+        GOAL_OVERRIDES[template.category] ?? template.defaultGoal;
+
+      const ut = utRepo2.create({
+        userId,
+        templateId: template.id,
+        goal,
+        schedule: { type: "daily", timezone: "America/Sao_Paulo" },
+        scoring: template.defaultScoring,
+        startDate: today as unknown as Date,
+      });
+      await utRepo2.save(ut);
+
+      const streak = streakRepo.create({
+        userId,
+        userTrackableId: ut.id,
+        currentStreak: 0,
+        bestStreak: 0,
+      });
+      await streakRepo.save(streak);
+    }
+  });
+
+  // Fetch with relations after provisioning
   userTrackables = await utRepo.find({
     where: { userId },
     relations: ["template"],
   });
-
-  // Ensure streaks exist for each trackable (also race-safe)
-  for (const ut of userTrackables) {
-    await ds.query(
-      `INSERT INTO streaks (user_id, user_trackable_id, current_streak, best_streak)
-       VALUES ($1, $2, 0, 0)
-       ON CONFLICT (user_id, user_trackable_id) DO NOTHING`,
-      [userId, ut.id]
-    );
-  }
 
   return userTrackables;
 }
