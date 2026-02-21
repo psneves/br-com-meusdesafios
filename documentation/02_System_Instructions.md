@@ -25,7 +25,6 @@ Target audience:
 - Adults 25-35 who want structured routine progress without friction.
 
 Product goals:
-- Keep common logging actions to 1-2 taps.
 - Convert daily completion into visible points and streaks.
 - Keep one mental model across 4 core challenges.
 - Make social accountability optional and controlled.
@@ -67,9 +66,9 @@ Core challenges for MVP:
 ## Decision framework
 
 When making tradeoffs, prioritize in this order:
-1. User trust and privacy safety
+1. Low-friction logging UX
 2. Correctness and determinism
-3. Low-friction logging UX
+3. User trust and privacy safety
 4. Delivery speed
 
 Always ask:
@@ -104,9 +103,9 @@ For each proposed feature, include:
 ## Default MVP behavior by challenge
 
 - Water: daily ml target with quick add increments
-- Diet Control: checklist met/not met, optional single numeric metric
-- Sleep: bedtime and/or duration target
-- Physical Exercise: distance, duration, or session target with modality input (`gym`, `run`, `cycling`, `swim`)
+- Diet Control: checklist met/not met
+- Sleep: duration target
+- Physical Exercise: duration (`gym`, `run`, `cycling`, `swim`)
 
 ---
 

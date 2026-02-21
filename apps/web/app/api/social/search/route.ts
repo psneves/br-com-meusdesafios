@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateQuery } from "@/lib/api/validate";
 import { searchUsers } from "@/lib/services/social.service";
+import { rateLimit } from "@/lib/api/rate-limit";
 
 const searchSchema = z.object({
   q: z.string().min(1, "Search query is required"),
@@ -14,6 +15,9 @@ export async function GET(request: Request) {
     if (!session.isLoggedIn || !session.id) {
       return errors.unauthorized();
     }
+
+    const limited = rateLimit(`search:${session.id}`, 60); // 60 searches/min
+    if (limited) return limited;
 
     const { searchParams } = new URL(request.url);
     const validation = validateQuery(searchParams, searchSchema);

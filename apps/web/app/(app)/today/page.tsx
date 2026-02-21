@@ -9,6 +9,7 @@ import { TodayHeader, TodayHeaderSkeleton } from "@/components/today/TodayHeader
 import { TrackableList, TrackableListSkeleton } from "@/components/today/TrackableList";
 import { FeedbackToast } from "@/components/today/FeedbackToast";
 import { WaterLogger, SleepLogger, ActivityLogger, DietLogger } from "@/components/logging";
+import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { AlertTriangle } from "lucide-react";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
@@ -219,6 +220,9 @@ export default function TodayPage() {
           target={activeCard.goal.target}
         />
       )}
+
+      {/* Onboarding (first visit only) */}
+      <OnboardingModal onComplete={refresh} />
     </div>
   );
 }

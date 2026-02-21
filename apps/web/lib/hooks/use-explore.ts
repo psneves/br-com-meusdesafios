@@ -14,6 +14,7 @@ interface UseExploreResult {
   searchResults: ExploreUser[] | null;
   isLoading: boolean;
   isSearching: boolean;
+  error: string | null;
   search: (query: string) => void;
   clearSearch: () => void;
   sendFollowRequest: (handle: string) => Promise<void>;
@@ -21,6 +22,7 @@ interface UseExploreResult {
   denyRequest: (edgeId: string) => Promise<void>;
   feedback: FeedbackData | null;
   clearFeedback: () => void;
+  refresh: () => void;
 }
 
 export function useExplore(): UseExploreResult {
@@ -29,26 +31,30 @@ export function useExplore(): UseExploreResult {
   const [searchResults, setSearchResults] = useState<ExploreUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackData | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestQueryRef = useRef<string>("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch initial explore data
   useEffect(() => {
     let cancelled = false;
 
     async function fetchExplore() {
+      setIsLoading(true);
+      setError(null);
       try {
         const res = await fetch("/api/social/explore");
-        if (!res.ok) return;
+        if (!res.ok) throw new Error("Failed to fetch");
         const json = await res.json();
         if (!cancelled) {
           setPendingRequests(json.data.pendingRequests);
           setSuggestedUsers(json.data.suggestedUsers);
         }
       } catch {
-        // silently fail
+        if (!cancelled) setError("Erro ao carregar dados");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -58,7 +64,9 @@ export function useExplore(): UseExploreResult {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   // Search with debounce
   const search = useCallback((query: string) => {
@@ -186,6 +194,7 @@ export function useExplore(): UseExploreResult {
     searchResults,
     isLoading,
     isSearching,
+    error,
     search,
     clearSearch,
     sendFollowRequest,
@@ -193,5 +202,6 @@ export function useExplore(): UseExploreResult {
     denyRequest,
     feedback,
     clearFeedback,
+    refresh,
   };
 }

@@ -265,6 +265,17 @@ export function TodayHeader({
 
           <div>
             <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Dia perfeito
+            </h3>
+            <p>
+              Se cumprir <em>todos</em> os 4 desafios no mesmo dia, ganha{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              extra.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
               Meta semanal
             </h3>
             <p>

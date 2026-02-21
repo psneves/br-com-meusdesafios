@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateBody } from "@/lib/api/validate";
 import { updateAvatar } from "@/lib/services/user.service";
+import { rateLimit } from "@/lib/api/rate-limit";
 
 const MAX_DECODED_SIZE = 500 * 1024; // 500KB
 
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     if (!session.isLoggedIn || !session.id) {
       return errors.unauthorized();
     }
+
+    const limited = rateLimit(`avatar:${session.id}`, 5, 300_000); // 5 uploads/5min
+    if (limited) return limited;
 
     const validated = await validateBody(request, avatarSchema);
     if ("error" in validated) return validated.error;

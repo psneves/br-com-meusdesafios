@@ -134,40 +134,41 @@ export async function ensureUserTrackables(
 
   if (userTrackables.length > 0) return userTrackables;
 
-  // New user — provision all 4 templates
+  // New user — provision all 4 templates (race-safe with ON CONFLICT)
   const templateRepo = ds.getRepository(TrackableTemplate);
   const templates = await templateRepo.find();
-
-  const streakRepo = ds.getRepository(StreakEntity);
   const today = dayString(new Date());
 
   for (const template of templates) {
     const goal =
       GOAL_OVERRIDES[template.category] ?? template.defaultGoal;
 
-    const ut = utRepo.create({
-      userId,
-      templateId: template.id,
-      goal,
-      schedule: { type: "daily", timezone: "America/Sao_Paulo" },
-      scoring: template.defaultScoring,
-      startDate: today as unknown as Date,
-    });
-    await utRepo.save(ut);
+    const schedule = { type: "daily", timezone: "America/Sao_Paulo" };
 
-    const streak = streakRepo.create({
-      userId,
-      userTrackableId: ut.id,
-      currentStreak: 0,
-      bestStreak: 0,
-    });
-    await streakRepo.save(streak);
+    // ON CONFLICT prevents duplicates when concurrent requests race
+    await ds.query(
+      `INSERT INTO user_trackables (user_id, template_id, goal, schedule, scoring, start_date)
+       VALUES ($1, $2, $3::jsonb, $4::jsonb, $5::jsonb, $6)
+       ON CONFLICT (user_id, template_id) DO NOTHING`,
+      [userId, template.id, JSON.stringify(goal), JSON.stringify(schedule), JSON.stringify(template.defaultScoring), today]
+    );
   }
 
+  // Fetch the (possibly just-created) records
   userTrackables = await utRepo.find({
     where: { userId },
     relations: ["template"],
   });
+
+  // Ensure streaks exist for each trackable (also race-safe)
+  for (const ut of userTrackables) {
+    await ds.query(
+      `INSERT INTO streaks (user_id, user_trackable_id, current_streak, best_streak)
+       VALUES ($1, $2, 0, 0)
+       ON CONFLICT (user_id, user_trackable_id) DO NOTHING`,
+      [userId, ut.id]
+    );
+  }
 
   return userTrackables;
 }
@@ -191,26 +192,52 @@ export async function buildTodayResponse(
   const streakRepo = ds.getRepository(StreakEntity);
   const ledgerRepo = ds.getRepository(PointsLedger);
 
+  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+  const utIds = activeUTs.map((ut) => ut.id);
+
+  // Batch fetch: 3 queries instead of 3 × N (N+1 fix)
+  const [allLogs, allStats, allStreaks] = await Promise.all([
+    utIds.length > 0
+      ? logRepo
+          .createQueryBuilder("log")
+          .where("log.user_trackable_id IN (:...utIds)", { utIds })
+          .andWhere("log.occurred_at >= :dayStart", { dayStart })
+          .andWhere("log.occurred_at <= :dayEnd", { dayEnd })
+          .orderBy("log.occurred_at", "ASC")
+          .getMany()
+      : Promise.resolve([]),
+    utIds.length > 0
+      ? statsRepo
+          .createQueryBuilder("s")
+          .where("s.user_trackable_id IN (:...utIds)", { utIds })
+          .andWhere("s.day = :day", { day: dayStr })
+          .getMany()
+      : Promise.resolve([]),
+    utIds.length > 0
+      ? streakRepo
+          .createQueryBuilder("s")
+          .where("s.user_id = :userId", { userId })
+          .andWhere("s.user_trackable_id IN (:...utIds)", { utIds })
+          .getMany()
+      : Promise.resolve([]),
+  ]);
+
+  // Index by userTrackableId for O(1) lookups
+  const logsByUt = new Map<string, TrackableLogEntity[]>();
+  for (const log of allLogs) {
+    const list = logsByUt.get(log.userTrackableId) ?? [];
+    list.push(log);
+    logsByUt.set(log.userTrackableId, list);
+  }
+  const statsMap = new Map(allStats.map((s) => [s.userTrackableId, s]));
+  const streakMap = new Map(allStreaks.map((s) => [s.userTrackableId, s]));
+
   const cards: TodayCard[] = [];
 
-  for (const ut of userTrackables) {
-    if (!ut.isActive) continue;
-
-    const [logs, stats, streak] = await Promise.all([
-      logRepo
-        .createQueryBuilder("log")
-        .where("log.user_trackable_id = :utId", { utId: ut.id })
-        .andWhere("log.occurred_at >= :dayStart", { dayStart })
-        .andWhere("log.occurred_at <= :dayEnd", { dayEnd })
-        .orderBy("log.occurred_at", "ASC")
-        .getMany(),
-      statsRepo.findOne({
-        where: { userTrackableId: ut.id, day: dayStr as unknown as Date },
-      }),
-      streakRepo.findOne({
-        where: { userId, userTrackableId: ut.id },
-      }),
-    ]);
+  for (const ut of activeUTs) {
+    const logs = logsByUt.get(ut.id) ?? [];
+    const stats = statsMap.get(ut.id);
+    const streak = streakMap.get(ut.id);
 
     // Compute progress from logs
     const sharedLogs = logs.map(toSharedLog);
@@ -318,6 +345,137 @@ export async function buildTodayResponse(
   };
 }
 
+// ── Perfect day bonus helper ─────────────────────────────────
+
+async function awardPerfectDayBonus(
+  manager: { getRepository: Awaited<ReturnType<typeof getDataSource>>["getRepository"] },
+  userId: string,
+  dayStr: string
+): Promise<number> {
+  const allUTs = await manager.getRepository(UserTrackable).find({
+    where: { userId, isActive: true },
+  });
+  const allStats = await manager
+    .getRepository(ComputedDailyStats)
+    .createQueryBuilder("s")
+    .where("s.user_id = :userId", { userId })
+    .andWhere("s.day = :day", { day: dayStr })
+    .getMany();
+
+  const metMap = new Map(allStats.map((s: ComputedDailyStats) => [s.userTrackableId, s.metGoal]));
+  const allMet = allUTs.length > 0 && allUTs.every((ut: UserTrackable) => metMap.get(ut.id) === true);
+  if (!allMet) return 0;
+
+  const ledgerRepo = manager.getRepository(PointsLedger);
+  const existing = await ledgerRepo.findOne({
+    where: { userId, day: dayStr as unknown as Date, source: "streak_bonus", reason: "Dia perfeito" },
+  });
+  if (existing) return 0;
+
+  const entry = ledgerRepo.create({
+    userId,
+    day: dayStr as unknown as Date,
+    source: "streak_bonus",
+    points: 10,
+    reason: "Dia perfeito",
+  });
+  await ledgerRepo.save(entry);
+  return 10;
+}
+
+// ── Weekly bonus helper ──────────────────────────────────────
+
+async function awardWeeklyBonuses(
+  manager: { getRepository: Awaited<ReturnType<typeof getDataSource>>["getRepository"]; query: Awaited<ReturnType<typeof getDataSource>>["query"] },
+  userId: string,
+  logDate: Date
+): Promise<number> {
+  // Determine the previous week (Mon-Sun)
+  const prevSunday = new Date(logDate);
+  const dow = logDate.getDay(); // 0=Sun
+  if (dow === 0) {
+    prevSunday.setDate(prevSunday.getDate() - 7);
+  } else {
+    prevSunday.setDate(prevSunday.getDate() - dow);
+  }
+  const prevMonday = new Date(prevSunday);
+  prevMonday.setDate(prevSunday.getDate() - 6);
+
+  // Only award if that week is fully in the past
+  const today = startOfDay(new Date());
+  if (today <= prevSunday) return 0;
+
+  const sundayStr = dayString(prevSunday);
+  const mondayStr = dayString(prevMonday);
+
+  // Idempotent: check if already awarded for this week
+  const ledgerRepo = manager.getRepository(PointsLedger);
+  const existing = await ledgerRepo
+    .createQueryBuilder("pl")
+    .where("pl.user_id = :userId", { userId })
+    .andWhere("pl.day = :day", { day: sundayStr })
+    .andWhere("pl.source = :source", { source: "streak_bonus" })
+    .andWhere("pl.reason LIKE :reason", { reason: "Meta semanal%" })
+    .getOne();
+  if (existing) return 0;
+
+  // Get all active user trackables
+  const allUTs = await manager.getRepository(UserTrackable).find({
+    where: { userId, isActive: true },
+  });
+  if (allUTs.length === 0) return 0;
+
+  // Get all stats for the previous week
+  const utIds = allUTs.map((ut) => ut.id);
+  const statsRepo = manager.getRepository(ComputedDailyStats);
+  const weekStats = await statsRepo
+    .createQueryBuilder("s")
+    .where("s.user_trackable_id IN (:...utIds)", { utIds })
+    .andWhere("s.day >= :start", { start: mondayStr })
+    .andWhere("s.day <= :end", { end: sundayStr })
+    .getMany();
+
+  // Count met days per UT
+  const metCountByUT = new Map<string, number>();
+  for (const s of weekStats) {
+    if (s.metGoal) {
+      metCountByUT.set(s.userTrackableId, (metCountByUT.get(s.userTrackableId) ?? 0) + 1);
+    }
+  }
+
+  // Weekly goal: +10 per challenge with 7/7 days met
+  const challengesWith7 = allUTs.filter((ut) => (metCountByUT.get(ut.id) ?? 0) === 7);
+  let totalBonus = 0;
+
+  if (challengesWith7.length > 0) {
+    const weeklyGoalBonus = challengesWith7.length * 10;
+    const entry = ledgerRepo.create({
+      userId,
+      day: sundayStr as unknown as Date,
+      source: "streak_bonus" as const,
+      points: weeklyGoalBonus,
+      reason: `Meta semanal: ${challengesWith7.length} desafio(s) com 7/7 dias`,
+    });
+    await ledgerRepo.save(entry);
+    totalBonus += weeklyGoalBonus;
+
+    // Perfect week: +10 if ALL challenges had 7/7
+    if (challengesWith7.length === allUTs.length) {
+      const perfectEntry = ledgerRepo.create({
+        userId,
+        day: sundayStr as unknown as Date,
+        source: "streak_bonus" as const,
+        points: 10,
+        reason: "Semana perfeita",
+      });
+      await ledgerRepo.save(perfectEntry);
+      totalBonus += 10;
+    }
+  }
+
+  return totalBonus;
+}
+
 // ── 1c. createLog ────────────────────────────────────────────
 
 interface CreateLogInput {
@@ -332,14 +490,9 @@ export async function createLog(
   input: CreateLogInput
 ): Promise<LogFeedback> {
   const ds = await getDataSource();
-  const utRepo = ds.getRepository(UserTrackable);
-  const logRepo = ds.getRepository(TrackableLogEntity);
-  const statsRepo = ds.getRepository(ComputedDailyStats);
-  const streakRepo = ds.getRepository(StreakEntity);
-  const ledgerRepo = ds.getRepository(PointsLedger);
 
-  // Validate ownership
-  const ut = await utRepo.findOne({
+  // Validate ownership (read-only, outside transaction)
+  const ut = await ds.getRepository(UserTrackable).findOne({
     where: { id: input.userTrackableId, userId },
     relations: ["template"],
   });
@@ -347,152 +500,166 @@ export async function createLog(
     throw new Error("UserTrackable not found or does not belong to user");
   }
 
-  // Insert log — use provided date or default to now
   const targetDate = input.date
     ? new Date(`${input.date}T12:00:00`)
     : new Date();
-  const log = logRepo.create({
-    userId,
-    userTrackableId: input.userTrackableId,
-    occurredAt: targetDate,
-    valueNum: input.valueNum,
-    meta: input.meta,
-  });
-  await logRepo.save(log);
-
-  // ── Recompute pipeline ──────────────────────────────────
-
   const dayStart = startOfDay(targetDate);
   const dayEnd = new Date(dayStart);
   dayEnd.setHours(23, 59, 59, 999);
   const dayStr = dayString(dayStart);
 
-  // 1. Query all logs for today
-  const allLogs = await logRepo
-    .createQueryBuilder("log")
-    .where("log.user_trackable_id = :utId", { utId: input.userTrackableId })
-    .andWhere("log.occurred_at >= :dayStart", { dayStart })
-    .andWhere("log.occurred_at <= :dayEnd", { dayEnd })
-    .getMany();
-  const sharedLogs = allLogs.map(toSharedLog);
+  // ── Entire scoring pipeline runs in a single transaction ──
+  return ds.transaction(async (manager) => {
+    const logRepo = manager.getRepository(TrackableLogEntity);
+    const streakRepo = manager.getRepository(StreakEntity);
+    const ledgerRepo = manager.getRepository(PointsLedger);
 
-  // 2. Get current streak
-  let streak = await streakRepo.findOne({
-    where: { userId, userTrackableId: input.userTrackableId },
-  });
-  if (!streak) {
-    streak = streakRepo.create({
+    // 1. Insert log
+    const log = logRepo.create({
       userId,
       userTrackableId: input.userTrackableId,
-      currentStreak: 0,
-      bestStreak: 0,
+      occurredAt: targetDate,
+      valueNum: input.valueNum,
+      meta: input.meta,
     });
-    await streakRepo.save(streak);
-  }
+    await logRepo.save(log);
 
-  // 3. Compute day result using shared scoring engine
-  const dayResult = computeDayResult(
-    ut.goal,
-    sharedLogs,
-    toSharedStreak(streak),
-    ut.scoring,
-    dayStart
-  );
+    // 2. Query all logs for today
+    const allLogs = await logRepo
+      .createQueryBuilder("log")
+      .where("log.user_trackable_id = :utId", { utId: input.userTrackableId })
+      .andWhere("log.occurred_at >= :dayStart", { dayStart })
+      .andWhere("log.occurred_at <= :dayEnd", { dayEnd })
+      .getMany();
+    const sharedLogs = allLogs.map(toSharedLog);
 
-  // 4. Upsert ComputedDailyStats
-  let existingStats = await statsRepo.findOne({
-    where: { userTrackableId: input.userTrackableId, day: dayStr as unknown as Date },
-  });
-  if (existingStats) {
-    existingStats.progress = dayResult.progress;
-    existingStats.metGoal = dayResult.metGoal;
-    existingStats.pointsEarned = dayResult.pointsEarned;
-    await statsRepo.save(existingStats);
-  } else {
-    existingStats = statsRepo.create({
-      userId,
-      userTrackableId: input.userTrackableId,
-      day: dayStr as unknown as Date,
-      progress: dayResult.progress,
-      metGoal: dayResult.metGoal,
-      pointsEarned: dayResult.pointsEarned,
-    });
-    await statsRepo.save(existingStats);
-  }
+    // 3. Get current streak with pessimistic lock (prevents concurrent updates)
+    let streak = await streakRepo
+      .createQueryBuilder("s")
+      .setLock("pessimistic_write")
+      .where("s.user_id = :userId", { userId })
+      .andWhere("s.user_trackable_id = :utId", { utId: input.userTrackableId })
+      .getOne();
 
-  // 5. Update streak
-  if (dayResult.metGoal) {
-    streak.currentStreak = dayResult.newStreak;
-    streak.bestStreak = Math.max(dayResult.newStreak, streak.bestStreak);
-    streak.lastMetDay = dayStr as unknown as Date;
-  } else {
-    streak.currentStreak = 0;
-  }
-  await streakRepo.save(streak);
-
-  // 6. Upsert PointsLedger: remove old entries for this trackable+day, insert new
-  await ledgerRepo.delete({
-    userId,
-    userTrackableId: input.userTrackableId,
-    day: dayStr as unknown as Date,
-    source: "trackable_goal",
-  });
-
-  if (dayResult.pointsEarned > 0) {
-    // Base points entry
-    const basePoints = dayResult.metGoal ? ut.scoring.basePoints : 0;
-    if (basePoints > 0) {
-      const entry = ledgerRepo.create({
-        userId,
-        userTrackableId: input.userTrackableId,
-        day: dayStr as unknown as Date,
-        source: "trackable_goal",
-        points: basePoints,
-        reason: `Meta diária cumprida: ${CATEGORY_NAMES[ut.template.category]}`,
-      });
-      await ledgerRepo.save(entry);
+    if (!streak) {
+      // Race-safe creation: ON CONFLICT DO NOTHING handles concurrent inserts
+      await manager.query(
+        `INSERT INTO streaks (user_id, user_trackable_id, current_streak, best_streak)
+         VALUES ($1, $2, 0, 0)
+         ON CONFLICT (user_id, user_trackable_id) DO NOTHING`,
+        [userId, input.userTrackableId]
+      );
+      streak = await streakRepo
+        .createQueryBuilder("s")
+        .setLock("pessimistic_write")
+        .where("s.user_id = :userId", { userId })
+        .andWhere("s.user_trackable_id = :utId", { utId: input.userTrackableId })
+        .getOne();
     }
-  }
 
-  // Handle streak bonus separately
-  if (dayResult.bonusAwarded) {
-    // Remove old streak_bonus for this trackable+day
+    // 4. Compute day result using shared scoring engine
+    const dayResult = computeDayResult(
+      ut.goal,
+      sharedLogs,
+      toSharedStreak(streak!),
+      ut.scoring,
+      dayStart
+    );
+
+    // 5. Upsert ComputedDailyStats (ON CONFLICT prevents race condition)
+    await manager.query(
+      `INSERT INTO computed_daily_stats (user_id, user_trackable_id, day, progress, met_goal, points_earned, updated_at)
+       VALUES ($1, $2, $3, $4::jsonb, $5, $6, NOW())
+       ON CONFLICT (user_trackable_id, day)
+       DO UPDATE SET progress = EXCLUDED.progress, met_goal = EXCLUDED.met_goal,
+                     points_earned = EXCLUDED.points_earned, updated_at = NOW()`,
+      [userId, input.userTrackableId, dayStr, JSON.stringify(dayResult.progress), dayResult.metGoal, dayResult.pointsEarned]
+    );
+
+    // 6. Update streak
+    if (dayResult.metGoal) {
+      streak!.currentStreak = dayResult.newStreak;
+      streak!.bestStreak = Math.max(dayResult.newStreak, streak!.bestStreak);
+      streak!.lastMetDay = dayStr as unknown as Date;
+    } else {
+      streak!.currentStreak = 0;
+    }
+    await streakRepo.save(streak!);
+
+    // 7. Upsert PointsLedger: remove old entries for this trackable+day, insert new
     await ledgerRepo.delete({
       userId,
       userTrackableId: input.userTrackableId,
       day: dayStr as unknown as Date,
-      source: "streak_bonus",
+      source: "trackable_goal",
     });
 
-    const bonusEntry = ledgerRepo.create({
-      userId,
-      userTrackableId: input.userTrackableId,
-      day: dayStr as unknown as Date,
-      source: "streak_bonus",
-      points: dayResult.bonusAwarded,
-      reason: `Bônus de streak: ${dayResult.newStreak} dias consecutivos`,
-    });
-    await ledgerRepo.save(bonusEntry);
-  }
+    if (dayResult.pointsEarned > 0) {
+      const basePoints = dayResult.metGoal ? ut.scoring.basePoints : 0;
+      if (basePoints > 0) {
+        const entry = ledgerRepo.create({
+          userId,
+          userTrackableId: input.userTrackableId,
+          day: dayStr as unknown as Date,
+          source: "trackable_goal",
+          points: basePoints,
+          reason: `Meta diária cumprida: ${CATEGORY_NAMES[ut.template.category]}`,
+        });
+        await ledgerRepo.save(entry);
+      }
+    }
 
-  // Build feedback
-  const streakChanged = dayResult.metGoal && dayResult.newStreak > 0;
+    // Handle streak bonus separately
+    if (dayResult.bonusAwarded) {
+      await ledgerRepo.delete({
+        userId,
+        userTrackableId: input.userTrackableId,
+        day: dayStr as unknown as Date,
+        source: "streak_bonus",
+      });
 
-  const feedback: LogFeedback = {
-    goalMet: dayResult.metGoal,
-    pointsEarned: dayResult.pointsEarned,
-    streakUpdated: streakChanged
-      ? { from: Math.max(0, dayResult.newStreak - 1), to: dayResult.newStreak }
-      : undefined,
-    milestone: dayResult.bonusAwarded
-      ? { day: dayResult.newStreak, bonus: dayResult.bonusAwarded }
-      : undefined,
-    message: dayResult.metGoal
-      ? `Meta cumprida! +${dayResult.pointsEarned} XP`
-      : "Registro salvo",
-  };
+      const bonusEntry = ledgerRepo.create({
+        userId,
+        userTrackableId: input.userTrackableId,
+        day: dayStr as unknown as Date,
+        source: "streak_bonus",
+        points: dayResult.bonusAwarded,
+        reason: `Bônus de streak: ${dayResult.newStreak} dias consecutivos`,
+      });
+      await ledgerRepo.save(bonusEntry);
+    }
 
-  return feedback;
+    // Perfect day bonus: +10 XP when ALL active challenges are met
+    const perfectDayBonus = dayResult.metGoal
+      ? await awardPerfectDayBonus(manager, userId, dayStr)
+      : 0;
+
+    // Weekly bonuses: award for previous completed week (idempotent)
+    await awardWeeklyBonuses(manager, userId, dayStart);
+
+    // Build feedback
+    const totalPoints = dayResult.pointsEarned + perfectDayBonus;
+    const streakChanged = dayResult.metGoal && dayResult.newStreak > 0;
+
+    let message = "Registro salvo";
+    if (perfectDayBonus > 0) {
+      message = `Dia perfeito! +${totalPoints} XP`;
+    } else if (dayResult.metGoal) {
+      message = `Meta cumprida! +${totalPoints} XP`;
+    }
+
+    return {
+      goalMet: dayResult.metGoal,
+      pointsEarned: totalPoints,
+      streakUpdated: streakChanged
+        ? { from: Math.max(0, dayResult.newStreak - 1), to: dayResult.newStreak }
+        : undefined,
+      milestone: perfectDayBonus > 0
+        ? { day: 0, bonus: perfectDayBonus }
+        : undefined,
+      message,
+    };
+  });
 }
 
 // ── 1d. updateGoal ──────────────────────────────────────────
@@ -854,3 +1021,4 @@ export async function buildMonthlySummary(
     totalXP,
   };
 }
+

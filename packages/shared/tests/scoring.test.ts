@@ -132,9 +132,21 @@ describe("updateStreak", () => {
     expect(result.newStreak).toBe(3);
   });
 
-  it("awards bonus on day 3", () => {
+  it("awards no milestone bonus with default scoring (empty streakBonuses)", () => {
     const streak = createStreak({ currentStreak: 2, lastMetDay: yesterday });
     const result = updateStreak(streak, true, today, DEFAULT_SCORING);
+    expect(result.newStreak).toBe(3);
+    expect(result.bonusAwarded).toBeUndefined();
+    expect(result.milestoneReached).toBeUndefined();
+  });
+
+  it("awards bonus when custom streakBonuses are configured", () => {
+    const customScoring: ScoringConfig = {
+      basePoints: 10,
+      streakBonuses: [{ day: 3, points: 5 }],
+    };
+    const streak = createStreak({ currentStreak: 2, lastMetDay: yesterday });
+    const result = updateStreak(streak, true, today, customScoring);
     expect(result.bonusAwarded).toBe(5);
     expect(result.milestoneReached).toBe(3);
   });
@@ -157,16 +169,16 @@ describe("computeDayResult", () => {
   const today = new Date("2024-01-15");
   const yesterday = new Date("2024-01-14");
 
-  it("computes full day result with points and streak", () => {
+  it("computes full day result with base points only (no milestone bonuses)", () => {
     const logs = [createLog({ valueNum: 2500 })];
     const streak = createStreak({ currentStreak: 2, lastMetDay: yesterday });
 
     const result = computeDayResult(goal, logs, streak, DEFAULT_SCORING, today);
 
     expect(result.metGoal).toBe(true);
-    expect(result.pointsEarned).toBe(15); // 10 base + 5 day-3 bonus
+    expect(result.pointsEarned).toBe(10); // 10 base, no milestone bonuses
     expect(result.newStreak).toBe(3);
-    expect(result.bonusAwarded).toBe(5);
+    expect(result.bonusAwarded).toBeUndefined();
   });
 
   it("returns zero points when goal not met", () => {

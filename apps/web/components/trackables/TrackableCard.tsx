@@ -12,14 +12,12 @@ import { cn } from "@/lib/utils";
 interface TrackableCardProps {
   card: TodayCard;
   onRegister: () => void;
-  onViewDetails?: () => void;
   className?: string;
 }
 
 export function TrackableCard({
   card,
   onRegister,
-  onViewDetails: _onViewDetails,
   className,
 }: TrackableCardProps) {
   const cfg = getCategoryConfig(card.category);

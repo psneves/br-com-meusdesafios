@@ -9,6 +9,24 @@ const authOnlyRoutes = ["/login"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // CSRF protection: verify Origin on API mutation requests
+  if (
+    pathname.startsWith("/api/") &&
+    ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)
+  ) {
+    const origin = request.headers.get("origin");
+    if (origin) {
+      const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      const allowedOrigin = new URL(appUrl).origin;
+      if (origin !== allowedOrigin) {
+        return NextResponse.json(
+          { success: false, error: { code: "FORBIDDEN", message: "Invalid origin" } },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
   // Pass through API routes, static files, Next.js internals
   if (
     pathname.startsWith("/api/") ||

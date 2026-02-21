@@ -37,21 +37,13 @@ Met when event occurs within configured time boundary.
 - Meeting daily goal: `+10`
 - Not meeting goal: `+0`
 
-### Weekly bonuses
+### Streak bonuses
 
+- Perfect day (ALL challenges met on current day): `+10`)
 - Weekly goal (7/7 days met for a single challenge, Mon–Sun): `+10` per challenge
 - Perfect week (ALL challenges met ALL 7 days, Mon–Sun): `+10`
 
 Weekly bonuses are evaluated at the end of the ISO week (Monday–Sunday).
-
-### Streak milestones
-
-- Day 3: `+5`
-- Day 7: `+10`
-- Day 14: `+20`
-- Day 30: `+50`
-
-Milestones are awarded once when crossing each threshold.
 
 ### Penalties
 
@@ -78,8 +70,6 @@ Mode B (optional): one numeric metric:
 
 Config options:
 - minimum duration
-- latest bedtime
-- both combined
 
 Met when all configured conditions are true.
 

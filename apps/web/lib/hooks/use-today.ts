@@ -66,6 +66,33 @@ export function useToday(selectedDate?: Date): UseTodayResult {
     }
   }, [selectedDate]);
 
+  // Optimistic update: immediately reflect the log in local state
+  const applyOptimisticUpdate = useCallback(
+    (cardId: string, value: number) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          cards: prev.cards.map((c) => {
+            if (c.userTrackableId !== cardId) return c;
+            const newValue = c.progress.value + value;
+            const target = c.goal.target ?? 0;
+            return {
+              ...c,
+              progress: {
+                ...c.progress,
+                value: newValue,
+                percentage: target > 0 ? Math.min(100, Math.round((newValue / target) * 100)) : 0,
+                met: target > 0 ? newValue >= target : c.progress.met,
+              },
+            };
+          }),
+        };
+      });
+    },
+    []
+  );
+
   // Log with a specific value (for modals)
   const logValue = useCallback(
     async (cardId: string, value: number, meta?: Record<string, unknown>) => {
@@ -73,6 +100,9 @@ export function useToday(selectedDate?: Date): UseTodayResult {
 
       const card = data.cards.find((c) => c.userTrackableId === cardId);
       if (!card) return;
+
+      // Optimistic: update UI immediately
+      applyOptimisticUpdate(cardId, value);
 
       const dateStr = selectedDate
         ? localDateStr(selectedDate)
@@ -97,12 +127,15 @@ export function useToday(selectedDate?: Date): UseTodayResult {
           setFeedback(json.data.feedback);
         }
 
-        await fetchToday();
+        // Reconcile with server state in background
+        fetchToday();
       } catch (err) {
+        // Revert optimistic update on error
+        applyOptimisticUpdate(cardId, -value);
         setError(err instanceof Error ? err : new Error("Erro ao registar"));
       }
     },
-    [data, selectedDate, fetchToday]
+    [data, selectedDate, fetchToday, applyOptimisticUpdate]
   );
 
   const logQuickAction = useCallback(
@@ -155,37 +188,13 @@ export function useToday(selectedDate?: Date): UseTodayResult {
       }
 
       const action = card.quickActions.find((a) => a.id === actionId);
-      if (!action) return;
+      if (!action?.amount) return;
 
-      const dateStr = selectedDate
-        ? localDateStr(selectedDate)
+      // Delegate to logValue for unified optimistic handling
+      const meta = action.exerciseModality
+        ? { exerciseModality: action.exerciseModality }
         : undefined;
-
-      try {
-        const response = await fetch("/api/trackables/log", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userTrackableId: cardId,
-            valueNum: action.amount,
-            date: dateStr,
-            meta: action.exerciseModality
-              ? { exerciseModality: action.exerciseModality }
-              : undefined,
-          }),
-        });
-
-        if (!response.ok) throw new Error("Failed to log action");
-
-        const json = await response.json();
-        if (json.data.feedback) {
-          setFeedback(json.data.feedback);
-        }
-
-        await fetchToday();
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error("Erro ao registar"));
-      }
+      await logValue(cardId, action.amount, meta);
     },
     [data, selectedDate, fetchToday, logValue]
   );

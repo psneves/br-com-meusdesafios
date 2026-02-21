@@ -30,9 +30,9 @@ Meus Desafios solves this by combining:
 
 ## Success metrics (MVP)
 
-- Activation: users activate at least 2 core challenges in first session.
+- Activation: users completes at least 2 core challenges in first session.
 - Week-1 consistency: users log at least 4 of 7 days on one active challenge.
-- Logging speed: common actions complete in under 30 seconds.
+- Logging speed: common actions complete in under 20 seconds.
 - Explainability: every points event has a readable reason.
 - Privacy safety: zero endpoints expose other users' rank identity.
 
@@ -54,11 +54,7 @@ The app exposes 4 core challenges:
 
 The internal rules engine still uses a unified trackable model so every challenge supports:
 - goal type
-- schedule
-- log inputs
 - daily evaluation rules
-- point/streak outcomes
-- visibility controls
 
 ### Challenge template
 
@@ -73,8 +69,8 @@ A "day" is evaluated in the user's configured timezone.
 ## Functional requirements (MVP)
 
 ### Onboarding and setup
-
-- Users can activate core challenges from standard templates.
+- Users have 4 challenges assigned once logging.
+- Users can activate core challenges.
 - Users can override goal/schedule defaults per challenge.
 - Physical Exercise is activated once and logs modality-specific activity (gym, run, cycling, swim).
 
@@ -142,8 +138,7 @@ Each challenge detail screen includes:
 ## Non-functional requirements
 
 - Privacy-controlled by default.
-- Server-authoritative calculations for points/streaks/rank.
-- Explainable scoring outputs.
+z- Explainable scoring outputs.
 - Deterministic recomputation from logs.
 - API schema validation on all inputs and outputs.
 

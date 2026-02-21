@@ -5,165 +5,120 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Meus Desafios – Consistency becomes results.
-Meus Desafios is built for adults aged 25-35 who want to build routines and see measurable progress without complexity. With simple goals and straightforward gamification (points and streaks), you can log in a few taps and track progress effortlessly. The app focuses on 4 key challenges: Water, Diet Control, Sleep, and Physical Exercise. Physical Exercise combines Gym, Running, Cycling, and Swimming into one unified challenge with modality-based logs. Every challenge follows the same Today card, quick actions, and detail screen (Overview / Logs / Rules), so you always know what counts and how you score. Social features stay optional, with visibility controls to avoid unnecessary exposure.
+A habit-tracking app for adults aged 25-35 who want to build routines with simple gamification (points, streaks). Focuses on 4 challenges: Water, Diet Control, Sleep, and Physical Exercise (Gym/Running/Cycling/Swimming modalities). All user-facing text is in Portuguese (pt-BR).
 
 ## Build & Development Commands
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Development
-pnpm dev                    # Run Next.js dev server
-
-# Build
-pnpm build                  # Build for production
-
-# Linting
+pnpm install                # Install dependencies
+pnpm dev                    # Next.js dev server (http://localhost:3000)
+pnpm build                  # Production build
 pnpm lint                   # Lint all packages
-
-# Testing
 pnpm test                   # Run all tests
-pnpm --filter @meusdesafios/shared test      # Run shared package tests
-pnpm --filter @meusdesafios/shared test:run  # Run tests once (CI)
-
-# Database (TypeORM)
-pnpm db:migration:run       # Run migrations
+pnpm --filter @meusdesafios/shared test:run  # Run scoring tests once (CI)
+pnpm db:migration:run       # Run TypeORM migrations
 pnpm db:seed                # Seed trackable templates
 ```
 
 ## Repository Structure
 
 ```
-/apps
-  /web                      # Next.js 14 App Router (UI + API routes)
-/packages
-  /shared                   # TypeScript types, Zod schemas, scoring engine
-  /db                       # TypeORM entities, migrations, seeds
+/apps/web                   # Next.js 14 App Router (UI + API routes)
+/packages/shared            # TypeScript types, Zod schemas, scoring engine
+/packages/db                # TypeORM entities, migrations, seeds
 /documentation              # Product specs and requirements
 ```
 
-## Key Documentation Files
+## Architecture
 
-Located in `/documentation/`:
-- **02_System_Instructions.md** - Core system/behavior prompt
-- **03_Product_Requirements.md** - Product source of truth
-- **04_Data_Model.md** - Postgres data model
-- **05_API_Contracts.md** - API endpoints and response shapes
-- **06_Scoring_Streaks_Rules.md** - Points, streaks, gamification logic
-- **07_Leaderboards_Privacy.md** - Privacy-safe leaderboard strategy
+### Auth System
+- **iron-session** (NOT NextAuth) — encrypted HTTP-only cookie `meusdesafios-session`, 7-day expiry
+- Google OAuth flow: `/api/auth/google` → Google → `/api/auth/google/callback`
+- Session fields: `id`, `handle`, `firstName`, `lastName`, `displayName`, `email`, `isLoggedIn`, `provider`
+- Middleware (`apps/web/middleware.ts`) protects `/today`, `/explore`, `/leaderboard`, `/profile`, `/settings`
+- Auth helpers: `apps/web/lib/auth/{session,oauth,user}.ts`
+
+### Request Flow
+```
+Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
+```
+
+- **API responses**: `successResponse(data)` → `{ success: true, data }`, `errors.unauthorized()/.badRequest()/.serverError()` → `{ success: false, error: { code, message } }`
+- **Validation**: `validateBody(req, zodSchema)` and `validateQuery(params, zodSchema)` in `lib/api/validate.ts`
+- **Session check**: Every protected route starts with `const session = await getSession(); if (!session.isLoggedIn) return errors.unauthorized();`
+
+### Services Layer (`apps/web/lib/services/`)
+- **trackable.service.ts** (857 lines) — Core service: `buildTodayResponse()`, `createLog()` (log + recompute pipeline), `updateGoal()`, `toggleActive()`, `buildWeeklySummary()`, `buildMonthlySummary()`
+- **user.service.ts** — Profile CRUD, handle availability, avatar upload, location
+- **social.service.ts** — User search, follow requests (send/accept/deny), suggested users
+- **leaderboard.service.ts** — Privacy-safe rank computation by scope (following/followers/nearby) and period (week/month)
+
+### Client Hooks (`apps/web/lib/hooks/`)
+- **use-session.ts** — Auth state from `/api/auth/me`
+- **use-today.ts** — Today page data, logging actions, week/month summaries
+- **use-profile.ts** — Profile editing, avatar upload, debounced handle check
+- **use-leaderboard.ts** — Leaderboard data with scope/period/radius controls
+- **use-explore.ts** — Social explore, search, follow request management
+- **use-challenge-settings.ts** — Challenge settings dialog
+
+### API Routes (21 endpoints)
+**Auth:** `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/logout`
+**Profile:** `GET|PATCH /api/profile`, `POST /api/profile/avatar`, `GET /api/profile/check-handle`, `PATCH /api/profile/location`
+**Trackables:** `GET /api/trackables/today`, `POST /api/trackables/log`, `PUT /api/trackables/active`, `PATCH /api/trackables/goal`, `GET /api/trackables/settings`, `GET /api/trackables/summary`
+**Social:** `GET /api/social/explore`, `POST /api/social/follow-request`, `GET /api/social/search`, `POST /api/social/follow-requests/[id]/accept`, `POST /api/social/follow-requests/[id]/deny`
+**Leaderboard:** `GET /api/leaderboards/rank`
 
 ## Core Domain Concepts
 
-### Unified Challenges
-All challenge cards share one trackable model. The product surface is 4 key challenges:
-- Water
-- Diet Control
-- Sleep
-- Physical Exercise (gym/run/cycling/swim modalities)
-
-Each challenge supports:
-- Goal definition (binary/target/range/time window)
-- Logging (quick log + optional detailed log)
-- Streak computation
-- Point computation
-- Standard UI components (Today Card, Detail page, Rules tab)
-
 ### Server-Authoritative Scoring
-- Points, streaks, and ranks are calculated server-side only
-- Base points: +10 for meeting daily goal
+- Points, streaks, and ranks calculated server-side only
+- Base points: +10 XP for meeting daily goal
 - Streak bonuses: +5 (day 3), +10 (day 7), +20 (day 14), +50 (day 30)
-- Scoring engine is in `packages/shared/src/scoring/`
+- Scoring engine: `packages/shared/src/scoring/` — `evaluateGoal()`, `updateStreak()`, `calculateStreakBonus()`, `computeDayResult()`
+- Recompute pipeline in `trackable.service.ts#createLog()`: insert log → evaluate goal → update ComputedDailyStats → update Streak → write PointsLedger
 
 ### Privacy Model (Critical)
 - Follow requests require explicit acceptance to see stats
 - Leaderboards return ONLY the requesting user's rank/score/cohort_size
 - Never expose: usernames, user IDs, neighbor ranks, or paginated lists
-- Minimum cohort size check (if < 5, hide rank)
+- Minimum cohort size = 5 (below this, hide rank with `rankStatus: "insufficient_cohort"`)
 
-## Key TypeORM Entities
+### Timezone Safety (Critical)
+All date-to-string conversions MUST use local timezone getters (`getFullYear()`/`getMonth()`/`getDate()`), NOT `toISOString()` which converts to UTC. The standard pattern:
+```typescript
+function dayString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+```
 
-Located in `packages/db/src/entities/`:
-- `User` - basic user info
-- `TrackableTemplate` - core challenge definitions (4 types)
-- `UserTrackable` - user's activated trackables with goal overrides
-- `TrackableLog` - authoritative input events
-- `ComputedDailyStats` - cached daily progress
-- `Streak` - current/best streak per trackable
-- `PointsLedger` - immutable audit trail of all point awards
-- `FollowEdge` - social graph with status (pending/accepted/denied/blocked)
-- `LeaderboardSnapshot` - privacy-safe rank snapshots per user
+## Key TypeORM Entities (`packages/db/src/entities/`)
 
-## Testing Priorities
+`User`, `TrackableTemplate` (4 challenge types), `UserTrackable` (activated with goal overrides), `TrackableLog` (input events), `ComputedDailyStats` (cached daily progress), `Streak` (current/best per trackable), `PointsLedger` (immutable point audit trail), `FollowEdge` (social graph: pending/accepted/denied/blocked), `LeaderboardSnapshot`
 
-1. **Scoring correctness** - goal types, streak transitions, no double-counting (tests in `packages/shared/tests/`)
-2. **Privacy enforcement** - reject access without accepted follow, leaderboards never leak others
-3. **API contracts** - validate schemas with Zod
+## Environment Variables
+
+Required: `DATABASE_URL` (PostgreSQL), `NEXTAUTH_URL` (app base URL), `SECRET_COOKIE_PASSWORD` (32+ chars for iron-session), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+
+## Key Documentation Files (`/documentation/`)
+
+- **03_Product_Requirements.md** — Product source of truth
+- **04_Data_Model.md** — Postgres data model
+- **05_API_Contracts.md** — API endpoints and response shapes
+- **06_Scoring_Streaks_Rules.md** — Points, streaks, gamification logic
+- **07_Leaderboards_Privacy.md** — Privacy-safe leaderboard strategy
+
+## Testing
+
+Tests live in `packages/shared/tests/`. 18 scoring tests cover goal evaluation, streak transitions, and point calculation. Run with `pnpm --filter @meusdesafios/shared test:run`.
 
 ## Edge Cases to Handle
 
-- Timezone boundaries for late-night logs
+- Timezone boundaries for late-night logs (use local date, not UTC)
 - Sleep entries spanning midnight
 - Duplicate logs and idempotency
 - User deactivates/reactivates challenges
 - Cohort too small for leaderboard display (< 5)
-
----
-
-## Implementation Progress
-
-### Phase 1: UI Foundation - COMPLETE
-All UI components built with mock data. Run `pnpm dev` and visit http://localhost:3000
-
-**Completed:**
-- Mock data layer (`lib/mock/today-data.ts`) - 4 core challenge cards with physical exercise modalities
-- `useToday` hook (`lib/hooks/use-today.ts`) - manages state, has `USE_MOCK` flag
-- Base UI components: Badge, Button, Card, ProgressBar
-- Trackable components: StreakBadge, PointsChip, QuickActionRow, TrackableProgress, TrackableCard
-- Today page: TodayHeader, TrackableList, EmptyState, FeedbackToast
-- App layout with navigation
-
-**Key files:**
-- `apps/web/app/(app)/today/page.tsx` - main dashboard
-- `apps/web/lib/hooks/use-today.ts` - set `USE_MOCK = false` to switch to real API
-
-### Phase 2: Logging Modals - COMPLETE
-**Completed:**
-- Modal base component (`components/ui/Modal.tsx`)
-- WaterLogger modal with quick-select and custom amount input
-- SleepLogger modal with bedtime picker and duration slider
-- ActivityLogger modal for Physical Exercise modalities (Run/Cycling/Swim/Gym)
-- All modals wired to Today page via modal state management
-
-### Phase 3: API Routes - IN PROGRESS
-**Started:**
-- API foundation: `lib/api/response.ts` (success/error helpers)
-- API validation: `lib/api/validate.ts` (Zod schema validation)
-- Directory structure created for endpoints
-
-**Pending endpoints:**
-- `GET /api/trackables/templates` - list templates
-- `POST /api/trackables/activate` - activate a challenge card
-- `GET /api/trackables/today` - today's cards with progress
-- `POST /api/trackables/log` - create log entry, trigger recompute
-- `GET /api/trackables/[id]` - detail view
-
-### Phase 4: Scoring Service - NOT STARTED
-- Wrap `packages/shared/src/scoring/` in a service layer
-- Handle transactions, idempotency, streak updates
-- Connect to TypeORM entities
-
-### Phase 5: Remaining Features - NOT STARTED
-- Detail endpoint, logs history, scoring explanations
-- Full test coverage
-
----
-
-## Development Philosophy
-
-**UI-First Approach:**
-1. Build UI with mock data (looks real, stakeholders can see progress)
-2. Define TypeScript types/contracts
-3. Create API routes matching contracts
-4. Connect UI to real API (swap mock → fetch)
-5. Implement backend services
+- `ComputedDailyStats.day` may be a Date object or string depending on context — always normalize with `dayString()`

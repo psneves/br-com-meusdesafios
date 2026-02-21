@@ -7,11 +7,18 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   viewportFit: "cover",
+  themeColor: "#4f46e5",
 };
 
 export const metadata: Metadata = {
   title: "Meus Desafios",
   description: "Consistência vira resultado",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Meus Desafios",
+  },
   icons: {
     icon: [
       { url: "/logo-256x256.png", sizes: "256x256", type: "image/png" },

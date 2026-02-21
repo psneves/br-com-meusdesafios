@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { createLog } from "@/lib/services/trackable.service";
 import { validateBody } from "@/lib/api/validate";
 import { successResponse, errors } from "@/lib/api/response";
+import { rateLimit } from "@/lib/api/rate-limit";
 
 const logSchema = z.object({
   userTrackableId: z.string().uuid(),
@@ -17,6 +18,9 @@ export async function POST(request: Request) {
     if (!session.isLoggedIn || !session.id) {
       return errors.unauthorized();
     }
+
+    const limited = rateLimit(`log:${session.id}`, 30); // 30 logs/min
+    if (limited) return limited;
 
     const validation = await validateBody(request, logSchema);
     if ("error" in validation) {

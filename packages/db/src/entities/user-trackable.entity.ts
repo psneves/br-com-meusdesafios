@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Unique,
 } from "typeorm";
 import { User } from "./user.entity";
 import { TrackableTemplate } from "./trackable-template.entity";
@@ -14,6 +15,7 @@ import { Streak } from "./streak.entity";
 import type { Goal, Schedule, ScoringConfig } from "@meusdesafios/shared";
 
 @Entity("user_trackables")
+@Unique("UQ_user_trackable_user_template", ["userId", "templateId"])
 export class UserTrackable {
   @PrimaryGeneratedColumn("uuid")
   id!: string;

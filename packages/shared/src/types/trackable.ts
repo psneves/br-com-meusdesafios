@@ -58,10 +58,5 @@ export interface StreakBonus {
 
 export const DEFAULT_SCORING: ScoringConfig = {
   basePoints: 10,
-  streakBonuses: [
-    { day: 3, points: 5 },
-    { day: 7, points: 10 },
-    { day: 14, points: 20 },
-    { day: 30, points: 50 },
-  ],
+  streakBonuses: [],
 };
