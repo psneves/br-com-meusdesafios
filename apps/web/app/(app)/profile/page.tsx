@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { useChallengeSettings } from "@/lib/hooks/use-challenge-settings";
 import { useProfile } from "@/lib/hooks/use-profile";
+import { encodeGeohash, LOCATION_CELL_PRECISION } from "@/lib/location/geohash";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
 interface ChallengeGoalDef {
@@ -23,6 +24,13 @@ interface ChallengeGoalDef {
   toDisplay: (v: number) => number;
   toInternal: (v: number) => number;
   format: (v: number) => string;
+}
+
+interface LocationStatus {
+  enabled: boolean;
+  cellId: string | null;
+  precisionKm: number;
+  updatedAt: string | null;
 }
 
 const CHALLENGE_DEFS: ChallengeGoalDef[] = [
@@ -96,12 +104,12 @@ export default function ProfilePage() {
   const [editHandle, setEditHandle] = useState("");
 
   // Location state
-  const [locationUpdatedAt, setLocationUpdatedAt] = useState<string | null | undefined>(undefined); // undefined = loading, null = no location
+  const [locationStatus, setLocationStatus] = useState<LocationStatus | undefined>(undefined);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationSuccess, setLocationSuccess] = useState(false);
 
-  const locationActive = locationUpdatedAt != null && locationUpdatedAt !== undefined;
+  const locationActive = locationStatus?.enabled === true;
 
   useEffect(() => setMounted(true), []);
 
@@ -110,9 +118,9 @@ export default function ProfilePage() {
     fetch("/api/profile/location")
       .then((r) => r.json())
       .then((json) => {
-        setLocationUpdatedAt(json.data?.updatedAt ?? null);
+        setLocationStatus(json.data ?? { enabled: false, cellId: null, precisionKm: 5, updatedAt: null });
       })
-      .catch(() => setLocationUpdatedAt(null));
+      .catch(() => setLocationStatus({ enabled: false, cellId: null, precisionKm: 5, updatedAt: null }));
   }, []);
 
   const updateLocation = useCallback(async () => {
@@ -137,13 +145,16 @@ export default function ProfilePage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          cellId: encodeGeohash(
+            position.coords.latitude,
+            position.coords.longitude,
+            LOCATION_CELL_PRECISION
+          ),
         }),
       });
       if (!res.ok) throw new Error("Falha ao salvar localização");
       const json = await res.json();
-      setLocationUpdatedAt(json.data?.updatedAt ?? new Date().toISOString());
+      setLocationStatus(json.data);
       setLocationSuccess(true);
       setTimeout(() => setLocationSuccess(false), 3000);
     } catch (err: unknown) {
@@ -158,6 +169,29 @@ export default function ProfilePage() {
         setLocationError("Erro ao atualizar localização.");
       }
       console.error("[updateLocation]", err);
+    } finally {
+      setIsUpdatingLocation(false);
+    }
+  }, []);
+
+  const clearLocation = useCallback(async () => {
+    setIsUpdatingLocation(true);
+    setLocationError(null);
+    setLocationSuccess(false);
+
+    try {
+      const res = await fetch("/api/profile/location", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Falha ao desativar localização");
+      const json = await res.json();
+      setLocationStatus(json.data);
+      setLocationSuccess(true);
+      setTimeout(() => setLocationSuccess(false), 3000);
+    } catch (err) {
+      console.error("[clearLocation]", err);
+      setLocationError("Erro ao desativar localização.");
     } finally {
       setIsUpdatingLocation(false);
     }
@@ -449,45 +483,56 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {locationUpdatedAt === undefined
+                {locationStatus === undefined
                   ? "Carregando..."
                   : locationActive
                     ? "Localização ativa"
                     : "Sem localização"}
               </p>
               <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                {locationActive && locationUpdatedAt
-                  ? `Atualizada em ${new Date(locationUpdatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}`
-                  : "Usada para o ranking regional"}
+                {locationActive && locationStatus?.updatedAt
+                  ? `Célula aproximada (~${locationStatus.precisionKm} km). Atualizada em ${new Date(locationStatus.updatedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}`
+                  : "Usada no ranking regional sem salvar localização precisa"}
               </p>
             </div>
           </div>
-          <button
-            onClick={updateLocation}
-            disabled={isUpdatingLocation}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
-              locationSuccess
-                ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          <div className="flex items-center gap-2">
+            {locationActive && (
+              <button
+                onClick={clearLocation}
+                disabled={isUpdatingLocation}
+                className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Desativar
+              </button>
             )}
-          >
-            {isUpdatingLocation ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Atualizando...
-              </>
-            ) : locationSuccess ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                Salvo
-              </>
-            ) : locationActive ? (
-              "Atualizar"
-            ) : (
-              "Ativar"
-            )}
-          </button>
+            <button
+              onClick={updateLocation}
+              disabled={isUpdatingLocation}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
+                locationSuccess
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              )}
+            >
+              {isUpdatingLocation ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Atualizando...
+                </>
+              ) : locationSuccess ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  Salvo
+                </>
+              ) : locationActive ? (
+                "Atualizar"
+              ) : (
+                "Ativar"
+              )}
+            </button>
+          </div>
         </div>
         {locationError && (
           <p className="mt-2 text-xs text-red-500 dark:text-red-400">

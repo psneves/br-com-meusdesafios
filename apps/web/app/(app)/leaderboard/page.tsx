@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
-import { Trophy, Users, MapPin, Lock, Loader2 } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Trophy, Users, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
 import { useLeaderboard } from "@/lib/hooks/use-leaderboard";
 import { useSession } from "@/lib/hooks/use-session";
-import type { Radius } from "@/lib/types/leaderboard";
-import type { FriendSummary } from "@/lib/types/social";
+import { encodeGeohash, LOCATION_CELL_PRECISION } from "@/lib/location/geohash";
+import type { ParticipantRow, Radius } from "@/lib/types/leaderboard";
 
 const RADIUS_OPTIONS: Radius[] = [50, 100, 500];
 
@@ -33,35 +32,76 @@ function LeaderboardSkeleton() {
   );
 }
 
+// ── Participant Row ──────────────────────────────────────
+
+function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-phi-3 rounded-lg px-phi-3 py-phi-3 transition-colors",
+        me
+          ? "bg-indigo-50/80 ring-1 ring-indigo-200 dark:bg-indigo-950/25 dark:ring-indigo-800"
+          : "bg-gray-50 dark:bg-gray-800/40"
+      )}
+    >
+      {/* Rank */}
+      <span className="w-7 text-center text-sm font-bold tabular-nums text-gray-400 dark:text-gray-500">
+        {row.rank}º
+      </span>
+
+      <DefaultAvatar
+        name={row.user.displayName}
+        avatarUrl={row.user.avatarUrl}
+      />
+
+      {/* Name + active challenges */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+          {row.user.displayName}
+          {me && (
+            <span className="ml-1 text-[10px] font-semibold text-indigo-500 dark:text-indigo-400">
+              você
+            </span>
+          )}
+        </p>
+        <div className="mt-0.5 flex items-center gap-1">
+          {row.goals.targets.map((goal) => {
+            const cfg = getCategoryConfig(goal.category);
+            const Icon = cfg.icon;
+            return (
+              <Icon
+                key={goal.category}
+                className={cn("h-3 w-3", cfg.color)}
+                aria-label={goal.category}
+              />
+            );
+          })}
+          <span className="ml-0.5 text-[10px] tabular-nums text-gray-400 dark:text-gray-500">
+            {row.accomplishedTotal} concluída{row.accomplishedTotal !== 1 ? "s" : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* Score */}
+      <div className="text-right">
+        <span className="text-lg font-extrabold tabular-nums text-indigo-600 dark:text-indigo-400">
+          {row.score}
+        </span>
+        <span className="ml-0.5 text-[10px] font-bold text-indigo-500/70 dark:text-indigo-400/60">
+          XP
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────
 
 export default function LeaderboardPage() {
   const leaderboard = useLeaderboard();
   const session = useSession();
-  const [friends, setFriends] = useState<FriendSummary[]>([]);
-  const [isFriendsLoading, setIsFriendsLoading] = useState(true);
-  const [friendsError, setFriendsError] = useState<string | null>(null);
   const [isActivatingLocation, setIsActivatingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-
-  const fetchFriends = useCallback(async () => {
-    setIsFriendsLoading(true);
-    setFriendsError(null);
-    try {
-      const res = await fetch("/api/social/friends");
-      if (!res.ok) throw new Error("Failed to fetch friends");
-      const json = await res.json();
-      setFriends(json.data.friends ?? []);
-    } catch {
-      setFriendsError("Não foi possível carregar sua lista de amigos.");
-    } finally {
-      setIsFriendsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFriends();
-  }, [fetchFriends]);
 
   const activateLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -73,29 +113,28 @@ export default function LeaderboardPage() {
     setLocationError(null);
 
     try {
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 15000,
-          });
-        }
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 15000,
+        });
+      });
+
+      const cellId = encodeGeohash(
+        position.coords.latitude,
+        position.coords.longitude,
+        LOCATION_CELL_PRECISION
       );
 
       const res = await fetch("/api/profile/location", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        }),
+        body: JSON.stringify({ cellId }),
       });
 
       if (!res.ok) throw new Error("Falha ao salvar localização");
-
       leaderboard.refresh();
     } catch (err: unknown) {
-      // GeolocationPositionError has a numeric .code property
       const geoErr = err as { code?: number };
       if (typeof geoErr.code === "number" && geoErr.code >= 1 && geoErr.code <= 3) {
         setLocationError(
@@ -114,6 +153,34 @@ export default function LeaderboardPage() {
     }
   }, [leaderboard]);
 
+  const rankData = leaderboard.data?.overall;
+  const challengeRanks = leaderboard.data?.challengeRanks ?? [];
+  const participantsStandard = leaderboard.data?.participantsStandard;
+  const participantsPage = leaderboard.data?.participantsPage;
+
+  const isNearby = leaderboard.scope === "nearby";
+  const noLocation = rankData?.rankStatus === "no_location";
+  const percentileLabel = useMemo(() => {
+    if (rankData?.percentile == null) return null;
+    return `Top ${Math.max(1, Math.round((1 - rankData.percentile) * 100))}%`;
+  }, [rankData?.percentile]);
+
+  const scopePillClass = (active: boolean) =>
+    cn(
+      "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
+      active
+        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+        : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+    );
+
+  const viewTabClass = (active: boolean) =>
+    cn(
+      "flex-1 py-2 text-center text-xs font-medium transition-colors",
+      active
+        ? "border-b-2 border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+        : "border-b-2 border-transparent text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+    );
+
   if (leaderboard.isLoading || session.isLoading) {
     return <LeaderboardSkeleton />;
   }
@@ -125,11 +192,9 @@ export default function LeaderboardPage() {
           <Trophy className="h-7 w-7 text-red-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            Erro ao carregar ranking
-          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">Erro ao carregar ranking</p>
           <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Não foi possível buscar seus dados. Verifique sua conexão.
+            Não foi possível buscar os dados do grupo.
           </p>
         </div>
         <button
@@ -142,24 +207,6 @@ export default function LeaderboardPage() {
     );
   }
 
-  const rankData = leaderboard.data?.overall;
-  const challengeRanks = leaderboard.data?.challengeRanks ?? [];
-  const isNearby = leaderboard.scope === "nearby";
-  const noLocation = rankData?.rankStatus === "no_location";
-
-  const percentileLabel =
-    rankData?.percentile != null
-      ? `Top ${Math.max(1, Math.round((1 - rankData.percentile) * 100))}%`
-      : null;
-
-  const scopePillClass = (active: boolean) =>
-    cn(
-      "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
-      active
-        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-        : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-    );
-
   return (
     <div className="space-y-phi-4 md:space-y-phi-5">
       {/* Page title */}
@@ -168,11 +215,9 @@ export default function LeaderboardPage() {
           <Trophy className="h-5 w-5 text-amber-500" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-            Sua Posição
-          </h1>
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white">Ranking</h1>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Compare seu desempenho com seus amigos
+            Compare seu desempenho com o grupo
           </p>
         </div>
       </div>
@@ -203,7 +248,7 @@ export default function LeaderboardPage() {
         </button>
       </div>
 
-      {/* Scope tabs */}
+      {/* Scope pills */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => leaderboard.setScope("friends")}
@@ -211,15 +256,18 @@ export default function LeaderboardPage() {
         >
           <Users className="h-3.5 w-3.5" />
           Amigos
-          <span className={cn(
-            "ml-0.5 tabular-nums",
-            leaderboard.scope === "friends"
-              ? "text-white/70 dark:text-gray-900/60"
-              : "text-gray-400 dark:text-gray-500"
-          )}>
+          <span
+            className={cn(
+              "ml-0.5 tabular-nums",
+              leaderboard.scope === "friends"
+                ? "text-white/70 dark:text-gray-900/60"
+                : "text-gray-400 dark:text-gray-500"
+            )}
+          >
             {session.user?.friendsCount ?? 0}
           </span>
         </button>
+
         <button
           onClick={() => leaderboard.setScope("nearby")}
           className={scopePillClass(isNearby)}
@@ -257,11 +305,9 @@ export default function LeaderboardPage() {
               <MapPin className="h-6 w-6 text-indigo-500" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                Ative sua localização
-              </p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">Ative sua localização</p>
               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                Para ver seu ranking regional, precisamos da sua localização aproximada.
+                Usamos apenas célula aproximada (~5 km), sem salvar coordenadas precisas.
               </p>
             </div>
             <button
@@ -278,15 +324,8 @@ export default function LeaderboardPage() {
                 "Ativar localização"
               )}
             </button>
-            {isActivatingLocation && (
-              <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                Permita o acesso à localização no seu navegador.
-              </p>
-            )}
             {locationError && (
-              <p className="text-xs text-red-500 dark:text-red-400">
-                {locationError}
-              </p>
+              <p className="text-xs text-red-500 dark:text-red-400">{locationError}</p>
             )}
           </div>
         </section>
@@ -305,50 +344,37 @@ export default function LeaderboardPage() {
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {session.user?.displayName ?? "—"}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  @{session.user?.handle ?? "—"}
-                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">@{session.user?.handle ?? "—"}</p>
               </div>
               <div className="text-right">
                 <span className="text-3xl font-extrabold tabular-nums text-indigo-600 dark:text-indigo-400">
                   {rankData?.score ?? 0}
                 </span>
-                <span className="ml-1 text-sm font-bold text-indigo-500/70 dark:text-indigo-400/60">
-                  XP
-                </span>
+                <span className="ml-1 text-sm font-bold text-indigo-500/70 dark:text-indigo-400/60">XP</span>
               </div>
             </div>
 
             <div className="border-t border-gray-100 dark:border-gray-800">
-              {rankData?.rankStatus === "available" && rankData.rank != null ? (
-                <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-800">
-                  <div className="flex flex-col items-center py-4">
-                    <span className="text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
-                      {rankData.rank}º
-                    </span>
-                    <span className="mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                      Posição
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center py-4">
-                    <span className="text-2xl font-extrabold tabular-nums text-amber-500 dark:text-amber-400">
-                      {percentileLabel}
-                    </span>
-                    <span className="mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">
-                      Percentil
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-5 py-4 text-sm text-gray-400 dark:text-gray-500">
-                  <Lock className="h-4 w-4 shrink-0" />
-                  <span>
-                    {isNearby
-                      ? `Menos de 5 usuários encontrados em ${leaderboard.radius} km. Tente um raio maior.`
-                      : "Adicione pelo menos 4 amigos para desbloquear seu ranking."}
+              <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800">
+                <div className="flex flex-col items-center py-4">
+                  <span className="text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                    {rankData?.rank ?? 1}º
                   </span>
+                  <span className="mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">Posição</span>
                 </div>
-              )}
+                <div className="flex flex-col items-center py-4">
+                  <span className="text-2xl font-extrabold tabular-nums text-amber-500 dark:text-amber-400">
+                    {percentileLabel ?? "—"}
+                  </span>
+                  <span className="mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">Percentil</span>
+                </div>
+                <div className="flex flex-col items-center py-4">
+                  <span className="text-2xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                    {rankData?.cohortSize ?? 0}
+                  </span>
+                  <span className="mt-0.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">Participantes</span>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -367,10 +393,7 @@ export default function LeaderboardPage() {
                     : "—";
 
                 return (
-                  <div
-                    key={ch.category}
-                    className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
-                  >
+                  <div key={ch.category} className="flex items-center gap-phi-3 px-phi-4 py-phi-3">
                     <div
                       className={cn(
                         "flex h-8 w-8 items-center justify-center rounded-lg",
@@ -381,115 +404,119 @@ export default function LeaderboardPage() {
                       <Icon className={cn("h-4 w-4", cfg.color)} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {ch.name}
-                      </p>
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                        {ch.score} XP
-                      </p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{ch.name}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500">{ch.score} XP</p>
                     </div>
                     <div className="text-right">
-                      {ch.rank != null ? (
-                        <>
-                          <span className="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
-                            {ch.rank}º
-                          </span>
-                          <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
-                            {pctLabel}
-                          </p>
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                      <span className="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+                        {ch.rank ?? "—"}
+                        {ch.rank != null ? "º" : ""}
+                      </span>
+                      <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500">{pctLabel}</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           </section>
+
+          {/* Participants — view tabs are contextual within this section */}
+          <section className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            {/* View tabs */}
+            <div className="flex border-b border-gray-100 dark:border-gray-800">
+              <button
+                onClick={() => leaderboard.setView("standard")}
+                className={viewTabClass(leaderboard.view === "standard")}
+              >
+                Destaques
+              </button>
+              <button
+                onClick={() => leaderboard.setView("all")}
+                className={viewTabClass(leaderboard.view === "all")}
+              >
+                Ranking completo
+              </button>
+            </div>
+
+            <div className="p-phi-4">
+              {leaderboard.view === "standard" ? (
+                <div className="space-y-phi-4">
+                  {/* Top */}
+                  <div>
+                    <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      Melhores do grupo
+                    </h3>
+                    <div className="space-y-1.5">
+                      {(participantsStandard?.top ?? []).map((row) => (
+                        <ParticipantCard
+                          key={`top-${row.user.id}`}
+                          row={row}
+                          me={row.user.id === session.user?.id}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Around me */}
+                  {(participantsStandard?.aroundMe ?? []).length > 0 && (
+                    <div>
+                      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        Sua região no ranking
+                      </h3>
+                      <div className="space-y-1.5">
+                        {(participantsStandard?.aroundMe ?? []).map((row) => (
+                          <ParticipantCard
+                            key={`around-${row.user.id}`}
+                            row={row}
+                            me={row.user.id === session.user?.id}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-phi-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      Todos os participantes
+                    </span>
+                    <span className="text-[11px] tabular-nums text-gray-400 dark:text-gray-500">
+                      {participantsPage?.items.length ?? 0} de {participantsPage?.totalItems ?? 0}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {(participantsPage?.items ?? []).map((row) => (
+                      <ParticipantCard
+                        key={`all-${row.user.id}`}
+                        row={row}
+                        me={row.user.id === session.user?.id}
+                      />
+                    ))}
+                  </div>
+
+                  {leaderboard.hasNextPage && (
+                    <button
+                      onClick={leaderboard.loadMore}
+                      disabled={leaderboard.isLoadingMore}
+                      className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                      {leaderboard.isLoadingMore ? "Carregando..." : "Carregar mais"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
         </>
       )}
 
-      {/* Friends list */}
-      <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-center gap-2 px-phi-4 pt-phi-4 pb-phi-2">
-          <Users className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Seus amigos
-          </h2>
-          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
-            {session.user?.friendsCount ?? friends.length}
-          </span>
-        </div>
-
-        {isFriendsLoading ? (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {[1, 2, 3].map((idx) => (
-              <div key={idx} className="flex items-center gap-phi-3 px-phi-4 py-phi-3 animate-pulse">
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-28 rounded bg-gray-200 dark:bg-gray-700" />
-                  <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : friendsError ? (
-          <div className="flex items-center justify-between gap-2 px-phi-4 py-phi-3">
-            <p className="text-xs text-red-500 dark:text-red-400">
-              {friendsError}
-            </p>
-            <button
-              onClick={fetchFriends}
-              className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        ) : friends.length > 0 ? (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {friends.map((friend) => (
-              <div
-                key={friend.id}
-                className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
-              >
-                <DefaultAvatar
-                  name={friend.displayName}
-                  avatarUrl={friend.avatarUrl}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-                    {friend.displayName}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    @{friend.handle}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
-            <Users className="h-8 w-8 text-gray-200 dark:text-gray-700" />
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              Você ainda não tem amigos adicionados.
-            </p>
-            <Link
-              href="/explore"
-              className="rounded-full bg-gray-900 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-            >
-              Encontrar amigos
-            </Link>
-          </div>
-        )}
-      </section>
-
-      {/* Privacy notice */}
+      {/* Privacy / location notice */}
       <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
-        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
+        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          Seu ranking é privado. Apenas sua posição e pontuação são visíveis
-          para você — ninguém mais tem acesso a esses dados.
+          No ranking &quot;Perto de mim&quot;, apenas uma célula aproximada (~5 km) é usada. Coordenadas precisas não são armazenadas.
         </p>
       </div>
     </div>

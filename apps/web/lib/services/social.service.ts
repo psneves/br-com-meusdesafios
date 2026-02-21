@@ -1,5 +1,5 @@
 import { getDataSource, User, FollowEdge } from "@meusdesafios/db";
-import type { ExploreUser, PendingFollowRequest, SentFollowRequest } from "../types/social";
+import type { ExploreUser, FriendSummary, PendingFollowRequest, SentFollowRequest } from "../types/social";
 
 // ── getFriendCount ────────────────────────────────────────
 
@@ -22,13 +22,6 @@ export async function getFriendCount(
 }
 
 // ── getAcceptedFriends ────────────────────────────────────
-
-export interface FriendSummary {
-  id: string;
-  displayName: string;
-  handle: string;
-  avatarUrl: string | null;
-}
 
 export async function getAcceptedFriends(
   userId: string

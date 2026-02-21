@@ -9,6 +9,9 @@ const rankSchema = z.object({
   scope: z.enum(["friends", "nearby"]),
   period: z.enum(["week", "month"]),
   radius: z.enum(["50", "100", "500"]).optional(),
+  view: z.enum(["standard", "all"]).optional().default("standard"),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(50),
 });
 
 export async function GET(request: Request) {
@@ -24,14 +27,22 @@ export async function GET(request: Request) {
       return validation.error;
     }
 
-    const { scope, period, radius: radiusStr } = validation.data;
+    const {
+      scope,
+      period,
+      radius: radiusStr,
+      view,
+      page,
+      pageSize,
+    } = validation.data;
     const radius = radiusStr ? (Number(radiusStr) as Radius) : undefined;
 
     const data = await computeLeaderboard(
       session.id,
       scope,
       period,
-      radius
+      radius,
+      { view, page, pageSize }
     );
     return successResponse(data);
   } catch (err) {

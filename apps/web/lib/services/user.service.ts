@@ -1,4 +1,9 @@
 import { getDataSource, User, ILike, Not } from "@meusdesafios/db";
+import {
+  LOCATION_CELL_APPROX_KM,
+  LOCATION_CELL_PRECISION,
+  normalizeCellId,
+} from "@/lib/location/geohash";
 
 export interface ProfileData {
   id: string;
@@ -102,27 +107,31 @@ export async function isHandleAvailable(
 }
 
 export interface UserLocation {
-  latitude: number;
-  longitude: number;
-  updatedAt: string;
+  enabled: boolean;
+  cellId: string | null;
+  precisionKm: typeof LOCATION_CELL_APPROX_KM;
+  updatedAt: string | null;
 }
 
-export async function getLocation(userId: string): Promise<UserLocation | null> {
+export async function getLocation(userId: string): Promise<UserLocation> {
   const ds = await getDataSource();
   const user = await ds.getRepository(User).findOneBy({ id: userId });
-  if (!user || user.latitude == null || user.longitude == null) return null;
+  if (!user) {
+    throw new Error("User not found");
+  }
 
+  const cellId = user.locationCell;
   return {
-    latitude: user.latitude,
-    longitude: user.longitude,
-    updatedAt: user.locationUpdatedAt?.toISOString() ?? new Date().toISOString(),
+    enabled: cellId != null,
+    cellId: cellId ?? null,
+    precisionKm: LOCATION_CELL_APPROX_KM,
+    updatedAt: user.locationUpdatedAt?.toISOString() ?? null,
   };
 }
 
 export async function updateLocation(
   userId: string,
-  latitude: number,
-  longitude: number
+  cellId: string
 ): Promise<UserLocation> {
   const ds = await getDataSource();
   const repo = ds.getRepository(User);
@@ -130,14 +139,38 @@ export async function updateLocation(
   const user = await repo.findOneBy({ id: userId });
   if (!user) throw new Error("User not found");
 
-  user.latitude = latitude;
-  user.longitude = longitude;
+  const normalizedCellId = normalizeCellId(cellId, LOCATION_CELL_PRECISION);
+  if (!normalizedCellId) {
+    throw new Error("Invalid location cell");
+  }
+
+  user.locationCell = normalizedCellId;
   user.locationUpdatedAt = new Date();
   await repo.save(user);
 
   return {
-    latitude,
-    longitude,
+    enabled: true,
+    cellId: normalizedCellId,
+    precisionKm: LOCATION_CELL_APPROX_KM,
+    updatedAt: user.locationUpdatedAt.toISOString(),
+  };
+}
+
+export async function clearLocation(userId: string): Promise<UserLocation> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(User);
+
+  const user = await repo.findOneBy({ id: userId });
+  if (!user) throw new Error("User not found");
+
+  user.locationCell = null;
+  user.locationUpdatedAt = new Date();
+  await repo.save(user);
+
+  return {
+    enabled: false,
+    cellId: null,
+    precisionKm: LOCATION_CELL_APPROX_KM,
     updatedAt: user.locationUpdatedAt.toISOString(),
   };
 }

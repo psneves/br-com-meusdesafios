@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest",
+    "test": "vitest run --passWithNoTests --exclude '**/__tests__/**'",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

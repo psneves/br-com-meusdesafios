@@ -41,11 +41,8 @@ export class User {
   @Column({ name: "avatar_url", type: "varchar", nullable: true })
   avatarUrl!: string | null;
 
-  @Column({ type: "double precision", nullable: true })
-  latitude!: number | null;
-
-  @Column({ type: "double precision", nullable: true })
-  longitude!: number | null;
+  @Column({ name: "location_cell", type: "varchar", length: 12, nullable: true })
+  locationCell!: string | null;
 
   @Column({ name: "location_updated_at", type: "timestamptz", nullable: true })
   locationUpdatedAt!: Date | null;

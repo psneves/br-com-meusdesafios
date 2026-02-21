@@ -2,14 +2,24 @@
   "cookies": [
     {
       "name": "meusdesafios-session",
-      "value": "Fe26.2*1*a8e0447b325ddbe619fa6235324354af1a1a0bfc5aa21988f91ff464af93d945*yW0s0iMV-3pjuZRO0qLyOQ*3uH5RYJS_JscaAfYceOtHJd_3O9UfterdZ73iU_d_qo32kaYxbooliJHTf_Yu2So7Gfg9PYyvce7U66UQKYP8RRxwh48CgGUFXMfsg81gz0xmgW_kaO1CMne3df6JQUGlEsrdsi0qSkA5qWl5EpKMh31xB1QpiLvt342NKAJwYreQUCbwGmusOX61MILZrWYIqcaBCF1uqD_xlHnUOcuD9OJJY74R1N3rSB3aAdH1MM*1772709431962*76da148febfcbcaa49175dc9e22b0177f118190d095d97829c6cd45b280f9bfe*1lKt9ewvO61mQIjdhnjNyJNs3yt8f9rSRyweIc-i8q4~2",
+      "value": "Fe26.2*1*46064e9c90cf9b89abaef090fbc721ae0852376dce5f3b3e4b9c6e9235b0dd3d*1k4J3hlBU3-xC2uL2lrgaA*0wfpRfJVwzSBXyo1ELnko9qmwGpLpNC97GKR5mjJwSVhTj4F3D_C6JADZVr7XD2274vGhcbwuXFrXB1DjHgLdCTuwmcfHd7SQ2xVm_w_J2C1L9MQWD6cvv9oQfwORtw-tO-6bBcMCzn45hiuO1MteSjuUyGk3UNku7zPhlJ-j45Ej75p1F59PpHH_w8w3HGMJjt-lHZSeZ6DivWmHKVXmr0xYogPxusNB3WnDr8NeRgeYWph8SN1WLSJt5oFy1zlgZAohab4U1zJRHanduMaGQ*1772854685054*a2bb1edc5ff0a7169727c0b44245f181d6d07325e32d3b0aa23dcfefd07ca2ef*UQRbNAcIXFg_olDUXLeDDmKKezKg23OAKHQ9cSmX534~2",
       "domain": "localhost",
       "path": "/",
-      "expires": 1772104631.965,
+      "expires": 1772249885.058,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
     }
   ],
-  "origins": []
+  "origins": [
+    {
+      "origin": "http://localhost:3000",
+      "localStorage": [
+        {
+          "name": "meusdesafios-onboarding-done",
+          "value": "1"
+        }
+      ]
+    }
+  ]
 }

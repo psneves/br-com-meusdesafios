@@ -109,24 +109,151 @@ const MOCK_LEADERBOARD = {
   data: {
     overall: {
       scope: "friends",
-      rank: null,
+      rank: 2,
       score: 120,
-      cohortSize: 3,
-      percentile: null,
-      rankStatus: "insufficient_cohort",
+      cohortSize: 6,
+      percentile: 0.84,
+      rankStatus: "available",
     },
     challengeRanks: [
-      { category: "WATER", name: "Água", rank: null, score: 40, cohortSize: 3, percentile: null },
-      { category: "DIET_CONTROL", name: "Dieta", rank: null, score: 30, cohortSize: 3, percentile: null },
-      { category: "PHYSICAL_EXERCISE", name: "Exercício", rank: null, score: 20, cohortSize: 3, percentile: null },
-      { category: "SLEEP", name: "Sono", rank: null, score: 30, cohortSize: 3, percentile: null },
+      { category: "WATER", name: "Água", rank: 1, score: 40, cohortSize: 6, percentile: 1 },
+      { category: "DIET_CONTROL", name: "Dieta", rank: 3, score: 30, cohortSize: 6, percentile: 0.67 },
+      { category: "PHYSICAL_EXERCISE", name: "Exercício", rank: 4, score: 20, cohortSize: 6, percentile: 0.5 },
+      { category: "SLEEP", name: "Sono", rank: 2, score: 30, cohortSize: 6, percentile: 0.84 },
     ],
+    view: "standard",
+    participantsStandard: {
+      top: [
+        {
+          user: { id: "u-top-1", displayName: "Líder 1", handle: "lider1", avatarUrl: null },
+          rank: 1,
+          score: 180,
+          goals: {
+            activeCount: 4,
+            targets: [
+              { category: "WATER", target: 2500, unit: "ml" },
+              { category: "SLEEP", target: 420, unit: "min" },
+            ],
+          },
+          accomplishedTotal: 18,
+          pointsSummary: { day: 20, week: 120, month: 460 },
+        },
+        {
+          user: { id: "test-user", displayName: "E2E Test User", handle: "e2euser", avatarUrl: null },
+          rank: 2,
+          score: 120,
+          goals: {
+            activeCount: 4,
+            targets: [
+              { category: "WATER", target: 2500, unit: "ml" },
+            ],
+          },
+          accomplishedTotal: 14,
+          pointsSummary: { day: 10, week: 80, month: 320 },
+        },
+      ],
+      aroundMe: [
+        {
+          user: { id: "u-around", displayName: "Vizinho", handle: "vizinho", avatarUrl: null },
+          rank: 3,
+          score: 110,
+          goals: {
+            activeCount: 3,
+            targets: [
+              { category: "DIET_CONTROL", target: 5, unit: "refeições" },
+            ],
+          },
+          accomplishedTotal: 12,
+          pointsSummary: { day: 10, week: 70, month: 280 },
+        },
+      ],
+    },
+    participantsPage: {
+      items: [],
+      page: 1,
+      pageSize: 50,
+      totalItems: 3,
+      totalPages: 1,
+      hasNext: false,
+    },
   },
 };
 
 const MOCK_SESSION = {
   success: true,
-  data: { id: "test-user", displayName: "E2E Test User", avatarUrl: null, friendsCount: 0 },
+  data: {
+    id: "test-user",
+    displayName: "E2E Test User",
+    handle: "e2euser",
+    avatarUrl: null,
+    friendsCount: 0,
+  },
+};
+
+const MOCK_LEADERBOARD_ALL_PAGE_1 = {
+  success: true,
+  data: {
+    ...MOCK_LEADERBOARD.data,
+    view: "all",
+    participantsPage: {
+      items: [
+        {
+          user: { id: "u-top-1", displayName: "Líder 1", handle: "lider1", avatarUrl: null },
+          rank: 1,
+          score: 180,
+          goals: { activeCount: 4, targets: [{ category: "WATER", target: 2500, unit: "ml" }] },
+          accomplishedTotal: 18,
+          pointsSummary: { day: 20, week: 120, month: 460 },
+        },
+        {
+          user: { id: "test-user", displayName: "E2E Test User", handle: "e2euser", avatarUrl: null },
+          rank: 2,
+          score: 120,
+          goals: { activeCount: 4, targets: [{ category: "WATER", target: 2500, unit: "ml" }] },
+          accomplishedTotal: 14,
+          pointsSummary: { day: 10, week: 80, month: 320 },
+        },
+      ],
+      page: 1,
+      pageSize: 50,
+      totalItems: 4,
+      totalPages: 2,
+      hasNext: true,
+    },
+  },
+};
+
+const MOCK_LEADERBOARD_ALL_PAGE_2 = {
+  success: true,
+  data: {
+    ...MOCK_LEADERBOARD.data,
+    view: "all",
+    participantsPage: {
+      items: [
+        {
+          user: { id: "u-around", displayName: "Vizinho", handle: "vizinho", avatarUrl: null },
+          rank: 3,
+          score: 110,
+          goals: { activeCount: 3, targets: [{ category: "DIET_CONTROL", target: 5, unit: "refeições" }] },
+          accomplishedTotal: 12,
+          pointsSummary: { day: 10, week: 70, month: 280 },
+        },
+        {
+          user: { id: "u-last", displayName: "Participante 4", handle: "p4", avatarUrl: null },
+          rank: 4,
+          score: 100,
+          goals: { activeCount: 2, targets: [{ category: "SLEEP", target: 420, unit: "min" }] },
+          accomplishedTotal: 10,
+          pointsSummary: { day: 0, week: 55, month: 200 },
+        },
+      ],
+      page: 2,
+      pageSize: 50,
+      totalItems: 4,
+      totalPages: 2,
+      hasNext: false,
+    },
+  },
 };
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -154,11 +281,45 @@ async function mockApis(page: Page) {
   await page.route("**/api/social/follow-request", (route) =>
     route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ success: true, data: { edgeId: "edge-1" } }) })
   );
-  await page.route("**/api/leaderboards/rank*", (route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_LEADERBOARD) })
-  );
+  await page.route("**/api/leaderboards/rank*", (route) => {
+    const url = new URL(route.request().url());
+    const view = url.searchParams.get("view");
+    const pageParam = url.searchParams.get("page");
+
+    if (view === "all" && pageParam === "2") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_LEADERBOARD_ALL_PAGE_2),
+      });
+    }
+
+    if (view === "all") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_LEADERBOARD_ALL_PAGE_1),
+      });
+    }
+
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_LEADERBOARD),
+    });
+  });
   await page.route("**/api/auth/me", (route) =>
     route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_SESSION) })
+  );
+  await page.route("**/api/profile/location", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: { enabled: true, cellId: "6gyf4", precisionKm: 5, updatedAt: new Date().toISOString() },
+      }),
+    })
   );
 }
 
@@ -342,7 +503,7 @@ test("14 – leaderboard page renders title and controls", async ({ page }) => {
   await mockApis(page);
   await page.goto("/leaderboard");
 
-  await expect(page.getByRole("heading", { name: "Sua Posição" })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: "Ranking do Grupo" })).toBeVisible({ timeout: 10000 });
   // Period toggles
   await expect(page.getByRole("button", { name: "Semana" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mês" })).toBeVisible();
@@ -356,7 +517,7 @@ test("14 – leaderboard page renders title and controls", async ({ page }) => {
 test("15 – leaderboard period toggle fetches new data", async ({ page }) => {
   await mockApis(page);
   await page.goto("/leaderboard");
-  await expect(page.getByRole("heading", { name: "Sua Posição" })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: "Ranking do Grupo" })).toBeVisible({ timeout: 10000 });
 
   const requestPromise = page.waitForRequest((req) => req.url().includes("period=month"));
   await page.getByRole("button", { name: "Mês" }).click();
@@ -367,7 +528,7 @@ test("15 – leaderboard period toggle fetches new data", async ({ page }) => {
 test("16 – leaderboard scope toggle fetches new data", async ({ page }) => {
   await mockApis(page);
   await page.goto("/leaderboard");
-  await expect(page.getByRole("heading", { name: "Sua Posição" })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: "Ranking do Grupo" })).toBeVisible({ timeout: 10000 });
 
   const requestPromise = page.waitForRequest((req) => req.url().includes("scope=nearby"));
   await page.getByRole("button", { name: "Perto de mim" }).click();
@@ -375,22 +536,39 @@ test("16 – leaderboard scope toggle fetches new data", async ({ page }) => {
   expect(request.url()).toContain("scope=nearby");
 });
 
-test("17 – leaderboard shows privacy notice", async ({ page }) => {
+test("17 – leaderboard shows coarse location notice", async ({ page }) => {
   await mockApis(page);
   await page.goto("/leaderboard");
 
   await expect(
-    page.getByText("Seu ranking é privado", { exact: false })
+    page.getByText("célula aproximada", { exact: false })
   ).toBeVisible({ timeout: 10000 });
   // Also verify the subtitle explains the ranking scope
   await expect(
-    page.getByText("Compare seu desempenho com seus amigos", { exact: false })
+    page.getByText("XP e progresso visíveis", { exact: false })
   ).toBeVisible();
+});
+
+test("18 – leaderboard all view loads paginated participants", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/leaderboard");
+  await expect(page.getByRole("heading", { name: "Ranking do Grupo" })).toBeVisible({ timeout: 10000 });
+
+  const requestPromise = page.waitForRequest((req) =>
+    req.url().includes("/api/leaderboards/rank") && req.url().includes("view=all") && req.url().includes("page=2")
+  );
+
+  await page.getByRole("button", { name: /Todos \(paginado\)/ }).click();
+  await expect(page.getByRole("button", { name: "Carregar mais" })).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: "Carregar mais" }).click();
+  await requestPromise;
+
+  await expect(page.getByText("Participante 4")).toBeVisible({ timeout: 5000 });
 });
 
 // ─── 5. Profile Page ───────────────────────────────────────
 
-test("18 – profile page renders theme toggle and challenge settings", async ({ page }) => {
+test("19 – profile page renders theme toggle and challenge settings", async ({ page }) => {
   await mockApis(page);
   await page.goto("/profile");
 
@@ -410,7 +588,7 @@ test("18 – profile page renders theme toggle and challenge settings", async ({
   await expect(page.getByText("Conta")).toBeVisible();
 });
 
-test("19 – profile goal adjustment calls PUT /api/trackables/goal", async ({ page }) => {
+test("20 – profile goal adjustment calls PUT /api/trackables/goal", async ({ page }) => {
   await mockApis(page);
   await page.goto("/profile");
   await expect(page.getByText("Personalizar Desafios")).toBeVisible({ timeout: 10000 });
@@ -434,7 +612,7 @@ test("19 – profile goal adjustment calls PUT /api/trackables/goal", async ({ p
   expect(body.target).toBeGreaterThan(0);
 });
 
-test("20 – profile logout button exists", async ({ page }) => {
+test("21 – profile logout button exists", async ({ page }) => {
   await page.goto("/profile");
   await expect(page.getByText("Conta")).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
