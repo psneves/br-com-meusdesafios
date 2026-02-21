@@ -17,6 +17,9 @@ import {
   PointsLedger,
   FollowEdge,
   LeaderboardSnapshot,
+  MobileAuthSession,
+  MobileDevice,
+  UserNotificationPreference,
 } from "./entities";
 
 export const AppDataSource = new DataSource({
@@ -34,6 +37,9 @@ export const AppDataSource = new DataSource({
     PointsLedger,
     FollowEdge,
     LeaderboardSnapshot,
+    MobileAuthSession,
+    MobileDevice,
+    UserNotificationPreference,
   ],
   migrations: ["src/migrations/*.ts"],
   subscribers: [],

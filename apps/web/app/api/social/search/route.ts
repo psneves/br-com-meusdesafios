@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateQuery } from "@/lib/api/validate";
 import { searchUsers } from "@/lib/services/social.service";
@@ -11,12 +11,10 @@ const searchSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const limited = rateLimit(`search:${session.id}`, 60); // 60 searches/min
+    const limited = rateLimit(`search:${auth.userId}`, 60); // 60 searches/min
     if (limited) return limited;
 
     const { searchParams } = new URL(request.url);
@@ -25,7 +23,7 @@ export async function GET(request: Request) {
       return validation.error;
     }
 
-    const users = await searchUsers(session.id, validation.data.q);
+    const users = await searchUsers(auth.userId, validation.data.q);
     return successResponse({ users });
   } catch (err) {
     console.error("[GET /api/social/search]", err);

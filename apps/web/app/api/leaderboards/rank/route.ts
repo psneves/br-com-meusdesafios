@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateQuery } from "@/lib/api/validate";
 import { computeLeaderboard } from "@/lib/services/leaderboard.service";
@@ -16,10 +16,8 @@ const rankSchema = z.object({
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const { searchParams } = new URL(request.url);
     const validation = validateQuery(searchParams, rankSchema);
@@ -38,7 +36,7 @@ export async function GET(request: Request) {
     const radius = radiusStr ? (Number(radiusStr) as Radius) : undefined;
 
     const data = await computeLeaderboard(
-      session.id,
+      auth.userId,
       scope,
       period,
       radius,

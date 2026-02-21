@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import {
   getPendingRequests,
@@ -6,17 +6,15 @@ import {
   getSuggestedUsers,
 } from "@/lib/services/social.service";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const [pendingRequests, sentRequests, suggestedUsers] = await Promise.all([
-      getPendingRequests(session.id),
-      getSentPendingRequests(session.id),
-      getSuggestedUsers(session.id),
+      getPendingRequests(auth.userId),
+      getSentPendingRequests(auth.userId),
+      getSuggestedUsers(auth.userId),
     ]);
 
     return successResponse({ pendingRequests, sentRequests, suggestedUsers });

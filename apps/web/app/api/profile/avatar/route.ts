@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateBody } from "@/lib/api/validate";
 import { updateAvatar } from "@/lib/services/user.service";
@@ -18,12 +18,10 @@ const avatarSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const limited = rateLimit(`avatar:${session.id}`, 5, 300_000); // 5 uploads/5min
+    const limited = rateLimit(`avatar:${auth.userId}`, 5, 300_000); // 5 uploads/5min
     if (limited) return limited;
 
     const validated = await validateBody(request, avatarSchema);
@@ -40,7 +38,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const avatarUrl = await updateAvatar(session.id, image);
+    const avatarUrl = await updateAvatar(auth.userId, image);
 
     // Note: we do NOT store base64 in the session cookie (too large for ~4KB limit).
     // The /api/auth/me endpoint reads avatarUrl directly from the database.

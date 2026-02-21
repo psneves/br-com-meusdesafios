@@ -1,19 +1,17 @@
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { unfriend } from "@/lib/services/social.service";
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const { userId } = await params;
-    await unfriend(session.id, userId);
+    await unfriend(auth.userId, userId);
     return successResponse({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { updateGoal } from "@/lib/services/trackable.service";
 import { validateBody } from "@/lib/api/validate";
 import { successResponse, errors } from "@/lib/api/response";
@@ -11,17 +11,15 @@ const goalSchema = z.object({
 
 export async function PUT(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const validation = await validateBody(request, goalSchema);
     if ("error" in validation) {
       return validation.error;
     }
 
-    await updateGoal(session.id, validation.data);
+    await updateGoal(auth.userId, validation.data);
     return successResponse({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
