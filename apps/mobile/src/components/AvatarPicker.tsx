@@ -30,7 +30,12 @@ export function AvatarPicker({
   };
 
   return (
-    <Pressable onPress={handlePress} disabled={isUploading}>
+    <Pressable
+      onPress={handlePress}
+      disabled={isUploading}
+      accessibilityRole="button"
+      accessibilityLabel="Alterar foto de perfil"
+    >
       <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
         {avatarUrl ? (
           <Image

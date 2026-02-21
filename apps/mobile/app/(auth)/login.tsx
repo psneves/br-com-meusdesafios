@@ -1,41 +1,95 @@
-import { View, Text, Pressable, StyleSheet, Alert, Platform } from "react-native";
+import { useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  Platform,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import * as AppleAuthentication from "expo-apple-authentication";
+import Constants from "expo-constants";
 import { useAuthStore } from "../../src/stores/auth.store";
 import { colors } from "../../src/theme/colors";
 import { typography } from "../../src/theme/typography";
 import { spacing } from "../../src/theme/spacing";
 
+GoogleSignin.configure({
+  webClientId: Constants.expoConfig?.extra?.googleWebClientId,
+  iosClientId: Constants.expoConfig?.extra?.googleIosClientId,
+});
+
 export default function LoginScreen() {
   const { loginWithGoogle, loginWithApple } = useAuthStore();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    if (isSigningIn) return;
+    setIsSigningIn(true);
     try {
-      // TODO: Integrate @react-native-google-signin/google-signin
-      // const { idToken } = await GoogleSignin.signIn();
-      // await loginWithGoogle(idToken);
-      Alert.alert(
-        "Google Sign-In",
-        "Configure GOOGLE_CLIENT_ID and install @react-native-google-signin/google-signin to enable."
-      );
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      if (response.type === "cancelled") return;
+
+      const idToken = response.data?.idToken;
+      if (!idToken) {
+        throw new Error("Não foi possível obter o token do Google");
+      }
+
+      await loginWithGoogle(idToken);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao entrar";
       Alert.alert("Erro", message);
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
   const handleAppleSignIn = async () => {
+    if (isSigningIn) return;
+    setIsSigningIn(true);
     try {
-      // TODO: Integrate @invertase/react-native-apple-authentication
-      // const credential = await appleAuth.performRequest({ ... });
-      // await loginWithApple(credential.identityToken, fullName, email);
-      Alert.alert(
-        "Apple Sign-In",
-        "Install @invertase/react-native-apple-authentication to enable."
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const identityToken = credential.identityToken;
+      if (!identityToken) {
+        throw new Error("Não foi possível obter o token da Apple");
+      }
+
+      const fullName =
+        [credential.fullName?.givenName, credential.fullName?.familyName]
+          .filter(Boolean)
+          .join(" ") || undefined;
+
+      await loginWithApple(
+        identityToken,
+        fullName,
+        credential.email ?? undefined
       );
     } catch (err) {
+      // Handle user cancellation silently
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "ERR_REQUEST_CANCELED"
+      ) {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Erro ao entrar";
       Alert.alert("Erro", message);
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -43,28 +97,45 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Ionicons name="trophy" size={80} color={colors.primary[500]} />
+          <Ionicons name="trophy" size={80} color={colors.primary[500]} accessible={false} />
           <Text style={styles.title}>Meus Desafios</Text>
           <Text style={styles.tagline}>Consistência vira resultado</Text>
         </View>
 
         <View style={styles.buttons}>
           <Pressable
-            style={[styles.button, styles.googleButton]}
+            style={[
+              styles.button,
+              styles.googleButton,
+              isSigningIn && styles.buttonDisabled,
+            ]}
             onPress={handleGoogleSignIn}
+            disabled={isSigningIn}
+            accessibilityRole="button"
+            accessibilityLabel="Entrar com Google"
           >
-            <Ionicons name="logo-google" size={20} color={colors.white} />
-            <Text style={styles.buttonText}>Entrar com Google</Text>
+            {isSigningIn ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={20} color={colors.white} />
+                <Text style={styles.buttonText}>Entrar com Google</Text>
+              </>
+            )}
           </Pressable>
 
           {Platform.OS === "ios" && (
-            <Pressable
-              style={[styles.button, styles.appleButton]}
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={
+                AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+              }
+              buttonStyle={
+                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+              }
+              cornerRadius={12}
+              style={styles.appleButton}
               onPress={handleAppleSignIn}
-            >
-              <Ionicons name="logo-apple" size={20} color={colors.white} />
-              <Text style={styles.buttonText}>Entrar com Apple</Text>
-            </Pressable>
+            />
           )}
         </View>
       </View>
@@ -107,11 +178,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: spacing.phi3,
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   googleButton: {
     backgroundColor: colors.primary[500],
   },
   appleButton: {
-    backgroundColor: colors.black,
+    height: 52,
   },
   buttonText: {
     ...typography.body,

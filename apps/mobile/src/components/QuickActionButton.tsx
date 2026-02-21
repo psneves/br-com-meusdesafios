@@ -1,5 +1,6 @@
 import { Pressable, Text, StyleSheet } from "react-native";
 import type { QuickAction } from "@meusdesafios/shared";
+import { haptics } from "../utils/haptics";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -22,7 +23,12 @@ export function QuickActionButton({
         { borderColor: categoryColor },
         pressed && { backgroundColor: categoryColor, opacity: 0.9 },
       ]}
-      onPress={onPress}
+      onPress={() => {
+        haptics.light();
+        onPress();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={action.label}
     >
       {({ pressed }) => (
         <Text

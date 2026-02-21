@@ -18,7 +18,7 @@ export function ChallengeCard({ card, onQuickAction }: ChallengeCardProps) {
   return (
     <View style={[styles.container, { borderLeftColor: style.color }]}>
       <View style={styles.header}>
-        <View style={[styles.iconWrapper, { backgroundColor: style.lightBg }]}>
+        <View style={[styles.iconWrapper, { backgroundColor: style.lightBg }]} accessible={false}>
           <Ionicons
             name={style.icon as keyof typeof Ionicons.glyphMap}
             size={22}
@@ -37,7 +37,10 @@ export function ChallengeCard({ card, onQuickAction }: ChallengeCardProps) {
       </View>
 
       <View style={styles.progressSection}>
-        <View style={styles.progressBarBg}>
+        <View
+          style={styles.progressBarBg}
+          accessibilityLabel={`Progresso: ${Math.round(card.progress.percentage)}%`}
+        >
           <View
             style={[
               styles.progressBarFill,
@@ -64,6 +67,7 @@ export function ChallengeCard({ card, onQuickAction }: ChallengeCardProps) {
               size={18}
               color={colors.success}
               style={styles.metIcon}
+              accessibilityLabel="Meta atingida"
             />
           )}
         </View>

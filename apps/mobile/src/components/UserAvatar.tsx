@@ -26,6 +26,7 @@ export function UserAvatar({
       <Image
         source={{ uri: avatarUrl }}
         style={[styles.image, { width: px, height: px, borderRadius: px / 2 }]}
+        accessibilityLabel={`Avatar de ${displayName}`}
       />
     );
   }
@@ -43,6 +44,7 @@ export function UserAvatar({
         styles.fallback,
         { width: px, height: px, borderRadius: px / 2 },
       ]}
+      accessibilityLabel={`Avatar de ${displayName}`}
     >
       <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
     </View>

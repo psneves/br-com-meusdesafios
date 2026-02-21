@@ -45,11 +45,12 @@ export function ChallengeSettingsSheet({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      accessibilityViewIsModal
     >
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Configurações</Text>
-          <Pressable onPress={onClose}>
+          <Pressable onPress={onClose} accessibilityLabel="Fechar configurações" accessibilityRole="button">
             <Ionicons name="close" size={24} color={colors.gray[600]} />
           </Pressable>
         </View>
@@ -75,6 +76,7 @@ export function ChallengeSettingsSheet({
                   false: colors.gray[300],
                   true: catStyle.color,
                 }}
+                accessibilityLabel={catStyle.label}
               />
 
               {setting.active && (
@@ -84,6 +86,8 @@ export function ChallengeSettingsSheet({
                       updateTarget(cat, Math.max(STEP[cat], setting.target - STEP[cat]))
                     }
                     style={styles.stepButton}
+                    accessibilityLabel="Diminuir meta"
+                    accessibilityRole="button"
                   >
                     <Ionicons name="remove" size={18} color={colors.gray[600]} />
                   </Pressable>
@@ -93,6 +97,8 @@ export function ChallengeSettingsSheet({
                   <Pressable
                     onPress={() => updateTarget(cat, setting.target + STEP[cat])}
                     style={styles.stepButton}
+                    accessibilityLabel="Aumentar meta"
+                    accessibilityRole="button"
                   >
                     <Ionicons name="add" size={18} color={colors.gray[600]} />
                   </Pressable>

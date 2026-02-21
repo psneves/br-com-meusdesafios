@@ -49,6 +49,7 @@ export function NotificationSettings() {
               ? colors.primary[500]
               : colors.gray[400]
           }
+          accessibilityLabel="Lembrete diário"
         />
       </View>
 
@@ -84,6 +85,8 @@ export function NotificationSettings() {
                     update({ reminderTimeLocal: time });
                     setShowTimePicker(false);
                   }}
+                  accessibilityLabel={`Definir horário para ${time}`}
+                  accessibilityRole="button"
                 >
                   <Text
                     style={[

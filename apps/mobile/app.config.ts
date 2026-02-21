@@ -43,9 +43,27 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "expo-notifications",
+    [
+      "@react-native-google-signin/google-signin",
+      {
+        iosUrlScheme:
+          process.env.GOOGLE_IOS_URL_SCHEME ||
+          "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID",
+      },
+    ],
+    [
+      "@sentry/react-native/expo",
+      {
+        organization: process.env.SENTRY_ORG || "meusdesafios",
+        project: process.env.SENTRY_PROJECT || "mobile",
+      },
+    ],
   ],
   extra: {
     apiBaseUrl: process.env.API_BASE_URL || "http://localhost:3000",
+    googleWebClientId: process.env.GOOGLE_WEB_CLIENT_ID || "",
+    googleIosClientId: process.env.GOOGLE_IOS_CLIENT_ID || "",
+    sentryDsn: process.env.SENTRY_DSN || "",
     privacyPolicyUrl: "https://meusdesafios.com.br/privacy",
     termsOfUseUrl: "https://meusdesafios.com.br/terms",
     eas: {

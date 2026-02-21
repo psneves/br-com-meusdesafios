@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { View, Text, Modal, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { LogFeedback } from "@meusdesafios/shared";
+import { haptics } from "../utils/haptics";
+import { maybePromptReview } from "../hooks/use-store-review";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/spacing";
 import { typography } from "../theme/typography";
@@ -12,9 +14,17 @@ interface FeedbackModalProps {
 }
 
 export function FeedbackModal({ feedback, onDismiss }: FeedbackModalProps) {
-  // Auto-dismiss after 3 seconds
+  // Haptic on show + auto-dismiss after 3 seconds
   useEffect(() => {
     if (!feedback) return;
+    if (feedback.milestone || feedback.streakUpdated) {
+      haptics.medium();
+    } else if (feedback.goalMet) {
+      haptics.light();
+    }
+    if (feedback.streakUpdated && feedback.streakUpdated.to >= 7) {
+      setTimeout(() => maybePromptReview(feedback.streakUpdated!.to), 2000);
+    }
     const timer = setTimeout(onDismiss, 3000);
     return () => clearTimeout(timer);
   }, [feedback, onDismiss]);
@@ -27,8 +37,14 @@ export function FeedbackModal({ feedback, onDismiss }: FeedbackModalProps) {
       animationType="fade"
       visible={!!feedback}
       onRequestClose={onDismiss}
+      accessibilityViewIsModal
     >
-      <Pressable style={styles.overlay} onPress={onDismiss}>
+      <Pressable
+        style={styles.overlay}
+        onPress={onDismiss}
+        accessibilityLabel="Fechar"
+        accessibilityRole="button"
+      >
         <View style={styles.content}>
           {feedback.goalMet && (
             <Ionicons

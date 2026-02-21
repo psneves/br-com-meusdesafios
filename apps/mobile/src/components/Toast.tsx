@@ -44,7 +44,11 @@ export function Toast({
   const bg = variant === "success" ? colors.success : colors.gray[700];
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor: bg, opacity }]}>
+    <Animated.View
+      style={[styles.container, { backgroundColor: bg, opacity }]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Text style={styles.text}>{message}</Text>
     </Animated.View>
   );

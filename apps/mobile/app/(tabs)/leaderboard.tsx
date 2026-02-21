@@ -12,8 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLeaderboard } from "../../src/hooks/use-leaderboard";
 import { useLocation } from "../../src/hooks/use-location";
+import { haptics } from "../../src/utils/haptics";
 import { UserAvatar } from "../../src/components/UserAvatar";
 import { getCategoryStyle } from "../../src/theme/category";
+import { LeaderboardScreenSkeleton } from "../../src/components/skeletons/LeaderboardScreenSkeleton";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
 import { typography } from "../../src/theme/typography";
@@ -51,6 +53,7 @@ export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
+    haptics.light();
     setRefreshing(true);
     refresh();
     setTimeout(() => setRefreshing(false), 1000);
@@ -72,11 +75,7 @@ export default function LeaderboardScreen() {
   );
 
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
-    );
+    return <LeaderboardScreenSkeleton />;
   }
 
   const participants =
@@ -127,6 +126,9 @@ export default function LeaderboardScreen() {
                 radius === r && styles.radiusPillActive,
               ]}
               onPress={() => setRadius(r)}
+              accessibilityRole="button"
+              accessibilityLabel={`Raio de ${r} quilômetros`}
+              accessibilityState={{ selected: radius === r }}
             >
               <Text
                 style={[
@@ -172,6 +174,8 @@ export default function LeaderboardScreen() {
                 refresh();
               }
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Permitir localização"
           >
             <Text style={styles.locationButtonText}>
               Permitir localização
@@ -335,6 +339,8 @@ function SegmentedControl<T extends string>({
             selected === opt.value && styles.segmentedItemActive,
           ]}
           onPress={() => onSelect(opt.value)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: selected === opt.value }}
         >
           <Text
             style={[

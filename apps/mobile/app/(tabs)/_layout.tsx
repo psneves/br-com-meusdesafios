@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { haptics } from "../../src/utils/haptics";
 import { colors } from "../../src/theme/colors";
 import { useOfflineQueueStore } from "../../src/stores/offline-queue.store";
 
@@ -8,6 +9,9 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => haptics.light(),
+      }}
       screenOptions={{
         tabBarActiveTintColor: colors.primary[500],
         tabBarInactiveTintColor: colors.gray[400],

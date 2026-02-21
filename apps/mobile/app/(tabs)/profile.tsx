@@ -15,6 +15,7 @@ import { useProfile } from "../../src/hooks/use-profile";
 import { useAuthStore } from "../../src/stores/auth.store";
 import { AvatarPicker } from "../../src/components/AvatarPicker";
 import { NotificationSettings } from "../../src/components/NotificationSettings";
+import { ProfileScreenSkeleton } from "../../src/components/skeletons/ProfileScreenSkeleton";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
 import { typography } from "../../src/theme/typography";
@@ -72,11 +73,7 @@ export default function ProfileScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
-    );
+    return <ProfileScreenSkeleton />;
   }
 
   return (
@@ -105,6 +102,7 @@ export default function ProfileScreen() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Nome"
+              accessibilityLabel="Nome"
             />
 
             <Text style={styles.label}>Sobrenome</Text>
@@ -113,6 +111,7 @@ export default function ProfileScreen() {
               value={lastName}
               onChangeText={setLastName}
               placeholder="Sobrenome"
+              accessibilityLabel="Sobrenome"
             />
 
             <Text style={styles.label}>Handle</Text>
@@ -123,6 +122,7 @@ export default function ProfileScreen() {
                 onChangeText={handleHandleChange}
                 placeholder="handle"
                 autoCapitalize="none"
+                accessibilityLabel="Handle"
               />
               {isCheckingHandle && (
                 <ActivityIndicator
@@ -150,7 +150,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.formButtons}>
-              <Pressable style={styles.cancelButton} onPress={cancelEditing}>
+              <Pressable style={styles.cancelButton} onPress={cancelEditing} accessibilityRole="button" accessibilityLabel="Cancelar edição">
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </Pressable>
               <Pressable
@@ -160,6 +160,8 @@ export default function ProfileScreen() {
                 ]}
                 onPress={handleSave}
                 disabled={isSaving}
+                accessibilityRole="button"
+                accessibilityLabel="Salvar perfil"
               >
                 {isSaving ? (
                   <ActivityIndicator size="small" color={colors.white} />
@@ -170,7 +172,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         ) : (
-          <Pressable style={styles.editButton} onPress={startEditing}>
+          <Pressable style={styles.editButton} onPress={startEditing} accessibilityRole="button" accessibilityLabel="Editar perfil">
             <Ionicons
               name="create-outline"
               size={18}
@@ -184,7 +186,7 @@ export default function ProfileScreen() {
         <NotificationSettings />
 
         {/* Logout */}
-        <Pressable style={styles.logoutButton} onPress={handleLogout}>
+        <Pressable style={styles.logoutButton} onPress={handleLogout} accessibilityRole="button" accessibilityLabel="Sair da conta">
           <Ionicons
             name="log-out-outline"
             size={20}

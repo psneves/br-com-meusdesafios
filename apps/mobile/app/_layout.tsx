@@ -3,10 +3,21 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
+import * as Sentry from "@sentry/react-native";
+import Constants from "expo-constants";
 import { useAuthStore } from "../src/stores/auth.store";
 import { startQueueFlushListener } from "../src/services/queue-flush";
 import { registerForPushNotifications } from "../src/services/push-notifications";
+import { ErrorBoundary } from "../src/components/ErrorBoundary";
 import { colors } from "../src/theme/colors";
+
+const sentryDsn = Constants.expoConfig?.extra?.sentryDsn;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    tracesSampleRate: 0.2,
+  });
+}
 
 function AuthGate() {
   const { isLoading, isAuthenticated, restoreSession } = useAuthStore();
@@ -48,14 +59,18 @@ function AuthGate() {
   return <Slot />;
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <AuthGate />
+      <ErrorBoundary onError={(error) => Sentry.captureException(error)}>
+        <AuthGate />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
   loading: {

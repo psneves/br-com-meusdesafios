@@ -6,17 +6,18 @@ import {
   RefreshControl,
   Pressable,
   StyleSheet,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useToday } from "../../src/hooks/use-today";
 import { useAuthStore } from "../../src/stores/auth.store";
+import { haptics } from "../../src/utils/haptics";
 import { ChallengeCard } from "../../src/components/ChallengeCard";
 import { FeedbackModal } from "../../src/components/FeedbackModal";
 import { WeeklySummaryCard } from "../../src/components/WeeklySummaryCard";
 import { MonthlySummaryCard } from "../../src/components/MonthlySummaryCard";
 import { ChallengeSettingsSheet } from "../../src/components/ChallengeSettingsSheet";
+import { TodayScreenSkeleton } from "../../src/components/skeletons/TodayScreenSkeleton";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
 import { typography } from "../../src/theme/typography";
@@ -39,17 +40,14 @@ export default function TodayScreen() {
   const [showSummary, setShowSummary] = useState(false);
 
   const onRefresh = async () => {
+    haptics.light();
     setRefreshing(true);
     await refresh();
     setRefreshing(false);
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
-    );
+    return <TodayScreenSkeleton />;
   }
 
   return (
@@ -77,7 +75,7 @@ export default function TodayScreen() {
               <PointPill label="Mês" value={data?.pointsMonth ?? 0} />
             </View>
           </View>
-          <Pressable onPress={() => setSettingsVisible(true)}>
+          <Pressable onPress={() => setSettingsVisible(true)} accessibilityLabel="Abrir configurações" accessibilityRole="button">
             <Ionicons
               name="settings-outline"
               size={24}
@@ -100,6 +98,8 @@ export default function TodayScreen() {
           <Pressable
             style={styles.summaryToggle}
             onPress={() => setShowSummary(!showSummary)}
+            accessibilityLabel={showSummary ? "Ocultar resumo" : "Ver resumo"}
+            accessibilityRole="button"
           >
             <Text style={styles.summaryToggleText}>
               {showSummary ? "Ocultar resumo" : "Ver resumo"}
@@ -149,12 +149,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.phi4,
     paddingBottom: spacing.phi7,
-  },
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.gray[50],
   },
   header: {
     flexDirection: "row",

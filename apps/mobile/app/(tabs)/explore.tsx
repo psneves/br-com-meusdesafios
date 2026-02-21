@@ -12,9 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { NotificationFeedbackType } from "expo-haptics";
 import { useExplore } from "../../src/hooks/use-explore";
+import { haptics } from "../../src/utils/haptics";
 import { UserAvatar } from "../../src/components/UserAvatar";
 import { Toast } from "../../src/components/Toast";
+import { ExploreScreenSkeleton } from "../../src/components/skeletons/ExploreScreenSkeleton";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
 import { typography } from "../../src/theme/typography";
@@ -51,6 +54,7 @@ export default function ExploreScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
+    haptics.light();
     setRefreshing(true);
     refresh();
     // Give the effect time to re-fetch
@@ -79,11 +83,7 @@ export default function ExploreScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-      </View>
-    );
+    return <ExploreScreenSkeleton />;
   }
 
   const displayUsers = searchResults ?? suggestedUsers;
@@ -117,9 +117,10 @@ export default function ExploreScreen() {
             placeholderTextColor={colors.gray[400]}
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="Buscar usuários"
           />
           {searchText.length > 0 && (
-            <Pressable onPress={handleClearSearch}>
+            <Pressable onPress={handleClearSearch} accessibilityLabel="Limpar busca" accessibilityRole="button">
               <Ionicons name="close-circle" size={18} color={colors.gray[400]} />
             </Pressable>
           )}
@@ -226,13 +227,23 @@ function PendingRequestRow({
       <View style={styles.actionButtons}>
         <Pressable
           style={styles.acceptButton}
-          onPress={() => onAccept(request.edgeId)}
+          onPress={() => {
+            haptics.notification();
+            onAccept(request.edgeId);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Aceitar solicitação de ${request.displayName}`}
         >
           <Text style={styles.acceptButtonText}>Aceitar</Text>
         </Pressable>
         <Pressable
           style={styles.denyButton}
-          onPress={() => onDeny(request.edgeId)}
+          onPress={() => {
+            haptics.notification(NotificationFeedbackType.Warning);
+            onDeny(request.edgeId);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Recusar solicitação de ${request.displayName}`}
         >
           <Ionicons name="close" size={16} color={colors.gray[500]} />
         </Pressable>
@@ -262,6 +273,8 @@ function SentRequestRow({
       <Pressable
         style={styles.cancelButton}
         onPress={() => onCancel(request.edgeId)}
+        accessibilityRole="button"
+        accessibilityLabel={`Cancelar solicitação para ${request.displayName}`}
       >
         <Text style={styles.cancelButtonText}>Cancelar</Text>
       </Pressable>
@@ -290,6 +303,8 @@ function FriendRow({
       <Pressable
         style={styles.unfriendButton}
         onPress={() => onUnfriend(friend.id, friend.displayName)}
+        accessibilityRole="button"
+        accessibilityLabel={`Desfazer amizade com ${friend.displayName}`}
       >
         <Ionicons name="person-remove-outline" size={16} color={colors.error} />
       </Pressable>
@@ -331,6 +346,8 @@ function ExploreUserRow({
         <Pressable
           style={styles.followButton}
           onPress={() => onFollow(user.handle)}
+          accessibilityRole="button"
+          accessibilityLabel={`Adicionar ${user.displayName}`}
         >
           <Text style={styles.followButtonText}>Adicionar</Text>
         </Pressable>
