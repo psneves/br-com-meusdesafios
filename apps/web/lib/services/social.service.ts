@@ -21,6 +21,47 @@ export async function getFriendCount(
   return { friendsCount };
 }
 
+// ── getAcceptedFriends ────────────────────────────────────
+
+export interface FriendSummary {
+  id: string;
+  displayName: string;
+  handle: string;
+  avatarUrl: string | null;
+}
+
+export async function getAcceptedFriends(
+  userId: string
+): Promise<FriendSummary[]> {
+  const ds = await getDataSource();
+  const edgeRepo = ds.getRepository(FollowEdge);
+
+  const edges = await edgeRepo
+    .createQueryBuilder("e")
+    .leftJoinAndSelect("e.requester", "requester")
+    .leftJoinAndSelect("e.target", "target")
+    .where("e.status = :status", { status: "accepted" })
+    .andWhere(
+      "(e.requester_id = :userId OR e.target_id = :userId)",
+      { userId }
+    )
+    .orderBy("e.updated_at", "DESC")
+    .getMany();
+
+  return edges
+    .map((e) => {
+      const friend = e.requesterId === userId ? e.target : e.requester;
+      if (!friend) return null;
+      return {
+        id: friend.id,
+        displayName: friend.displayName,
+        handle: friend.handle,
+        avatarUrl: friend.avatarUrl,
+      };
+    })
+    .filter((f): f is FriendSummary => f !== null);
+}
+
 // ── searchUsers ───────────────────────────────────────────
 
 export async function searchUsers(

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import Link from "next/link";
+import { useState, useCallback, useEffect } from "react";
 import { Trophy, Users, MapPin, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
@@ -8,6 +9,7 @@ import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
 import { useLeaderboard } from "@/lib/hooks/use-leaderboard";
 import { useSession } from "@/lib/hooks/use-session";
 import type { Radius } from "@/lib/types/leaderboard";
+import type { FriendSummary } from "@/lib/types/social";
 
 const RADIUS_OPTIONS: Radius[] = [50, 100, 500];
 
@@ -36,8 +38,30 @@ function LeaderboardSkeleton() {
 export default function LeaderboardPage() {
   const leaderboard = useLeaderboard();
   const session = useSession();
+  const [friends, setFriends] = useState<FriendSummary[]>([]);
+  const [isFriendsLoading, setIsFriendsLoading] = useState(true);
+  const [friendsError, setFriendsError] = useState<string | null>(null);
   const [isActivatingLocation, setIsActivatingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+
+  const fetchFriends = useCallback(async () => {
+    setIsFriendsLoading(true);
+    setFriendsError(null);
+    try {
+      const res = await fetch("/api/social/friends");
+      if (!res.ok) throw new Error("Failed to fetch friends");
+      const json = await res.json();
+      setFriends(json.data.friends ?? []);
+    } catch {
+      setFriendsError("Não foi possível carregar sua lista de amigos.");
+    } finally {
+      setIsFriendsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFriends();
+  }, [fetchFriends]);
 
   const activateLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -385,6 +409,80 @@ export default function LeaderboardPage() {
           </section>
         </>
       )}
+
+      {/* Friends list */}
+      <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-center gap-2 px-phi-4 pt-phi-4 pb-phi-2">
+          <Users className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Seus amigos
+          </h2>
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+            {session.user?.friendsCount ?? friends.length}
+          </span>
+        </div>
+
+        {isFriendsLoading ? (
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {[1, 2, 3].map((idx) => (
+              <div key={idx} className="flex items-center gap-phi-3 px-phi-4 py-phi-3 animate-pulse">
+                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : friendsError ? (
+          <div className="flex items-center justify-between gap-2 px-phi-4 py-phi-3">
+            <p className="text-xs text-red-500 dark:text-red-400">
+              {friendsError}
+            </p>
+            <button
+              onClick={fetchFriends}
+              className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : friends.length > 0 ? (
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {friends.map((friend) => (
+              <div
+                key={friend.id}
+                className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
+              >
+                <DefaultAvatar
+                  name={friend.displayName}
+                  avatarUrl={friend.avatarUrl}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                    {friend.displayName}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    @{friend.handle}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
+            <Users className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Você ainda não tem amigos adicionados.
+            </p>
+            <Link
+              href="/explore"
+              className="rounded-full bg-gray-900 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            >
+              Encontrar amigos
+            </Link>
+          </div>
+        )}
+      </section>
 
       {/* Privacy notice */}
       <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">

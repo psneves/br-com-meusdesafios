@@ -6,6 +6,13 @@ export interface ExploreUser {
   followStatus?: "pending" | "accepted" | "denied" | "blocked";
 }
 
+export interface FriendSummary {
+  id: string;
+  displayName: string;
+  handle: string;
+  avatarUrl: string | null;
+}
+
 export interface PendingFollowRequest {
   edgeId: string;
   requesterId: string;

@@ -236,6 +236,28 @@ Request body:
 
 Returns pending friend requests (incoming), sent friend requests (outgoing), and suggested users.
 
+### `GET /api/social/friends`
+
+Returns the authenticated user's accepted friends list, ordered by most recently updated relationship first.
+
+Example:
+
+```json
+{
+  "success": true,
+  "data": {
+    "friends": [
+      {
+        "id": "uuid-here",
+        "displayName": "Maria Souza",
+        "handle": "maria",
+        "avatarUrl": "https://..."
+      }
+    ]
+  }
+}
+```
+
 ### `GET /api/social/search?q=query`
 
 Returns matching users with their friendship status.

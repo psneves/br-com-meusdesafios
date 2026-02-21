@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const TEST_LOGIN_KEY = process.env.TEST_LOGIN_KEY ?? "playwright-local-test-key";
+process.env.TEST_LOGIN_KEY = TEST_LOGIN_KEY;
+
 export default defineConfig({
   testDir: "./__tests__",
   fullyParallel: true,

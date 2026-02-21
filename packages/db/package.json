@@ -11,18 +11,20 @@
     "migration:run": "pnpm typeorm migration:run -d src/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/data-source.ts",
     "seed": "ts-node src/seeds/run.ts",
-    "lint": "eslint src/",
+    "lint": "eslint --ext .ts src/",
     "test": "vitest"
   },
   "dependencies": {
     "@meusdesafios/shared": "workspace:*",
     "dotenv": "^16.4.1",
     "pg": "^8.11.3",
-    "typeorm": "^0.3.20",
-    "reflect-metadata": "^0.2.1"
+    "reflect-metadata": "^0.2.1",
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.0",
+    "@typescript-eslint/parser": "^8.46.0",
     "eslint": "^8.56.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",

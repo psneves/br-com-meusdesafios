@@ -117,7 +117,7 @@ export function TrackableCard({
       <div className="flex items-center pl-2">
         <button
           onClick={onRegister}
-          aria-label={card.progress.met ? `Editar ${card.name}` : `Registrar ${card.name}`}
+          aria-label={`Registrar ${card.name}`}
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-full transition-all active:scale-90",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1",

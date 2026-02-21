@@ -196,7 +196,7 @@ export function useToday(selectedDate?: Date): UseTodayResult {
         : undefined;
       await logValue(cardId, action.amount, meta);
     },
-    [data, selectedDate, fetchToday, logValue]
+    [data, logValue]
   );
 
   const clearFeedback = useCallback(() => {
