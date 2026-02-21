@@ -156,6 +156,7 @@ export default function TodayPage() {
             greeting={displayGreeting}
             date={displayDate}
             userName={user?.displayName ?? ""}
+            userHandle={user?.handle || ""}
             avatarUrl={user?.avatarUrl ?? "/profile/profile.png"}
             friendsCount={user?.friendsCount ?? 0}
             totalPoints={data.totalPoints}

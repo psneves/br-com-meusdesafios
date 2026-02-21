@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { useChallengeSettings } from "@/lib/hooks/use-challenge-settings";
 import { useProfile } from "@/lib/hooks/use-profile";
+import { useSession } from "@/lib/hooks/use-session";
 import { encodeGeohash, LOCATION_CELL_PRECISION } from "@/lib/location/geohash";
 import type { TrackableCategory } from "@meusdesafios/shared";
 
@@ -84,6 +85,7 @@ export default function ProfilePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { settings, toggleActive, updateTarget } = useChallengeSettings();
+  const { user: sessionUser } = useSession();
   const {
     profile,
     isLoading: profileLoading,
@@ -200,10 +202,11 @@ export default function ProfilePage() {
   const isDark = mounted && resolvedTheme === "dark";
 
   function startEditing() {
-    if (!profile) return;
-    setEditFirstName(profile.firstName || "");
-    setEditLastName(profile.lastName || "");
-    setEditHandle(profile.handle || "");
+    const source = profile ?? sessionUser;
+    if (!source) return;
+    setEditFirstName(source.firstName || "");
+    setEditLastName(source.lastName || "");
+    setEditHandle(source.handle || "");
     setIsEditing(true);
   }
 
@@ -228,10 +231,12 @@ export default function ProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  const currentHandle = profile?.handle || sessionUser?.handle;
+
   function onHandleChange(value: string) {
     const cleaned = value.toLowerCase().replaceAll(/[^a-z0-9_.]/g, "");
     setEditHandle(cleaned);
-    if (cleaned !== profile?.handle) {
+    if (cleaned !== currentHandle) {
       checkHandle(cleaned);
     }
   }
@@ -239,7 +244,7 @@ export default function ProfilePage() {
   const handleValid =
     (editHandle || "").length >= 3 &&
     /^[a-z][a-z0-9_.]*$/.test(editHandle || "") &&
-    (editHandle === profile?.handle || handleAvailable === true);
+    (editHandle === currentHandle || handleAvailable === true);
 
   const canSave =
     (editFirstName || "").trim().length > 0 &&
@@ -255,12 +260,21 @@ export default function ProfilePage() {
     }
   }
 
-  const avatarUrl = profile?.avatarUrl || "/profile/profile.png";
-  const displayName = profile ? profile.displayName : "";
-  const handle = profile ? profile.handle : "";
+  const avatarUrl = profile?.avatarUrl || sessionUser?.avatarUrl || "/profile/profile.png";
+  const displayName = profile?.displayName || sessionUser?.displayName || "";
+  const handle = profile?.handle || sessionUser?.handle || "";
 
   return (
     <div className="space-y-phi-4 md:space-y-phi-5">
+      {/* Hidden file input for avatar upload (always mounted so ref works in both modes) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleAvatarChange}
+        className="hidden"
+      />
+
       {/* Profile Header */}
       <div className="flex flex-col items-center gap-3 pt-4 pb-2">
         {profileLoading ? (
@@ -335,7 +349,7 @@ export default function ProfilePage() {
                     maxLength={30}
                     className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-7 pr-8 text-sm text-gray-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                   />
-                  {editHandle.length >= 3 && editHandle !== profile?.handle && (
+                  {editHandle.length >= 3 && editHandle !== currentHandle && (
                     <span className="absolute right-3 top-1/2 -translate-y-1/2">
                       {isCheckingHandle ? (
                         <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -347,7 +361,7 @@ export default function ProfilePage() {
                     </span>
                   )}
                 </div>
-                {editHandle.length >= 3 && editHandle !== profile?.handle && handleAvailable === false && !isCheckingHandle && (
+                {editHandle.length >= 3 && editHandle !== currentHandle && handleAvailable === false && !isCheckingHandle && (
                   <p className="mt-1 text-xs text-red-500">Username já está em uso</p>
                 )}
               </div>
@@ -375,13 +389,6 @@ export default function ProfilePage() {
           </>
         ) : (
           <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

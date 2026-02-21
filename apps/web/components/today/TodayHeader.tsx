@@ -13,6 +13,7 @@ interface TodayHeaderProps {
   greeting: string;
   date: string;
   userName?: string;
+  userHandle?: string;
   avatarUrl?: string;
   friendsCount?: number;
   totalPoints: number;
@@ -51,6 +52,7 @@ export function TodayHeader({
   greeting,
   date,
   userName,
+  userHandle,
   avatarUrl,
   friendsCount = 0,
   totalPoints,
@@ -114,6 +116,9 @@ export function TodayHeader({
               <p className="truncate text-[15px] font-bold leading-tight text-gray-900 dark:text-white">
                 {userName}
               </p>
+            )}
+            {userHandle && (
+              <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">@{userHandle}</p>
             )}
             <p className="text-[11px] text-gray-400 dark:text-gray-500">{date}</p>
             <div className="mt-0.5 flex items-center gap-3 text-[11px]">

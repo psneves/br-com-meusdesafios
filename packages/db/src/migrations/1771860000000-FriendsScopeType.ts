@@ -4,9 +4,13 @@ export class FriendsScopeType1771860000000 implements MigrationInterface {
   name = "FriendsScopeType1771860000000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // ALTER TYPE ADD VALUE cannot be used inside a transaction in PostgreSQL.
+    // Commit the migration runner's transaction, add the value, then re-open.
+    await queryRunner.commitTransaction();
     await queryRunner.query(
       `ALTER TYPE "public"."leaderboard_snapshots_scope_type_enum" ADD VALUE IF NOT EXISTS 'friends'`
     );
+    await queryRunner.startTransaction();
     await queryRunner.query(
       `UPDATE "leaderboard_snapshots" SET "scope_type" = 'friends' WHERE "scope_type" IN ('following', 'followers')`
     );

@@ -54,7 +54,7 @@ function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
         avatarUrl={row.user.avatarUrl}
       />
 
-      {/* Name + active challenges */}
+      {/* Name + handle + active challenges */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
           {row.user.displayName}
@@ -64,6 +64,9 @@ function ParticipantCard({ row, me }: { row: ParticipantRow; me: boolean }) {
             </span>
           )}
         </p>
+        {row.user.handle && (
+          <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">@{row.user.handle}</p>
+        )}
         <div className="mt-0.5 flex items-center gap-1">
           {row.goals.targets.map((goal) => {
             const cfg = getCategoryConfig(goal.category);
@@ -335,16 +338,18 @@ export default function LeaderboardPage() {
           <section className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center gap-phi-4 p-phi-4">
               <DefaultAvatar
-                name={session.user?.displayName ?? ""}
+                name={session.user?.displayName || "?"}
                 avatarUrl={session.user?.avatarUrl}
                 size="lg"
                 className="ring-2 ring-gray-200 dark:ring-gray-700"
               />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {session.user?.displayName ?? "—"}
+                  {session.user?.displayName || "—"}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">@{session.user?.handle ?? "—"}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {session.user?.handle ? `@${session.user.handle}` : ""}
+                </p>
               </div>
               <div className="text-right">
                 <span className="text-3xl font-extrabold tabular-nums text-indigo-600 dark:text-indigo-400">
@@ -444,7 +449,7 @@ export default function LeaderboardPage() {
                   {/* Top */}
                   <div>
                     <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                      Melhores do grupo
+                      Melhores
                     </h3>
                     <div className="space-y-1.5">
                       {(participantsStandard?.top ?? []).map((row) => (
@@ -516,7 +521,7 @@ export default function LeaderboardPage() {
       <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-phi-3 py-phi-3 dark:bg-gray-800/40">
         <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          No ranking &quot;Perto de mim&quot;, apenas uma célula aproximada (~5 km) é usada. Coordenadas precisas não são armazenadas.
+          No ranking &quot;Perto de mim&quot;, apenas a localização aproximada (~5 km) é usada. Coordenadas precisas não são armazenadas.
         </p>
       </div>
     </div>

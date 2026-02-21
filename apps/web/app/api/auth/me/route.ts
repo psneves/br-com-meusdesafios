@@ -12,17 +12,18 @@ export async function GET() {
 
     // Fetch fresh profile from DB to get up-to-date avatarUrl
     // (base64 data URIs are too large for session cookies)
+    // Catch individually so a single DB failure doesn't break the whole response
     const [profile, friendCountResult] = await Promise.all([
-      getProfile(session.id),
-      getFriendCount(session.id),
+      getProfile(session.id).catch(() => null),
+      getFriendCount(session.id).catch(() => ({ friendsCount: 0 })),
     ]);
 
     return successResponse({
       id: session.id,
-      handle: profile?.handle ?? session.handle ?? "",
-      firstName: profile?.firstName ?? session.firstName ?? "",
-      lastName: profile?.lastName ?? session.lastName ?? "",
-      displayName: profile?.displayName ?? session.displayName,
+      handle: profile?.handle || session.handle || "",
+      firstName: profile?.firstName || session.firstName || "",
+      lastName: profile?.lastName || session.lastName || "",
+      displayName: profile?.displayName || session.displayName || "",
       avatarUrl: profile?.avatarUrl ?? null,
       friendsCount: friendCountResult.friendsCount,
     });
