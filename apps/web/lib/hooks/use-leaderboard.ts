@@ -18,7 +18,7 @@ interface UseLeaderboardResult {
 
 export function useLeaderboard(): UseLeaderboardResult {
   const [period, setPeriod] = useState<Period>("week");
-  const [scope, setScope] = useState<Scope>("following");
+  const [scope, setScope] = useState<Scope>("friends");
   const [radius, setRadius] = useState<Radius>(50);
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

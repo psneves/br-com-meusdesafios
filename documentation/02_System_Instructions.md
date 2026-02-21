@@ -54,10 +54,10 @@ Core challenges for MVP:
 - Client never sends computed points/streak values.
 - Every point award is auditable in ledger records.
 
-### Privacy-controlled social model
+### Privacy-controlled social model (Friends — mutual/symmetric)
 
-- Follow requests require explicit acceptance.
-- No accepted relationship means no private stats visibility.
+- Friend requests require explicit acceptance.
+- No accepted friendship means no private stats visibility.
 - Leaderboards expose only the requesting user's result.
 - Never expose neighbor rank identities or ordered user lists.
 

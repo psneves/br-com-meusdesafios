@@ -25,9 +25,9 @@ export class LeaderboardSnapshot {
   @Column({
     name: "scope_type",
     type: "enum",
-    enum: ["following", "followers"],
+    enum: ["friends"],
   })
-  scopeType!: "following" | "followers";
+  scopeType!: "friends";
 
   @Column({ type: "date" })
   day!: Date;

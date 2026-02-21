@@ -27,15 +27,15 @@ const CATEGORY_NAMES: Record<TrackableCategory, string> = {
 
 // ── Helpers ───────────────────────────────────────────────
 
-function buildSocialCohortQuery(userId: string, scope: "following" | "followers"): { sql: string; params: string[] } {
-  if (scope === "following") {
-    return {
-      sql: `SELECT e.target_id AS uid FROM follow_edges e WHERE e.requester_id = $1 AND e.status = 'accepted'`,
-      params: [userId],
-    };
-  }
+function buildFriendsCohortQuery(userId: string): { sql: string; params: string[] } {
   return {
-    sql: `SELECT e.requester_id AS uid FROM follow_edges e WHERE e.target_id = $1 AND e.status = 'accepted'`,
+    sql: `
+      SELECT e.target_id AS uid FROM follow_edges e
+        WHERE e.requester_id = $1 AND e.status = 'accepted'
+      UNION
+      SELECT e.requester_id AS uid FROM follow_edges e
+        WHERE e.target_id = $1 AND e.status = 'accepted'
+    `,
     params: [userId],
   };
 }
@@ -140,8 +140,9 @@ export async function computeLeaderboard(
 
     cohortIds = nearbyResult.cohortIds;
   } else {
+    // scope === "friends"
     const edgeRepo = ds.getRepository(FollowEdge);
-    const cohortQuery = buildSocialCohortQuery(userId, scope);
+    const cohortQuery = buildFriendsCohortQuery(userId);
     const cohortRows: { uid: string }[] = await edgeRepo.query(
       cohortQuery.sql,
       cohortQuery.params

@@ -156,9 +156,11 @@ Behavior:
 
 ---
 
-## Social graph
+## Social graph (Friends — mutual/symmetric)
 
 ### `POST /api/social/follow-request`
+
+Sends a friend request. If the target already has a pending request to the requester, auto-accepts (instant mutual friendship).
 
 Request body:
 
@@ -170,19 +172,23 @@ Request body:
 
 ### `POST /api/social/follow-requests/{id}/accept`
 ### `POST /api/social/follow-requests/{id}/deny`
+### `POST /api/social/follow-requests/{id}/cancel`
 
-### `GET /api/social/connections`
+### `GET /api/social/explore`
 
-Returns accepted following/followers metadata only.
+Returns pending friend requests (incoming), sent friend requests (outgoing), and suggested users.
+
+### `GET /api/social/search?q=query`
+
+Returns matching users with their friendship status.
 
 ---
 
 ## Leaderboards (privacy-safe)
 
-### `GET /api/leaderboards/following`
-### `GET /api/leaderboards/followers`
+### `GET /api/leaderboards/rank?scope=friends|nearby&period=week|month&radius=50|100|500`
 
-Both return only requester's rank result.
+Returns only the requester's rank result. Scopes: `friends` (mutual friends cohort) and `nearby` (geolocation-based).
 
 Example:
 
@@ -190,7 +196,7 @@ Example:
 {
   "ok": true,
   "data": {
-    "scope": "following",
+    "scope": "friends",
     "day": "2026-02-14",
     "rank": 42,
     "score": 1880,

@@ -108,7 +108,7 @@ const MOCK_LEADERBOARD = {
   success: true,
   data: {
     overall: {
-      scope: "following",
+      scope: "friends",
       rank: null,
       score: 120,
       cohortSize: 3,
@@ -126,7 +126,7 @@ const MOCK_LEADERBOARD = {
 
 const MOCK_SESSION = {
   success: true,
-  data: { id: "test-user", displayName: "E2E Test User", avatarUrl: null },
+  data: { id: "test-user", displayName: "E2E Test User", avatarUrl: null, friendsCount: 0 },
 };
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -347,8 +347,8 @@ test("14 – leaderboard page renders title and controls", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Semana" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Mês" })).toBeVisible();
   // Scope tabs
-  await expect(page.getByRole("button", { name: "Seguindo" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Seguidores" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Amigos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Perto de mim" })).toBeVisible();
   // Per-challenge section with mock data categories
   await expect(page.getByText("Por desafio")).toBeVisible();
 });
@@ -369,10 +369,10 @@ test("16 – leaderboard scope toggle fetches new data", async ({ page }) => {
   await page.goto("/leaderboard");
   await expect(page.getByRole("heading", { name: "Sua Posição" })).toBeVisible({ timeout: 10000 });
 
-  const requestPromise = page.waitForRequest((req) => req.url().includes("scope=followers"));
-  await page.getByRole("button", { name: "Seguidores" }).click();
+  const requestPromise = page.waitForRequest((req) => req.url().includes("scope=nearby"));
+  await page.getByRole("button", { name: "Perto de mim" }).click();
   const request = await requestPromise;
-  expect(request.url()).toContain("scope=followers");
+  expect(request.url()).toContain("scope=nearby");
 });
 
 test("17 – leaderboard shows privacy notice", async ({ page }) => {
@@ -384,7 +384,7 @@ test("17 – leaderboard shows privacy notice", async ({ page }) => {
   ).toBeVisible({ timeout: 10000 });
   // Also verify the subtitle explains the ranking scope
   await expect(
-    page.getByText("Ranking privado entre conexões", { exact: false })
+    page.getByText("Compare seu desempenho com seus amigos", { exact: false })
   ).toBeVisible();
 });
 

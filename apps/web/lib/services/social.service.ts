@@ -1,5 +1,25 @@
 import { getDataSource, User, FollowEdge } from "@meusdesafios/db";
-import type { ExploreUser, PendingFollowRequest } from "../types/social";
+import type { ExploreUser, PendingFollowRequest, SentFollowRequest } from "../types/social";
+
+// ── getFriendCount ────────────────────────────────────────
+
+export async function getFriendCount(
+  userId: string
+): Promise<{ friendsCount: number }> {
+  const ds = await getDataSource();
+  const edgeRepo = ds.getRepository(FollowEdge);
+
+  const friendsCount = await edgeRepo
+    .createQueryBuilder("e")
+    .where("e.status = :status", { status: "accepted" })
+    .andWhere(
+      "(e.requester_id = :userId OR e.target_id = :userId)",
+      { userId }
+    )
+    .getCount();
+
+  return { friendsCount };
+}
 
 // ── searchUsers ───────────────────────────────────────────
 
@@ -120,6 +140,53 @@ export async function getPendingRequests(
     }));
 }
 
+// ── getSentPendingRequests ─────────────────────────────────
+
+export async function getSentPendingRequests(
+  currentUserId: string
+): Promise<SentFollowRequest[]> {
+  const ds = await getDataSource();
+  const edgeRepo = ds.getRepository(FollowEdge);
+
+  const edges = await edgeRepo
+    .createQueryBuilder("e")
+    .leftJoinAndSelect("e.target", "target")
+    .where("e.requester_id = :currentUserId", { currentUserId })
+    .andWhere("e.status = :status", { status: "pending" })
+    .orderBy("e.created_at", "DESC")
+    .getMany();
+
+  return edges
+    .filter((e) => e.target != null)
+    .map((e) => ({
+      edgeId: e.id,
+      targetId: e.targetId,
+      displayName: e.target.displayName,
+      handle: e.target.handle,
+      avatarUrl: e.target.avatarUrl,
+      createdAt: e.createdAt.toISOString(),
+    }));
+}
+
+// ── cancelFollowRequest ──────────────────────────────────
+
+export async function cancelFollowRequest(
+  currentUserId: string,
+  edgeId: string
+): Promise<void> {
+  const ds = await getDataSource();
+  const edgeRepo = ds.getRepository(FollowEdge);
+
+  const edge = await edgeRepo.findOne({
+    where: { id: edgeId, requesterId: currentUserId, status: "pending" },
+  });
+  if (!edge) {
+    throw new Error("Friend request not found");
+  }
+
+  await edgeRepo.remove(edge);
+}
+
 // ── sendFollowRequest ─────────────────────────────────────
 
 export async function sendFollowRequest(
@@ -137,7 +204,7 @@ export async function sendFollowRequest(
     throw new Error("User not found");
   }
   if (target.id === requesterId) {
-    throw new Error("Cannot follow yourself");
+    throw new Error("Cannot add yourself");
   }
 
   // Check for existing edge in either direction
@@ -147,7 +214,7 @@ export async function sendFollowRequest(
 
   if (existingOutgoing) {
     if (existingOutgoing.status === "blocked") {
-      throw new Error("Cannot follow this user");
+      throw new Error("Cannot add this user");
     }
     if (existingOutgoing.status === "pending" || existingOutgoing.status === "accepted") {
       return { edgeId: existingOutgoing.id };
@@ -159,12 +226,19 @@ export async function sendFollowRequest(
     }
   }
 
-  // Check if we're blocked by the target
+  // Check incoming edge from the target
   const existingIncoming = await edgeRepo.findOne({
     where: { requesterId: target.id, targetId: requesterId },
   });
   if (existingIncoming?.status === "blocked") {
-    throw new Error("Cannot follow this user");
+    throw new Error("Cannot add this user");
+  }
+
+  // Auto-accept: if the target already sent us a pending request, become friends instantly
+  if (existingIncoming?.status === "pending") {
+    existingIncoming.status = "accepted";
+    await edgeRepo.save(existingIncoming);
+    return { edgeId: existingIncoming.id };
   }
 
   const edge = edgeRepo.create({
@@ -189,7 +263,7 @@ export async function acceptFollowRequest(
     where: { id: edgeId, targetId: currentUserId, status: "pending" },
   });
   if (!edge) {
-    throw new Error("Follow request not found");
+    throw new Error("Friend request not found");
   }
 
   edge.status = "accepted";
@@ -209,7 +283,7 @@ export async function denyFollowRequest(
     where: { id: edgeId, targetId: currentUserId, status: "pending" },
   });
   if (!edge) {
-    throw new Error("Follow request not found");
+    throw new Error("Friend request not found");
   }
 
   edge.status = "denied";

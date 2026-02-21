@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     if (message === "User not found") {
       return errors.notFound("User");
     }
-    if (message === "Cannot follow yourself" || message === "Cannot follow this user") {
+    if (message === "Cannot add yourself" || message === "Cannot add this user") {
       return errors.badRequest(message);
     }
     console.error("[POST /api/social/follow-request]", err);

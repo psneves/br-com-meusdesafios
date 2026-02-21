@@ -49,8 +49,9 @@ Tabs:
 
 ### 3. Social
 
-- requests inbox (accept/deny)
-- accepted connections list
+- friend requests inbox (accept/deny)
+- sent friend requests list
+- suggested users with "Adicionar" action
 - rank cards (self rank only)
 
 ### 4. Challenges

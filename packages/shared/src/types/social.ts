@@ -12,7 +12,7 @@ export interface FollowEdge {
 export interface LeaderboardSnapshot {
   id: string;
   scopeUserId: string;
-  scopeType: "following" | "followers";
+  scopeType: "friends";
   day: Date;
   rank: number;
   score: number;
@@ -22,7 +22,7 @@ export interface LeaderboardSnapshot {
 }
 
 export interface LeaderboardResult {
-  scope: "following" | "followers";
+  scope: "friends";
   day: string;
   rank: number;
   score: number;

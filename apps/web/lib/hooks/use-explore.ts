@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { ExploreUser, PendingFollowRequest } from "../types/social";
+import type { ExploreUser, PendingFollowRequest, SentFollowRequest } from "../types/social";
 
 interface FeedbackData {
   message: string;
@@ -10,6 +10,7 @@ interface FeedbackData {
 
 interface UseExploreResult {
   pendingRequests: PendingFollowRequest[];
+  sentRequests: SentFollowRequest[];
   suggestedUsers: ExploreUser[];
   searchResults: ExploreUser[] | null;
   isLoading: boolean;
@@ -20,6 +21,7 @@ interface UseExploreResult {
   sendFollowRequest: (handle: string) => Promise<void>;
   acceptRequest: (edgeId: string) => Promise<void>;
   denyRequest: (edgeId: string) => Promise<void>;
+  cancelRequest: (edgeId: string) => Promise<void>;
   feedback: FeedbackData | null;
   clearFeedback: () => void;
   refresh: () => void;
@@ -27,6 +29,7 @@ interface UseExploreResult {
 
 export function useExplore(): UseExploreResult {
   const [pendingRequests, setPendingRequests] = useState<PendingFollowRequest[]>([]);
+  const [sentRequests, setSentRequests] = useState<SentFollowRequest[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<ExploreUser[]>([]);
   const [searchResults, setSearchResults] = useState<ExploreUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,6 +54,7 @@ export function useExplore(): UseExploreResult {
         const json = await res.json();
         if (!cancelled) {
           setPendingRequests(json.data.pendingRequests);
+          setSentRequests(json.data.sentRequests ?? []);
           setSuggestedUsers(json.data.suggestedUsers);
         }
       } catch {
@@ -150,7 +154,7 @@ export function useExplore(): UseExploreResult {
             : null
         );
 
-        setFeedback({ message: "Solicitação enviada", variant: "success" });
+        setFeedback({ message: "Solicitação de amizade enviada", variant: "success" });
       } catch {
         setFeedback({ message: "Erro ao enviar solicitação", variant: "neutral" });
       }
@@ -166,7 +170,7 @@ export function useExplore(): UseExploreResult {
       if (!res.ok) return;
 
       setPendingRequests((prev) => prev.filter((r) => r.edgeId !== edgeId));
-      setFeedback({ message: "Solicitação aceita", variant: "success" });
+      setFeedback({ message: "Amizade aceita", variant: "success" });
     } catch {
       setFeedback({ message: "Erro ao aceitar solicitação", variant: "neutral" });
     }
@@ -186,10 +190,25 @@ export function useExplore(): UseExploreResult {
     }
   }, []);
 
+  const cancelRequest = useCallback(async (edgeId: string) => {
+    try {
+      const res = await fetch(`/api/social/follow-requests/${edgeId}/cancel`, {
+        method: "POST",
+      });
+      if (!res.ok) return;
+
+      setSentRequests((prev) => prev.filter((r) => r.edgeId !== edgeId));
+      setFeedback({ message: "Solicitação cancelada", variant: "neutral" });
+    } catch {
+      setFeedback({ message: "Erro ao cancelar solicitação", variant: "neutral" });
+    }
+  }, []);
+
   const clearFeedback = useCallback(() => setFeedback(null), []);
 
   return {
     pendingRequests,
+    sentRequests,
     suggestedUsers,
     searchResults,
     isLoading,
@@ -200,6 +219,7 @@ export function useExplore(): UseExploreResult {
     sendFollowRequest,
     acceptRequest,
     denyRequest,
+    cancelRequest,
     feedback,
     clearFeedback,
     refresh,

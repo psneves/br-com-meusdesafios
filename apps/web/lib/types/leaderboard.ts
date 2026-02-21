@@ -1,7 +1,7 @@
 import type { TrackableCategory } from "@meusdesafios/shared";
 
 export type Period = "week" | "month";
-export type Scope = "following" | "followers" | "nearby";
+export type Scope = "friends" | "nearby";
 export type Radius = 50 | 100 | 500;
 
 export interface RankData {

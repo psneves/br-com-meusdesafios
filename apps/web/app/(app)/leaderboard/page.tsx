@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Trophy, Users, UserCheck, MapPin, Lock, Loader2 } from "lucide-react";
+import { Trophy, Users, MapPin, Lock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
@@ -148,7 +148,7 @@ export default function LeaderboardPage() {
             Sua Posição
           </h1>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Compare seu desempenho com suas conexões
+            Compare seu desempenho com seus amigos
           </p>
         </div>
       </div>
@@ -182,18 +182,19 @@ export default function LeaderboardPage() {
       {/* Scope tabs */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => leaderboard.setScope("following")}
-          className={scopePillClass(leaderboard.scope === "following")}
+          onClick={() => leaderboard.setScope("friends")}
+          className={scopePillClass(leaderboard.scope === "friends")}
         >
           <Users className="h-3.5 w-3.5" />
-          Seguindo
-        </button>
-        <button
-          onClick={() => leaderboard.setScope("followers")}
-          className={scopePillClass(leaderboard.scope === "followers")}
-        >
-          <UserCheck className="h-3.5 w-3.5" />
-          Seguidores
+          Amigos
+          <span className={cn(
+            "ml-0.5 tabular-nums",
+            leaderboard.scope === "friends"
+              ? "text-white/70 dark:text-gray-900/60"
+              : "text-gray-400 dark:text-gray-500"
+          )}>
+            {session.user?.friendsCount ?? 0}
+          </span>
         </button>
         <button
           onClick={() => leaderboard.setScope("nearby")}
@@ -320,7 +321,7 @@ export default function LeaderboardPage() {
                   <span>
                     {isNearby
                       ? `Menos de 5 usuários encontrados em ${leaderboard.radius} km. Tente um raio maior.`
-                      : "Adicione pelo menos 4 conexões para desbloquear seu ranking."}
+                      : "Adicione pelo menos 4 amigos para desbloquear seu ranking."}
                   </span>
                 </div>
               )}

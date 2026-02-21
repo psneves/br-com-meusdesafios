@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
 import {
   getPendingRequests,
+  getSentPendingRequests,
   getSuggestedUsers,
 } from "@/lib/services/social.service";
 
@@ -12,12 +13,13 @@ export async function GET() {
       return errors.unauthorized();
     }
 
-    const [pendingRequests, suggestedUsers] = await Promise.all([
+    const [pendingRequests, sentRequests, suggestedUsers] = await Promise.all([
       getPendingRequests(session.id),
+      getSentPendingRequests(session.id),
       getSuggestedUsers(session.id),
     ]);
 
-    return successResponse({ pendingRequests, suggestedUsers });
+    return successResponse({ pendingRequests, sentRequests, suggestedUsers });
   } catch (err) {
     console.error("[GET /api/social/explore]", err);
     return errors.serverError();

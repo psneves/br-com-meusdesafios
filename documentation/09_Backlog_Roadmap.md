@@ -66,12 +66,12 @@ Exit criteria:
 ## Phase 3 - Social graph (Week 3)
 
 Outcomes:
-- follow request controls and accepted visibility gating
+- friend request controls and accepted visibility gating (mutual/symmetric model)
 
 Key tasks:
-- [ ] follow request endpoints
-- [ ] accept/deny flows
-- [ ] connections list
+- [ ] friend request endpoints (send/accept/deny/cancel)
+- [ ] accept/deny flows with auto-accept for mutual requests
+- [ ] friends list and explore page
 
 Exit criteria:
 - non-accepted relationships cannot access private stats
@@ -82,8 +82,7 @@ Outcomes:
 - rank-only leaderboard with inference resistance
 
 Key tasks:
-- [ ] `GET /api/leaderboards/following`
-- [ ] `GET /api/leaderboards/followers`
+- [ ] `GET /api/leaderboards/rank?scope=friends|nearby`
 - [ ] minimum cohort behavior
 - [ ] snapshot/cache strategy
 

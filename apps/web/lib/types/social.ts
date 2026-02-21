@@ -14,3 +14,12 @@ export interface PendingFollowRequest {
   avatarUrl: string | null;
   createdAt: string;
 }
+
+export interface SentFollowRequest {
+  edgeId: string;
+  targetId: string;
+  displayName: string;
+  handle: string;
+  avatarUrl: string | null;
+  createdAt: string;
+}

@@ -6,7 +6,7 @@ import { computeLeaderboard } from "@/lib/services/leaderboard.service";
 import type { Radius } from "@/lib/types/leaderboard";
 
 const rankSchema = z.object({
-  scope: z.enum(["following", "followers", "nearby"]),
+  scope: z.enum(["friends", "nearby"]),
   period: z.enum(["week", "month"]),
   radius: z.enum(["50", "100", "500"]).optional(),
 });

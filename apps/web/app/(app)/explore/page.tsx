@@ -6,6 +6,7 @@ import {
   UserPlus,
   UserCheck,
   Clock,
+  Send,
   ChevronRight,
   X,
   Users,
@@ -189,7 +190,7 @@ export default function ExplorePage() {
               )}
             </div>
             <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
-              Ao aceitar, vocês passam a ver estatísticas um do outro.
+              Ao aceitar, vocês se tornam amigos e podem comparar estatísticas.
             </p>
           </div>
 
@@ -221,9 +222,16 @@ export default function ExplorePage() {
       {/* Users list (suggested or search results) */}
       <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="flex items-center justify-between px-phi-4 pt-phi-4 pb-phi-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {isShowingSearch ? "Resultados" : "Pessoas sugeridas"}
-          </h2>
+          <div className="flex items-center gap-2">
+            {isShowingSearch ? (
+              <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            ) : (
+              <UserPlus className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            )}
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {isShowingSearch ? "Resultados" : "Pessoas sugeridas"}
+            </h2>
+          </div>
           {!isShowingSearch && displayUsers.length > 0 && (
             <button className="flex items-center gap-0.5 text-xs font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300">
               Ver mais
@@ -281,7 +289,7 @@ export default function ExplorePage() {
                     ) : (
                       <>
                         <UserPlus className="h-3 w-3" />
-                        Seguir
+                        Adicionar
                       </>
                     )}
                   </button>
@@ -300,6 +308,66 @@ export default function ExplorePage() {
           )}
         </div>
       </section>
+
+      {/* Sent requests */}
+      {!isShowingSearch && (
+        <section className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="px-phi-4 pt-phi-4 pb-phi-2">
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                Solicitações enviadas
+              </h2>
+              {explore.sentRequests.length > 0 && (
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-100 px-1.5 text-[10px] font-bold text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+                  {explore.sentRequests.length}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+              Aguardando aceitação do outro usuário.
+            </p>
+          </div>
+
+          {explore.sentRequests.length > 0 ? (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {explore.sentRequests.map((req) => (
+                <div
+                  key={req.edgeId}
+                  className="flex items-center gap-phi-3 px-phi-4 py-phi-3"
+                >
+                  <DefaultAvatar
+                    name={req.displayName}
+                    avatarUrl={req.avatarUrl}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                      {req.displayName}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      @{req.handle}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => explore.cancelRequest(req.edgeId)}
+                    className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-red-800 dark:hover:bg-red-950/20 dark:hover:text-red-400"
+                  >
+                    <Clock className="h-3 w-3" />
+                    Pendente
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-phi-4 py-phi-5 text-center">
+              <Send className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Nenhuma solicitação enviada
+              </p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Toast */}
       <Toast toast={explore.feedback} onDismiss={explore.clearFeedback} />
@@ -355,7 +423,7 @@ function PendingRequestRow({
     return (
       <div className="flex items-center justify-between px-phi-4 py-phi-3">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Recusar conexão?
+          Recusar solicitação de amizade?
         </p>
         <div className="flex gap-2">
           <button

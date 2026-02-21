@@ -124,7 +124,11 @@ Point events used for weekly/monthly aggregation.
 
 ### follow_edges
 
-Relationship state controlling visibility.
+Friendship state controlling visibility (symmetric/mutual model).
+- `requester_id` = user who initiated the friend request
+- `target_id` = user who received the friend request
+- When `status = 'accepted'`, both users are mutual friends regardless of who initiated
+- Friend count and leaderboard cohorts query both directions (requester OR target)
 
 - `id` (uuid, pk, default `uuid_generate_v4()`)
 - `requester_id` (uuid, fk `users.id`, not null)
@@ -142,7 +146,7 @@ Snapshot table available in schema (currently not used by leaderboard service lo
 
 - `id` (uuid, pk, default `uuid_generate_v4()`)
 - `scope_user_id` (uuid, fk `users.id`, not null)
-- `scope_type` (enum: `following`, `followers`)
+- `scope_type` (enum: `friends`)
 - `day` (date, not null)
 - `rank` (int, not null)
 - `score` (int, not null)

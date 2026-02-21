@@ -157,6 +157,7 @@ export default function TodayPage() {
             date={displayDate}
             userName={user?.displayName ?? ""}
             avatarUrl={user?.avatarUrl ?? "/profile/profile.png"}
+            friendsCount={user?.friendsCount ?? 0}
             totalPoints={data.totalPoints}
             pointsWeek={data.pointsWeek}
             pointsMonth={data.pointsMonth}

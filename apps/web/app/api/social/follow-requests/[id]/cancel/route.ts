@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
-import { acceptFollowRequest } from "@/lib/services/social.service";
+import { cancelFollowRequest } from "@/lib/services/social.service";
 
 export async function POST(
   _request: Request,
@@ -13,14 +13,14 @@ export async function POST(
     }
 
     const { id } = await params;
-    await acceptFollowRequest(session.id, id);
+    await cancelFollowRequest(session.id, id);
     return successResponse({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message === "Friend request not found") {
       return errors.notFound("Friend request");
     }
-    console.error("[POST /api/social/follow-requests/:id/accept]", err);
+    console.error("[POST /api/social/follow-requests/:id/cancel]", err);
     return errors.serverError();
   }
 }

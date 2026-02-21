@@ -17,8 +17,8 @@ export async function POST(
     return successResponse({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    if (message === "Follow request not found") {
-      return errors.notFound("Follow request");
+    if (message === "Friend request not found") {
+      return errors.notFound("Friend request");
     }
     console.error("[POST /api/social/follow-requests/:id/deny]", err);
     return errors.serverError();

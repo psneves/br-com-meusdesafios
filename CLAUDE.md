@@ -50,22 +50,22 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 ### Services Layer (`apps/web/lib/services/`)
 - **trackable.service.ts** (857 lines) — Core service: `buildTodayResponse()`, `createLog()` (log + recompute pipeline), `updateGoal()`, `toggleActive()`, `buildWeeklySummary()`, `buildMonthlySummary()`
 - **user.service.ts** — Profile CRUD, handle availability, avatar upload, location
-- **social.service.ts** — User search, follow requests (send/accept/deny), suggested users
-- **leaderboard.service.ts** — Privacy-safe rank computation by scope (following/followers/nearby) and period (week/month)
+- **social.service.ts** — User search, friend requests (send/accept/deny/cancel), suggested users, friend count
+- **leaderboard.service.ts** — Privacy-safe rank computation by scope (friends/nearby) and period (week/month)
 
 ### Client Hooks (`apps/web/lib/hooks/`)
 - **use-session.ts** — Auth state from `/api/auth/me`
 - **use-today.ts** — Today page data, logging actions, week/month summaries
 - **use-profile.ts** — Profile editing, avatar upload, debounced handle check
 - **use-leaderboard.ts** — Leaderboard data with scope/period/radius controls
-- **use-explore.ts** — Social explore, search, follow request management
+- **use-explore.ts** — Social explore, search, friend request management
 - **use-challenge-settings.ts** — Challenge settings dialog
 
 ### API Routes (21 endpoints)
 **Auth:** `GET /api/auth/me`, `GET /api/auth/google`, `GET /api/auth/google/callback`, `GET /api/auth/logout`
 **Profile:** `GET|PATCH /api/profile`, `POST /api/profile/avatar`, `GET /api/profile/check-handle`, `PATCH /api/profile/location`
 **Trackables:** `GET /api/trackables/today`, `POST /api/trackables/log`, `PUT /api/trackables/active`, `PATCH /api/trackables/goal`, `GET /api/trackables/settings`, `GET /api/trackables/summary`
-**Social:** `GET /api/social/explore`, `POST /api/social/follow-request`, `GET /api/social/search`, `POST /api/social/follow-requests/[id]/accept`, `POST /api/social/follow-requests/[id]/deny`
+**Social:** `GET /api/social/explore`, `POST /api/social/follow-request`, `GET /api/social/search`, `POST /api/social/follow-requests/[id]/accept`, `POST /api/social/follow-requests/[id]/deny`, `POST /api/social/follow-requests/[id]/cancel`
 **Leaderboard:** `GET /api/leaderboards/rank`
 
 ## Core Domain Concepts
@@ -77,8 +77,15 @@ Client hook (use-*.ts) → API route → Service layer → TypeORM/DB
 - Scoring engine: `packages/shared/src/scoring/` — `evaluateGoal()`, `updateStreak()`, `calculateStreakBonus()`, `computeDayResult()`
 - Recompute pipeline in `trackable.service.ts#createLog()`: insert log → evaluate goal → update ComputedDailyStats → update Streak → write PointsLedger
 
+### Social Model (Friends — Mutual/Symmetric)
+- Uses a symmetric friends model: when A sends a request and B accepts, they become mutual friends via a single edge in `follow_edges`
+- Friend requests require explicit acceptance to see stats
+- Leaderboard scopes: `"friends"` (all accepted edges, either direction) and `"nearby"` (geolocation)
+- `getFriendCount()` returns a single `friendsCount` (accepted edges where user is either requester or target)
+- Auto-accept: if A requests B while B already has a pending request to A, they become friends instantly
+- Session fields: `friendsCount` (via `/api/auth/me`)
+
 ### Privacy Model (Critical)
-- Follow requests require explicit acceptance to see stats
 - Leaderboards return ONLY the requesting user's rank/score/cohort_size
 - Never expose: usernames, user IDs, neighbor ranks, or paginated lists
 - Minimum cohort size = 5 (below this, hide rank with `rankStatus: "insufficient_cohort"`)
@@ -96,7 +103,7 @@ function dayString(d: Date): string {
 
 ## Key TypeORM Entities (`packages/db/src/entities/`)
 
-`User`, `TrackableTemplate` (4 challenge types), `UserTrackable` (activated with goal overrides), `TrackableLog` (input events), `ComputedDailyStats` (cached daily progress), `Streak` (current/best per trackable), `PointsLedger` (immutable point audit trail), `FollowEdge` (social graph: pending/accepted/denied/blocked), `LeaderboardSnapshot`
+`User`, `TrackableTemplate` (4 challenge types), `UserTrackable` (activated with goal overrides), `TrackableLog` (input events), `ComputedDailyStats` (cached daily progress), `Streak` (current/best per trackable), `PointsLedger` (immutable point audit trail), `FollowEdge` (friends graph: pending/accepted/denied/blocked — symmetric model), `LeaderboardSnapshot`
 
 ## Environment Variables
 

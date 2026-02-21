@@ -36,7 +36,7 @@ Validation layer:
 
 ### 4. Privacy/security tests
 
-- follow status access matrix (`pending`, `accepted`, `denied`, `blocked`)
+- friend request status access matrix (`pending`, `accepted`, `denied`, `blocked`)
 - leaderboard endpoints return self result only
 - minimum cohort behavior
 - no top-N, no pagination, no neighbor leakage

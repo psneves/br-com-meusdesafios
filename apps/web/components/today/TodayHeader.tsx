@@ -14,6 +14,7 @@ interface TodayHeaderProps {
   date: string;
   userName?: string;
   avatarUrl?: string;
+  friendsCount?: number;
   totalPoints: number;
   pointsWeek: number;
   pointsMonth: number;
@@ -51,6 +52,7 @@ export function TodayHeader({
   date,
   userName,
   avatarUrl,
+  friendsCount = 0,
   totalPoints,
   pointsWeek,
   pointsMonth,
@@ -82,28 +84,28 @@ export function TodayHeader({
 
   return (
     <header className={cn("space-y-3 pt-2", className)}>
-      {/* Top row: avatar + greeting (left)  |  day nav (right) */}
+      {/* Top row: avatar + info (left)  |  day nav (right) */}
       <div className="flex items-center">
-        {/* Avatar + greeting */}
+        {/* Avatar + name + follow counts */}
         <div className="flex min-w-0 items-center gap-phi-3">
           {!avatarUrl || avatarError ? (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-              <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+              <User className="h-7 w-7 text-gray-400 dark:text-gray-500" />
             </div>
           ) : avatarUrl.startsWith("data:") ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
               alt={userName || "Avatar"}
-              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
+              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
             />
           ) : (
             <Image
               src={avatarUrl}
               alt={userName || "Avatar"}
-              width={40}
-              height={40}
-              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
+              width={56}
+              height={56}
+              className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-800"
               onError={() => setAvatarError(true)}
             />
           )}
@@ -114,6 +116,11 @@ export function TodayHeader({
               </p>
             )}
             <p className="text-[11px] text-gray-400 dark:text-gray-500">{date}</p>
+            <div className="mt-0.5 flex items-center gap-3 text-[11px]">
+              <span className="text-gray-500 dark:text-gray-400">
+                <strong className="font-semibold text-gray-700 dark:text-gray-200">{friendsCount}</strong> {friendsCount === 1 ? "amigo" : "amigos"}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -310,10 +317,11 @@ export function TodayHeaderSkeleton() {
     <header className="animate-pulse space-y-3 pt-2">
       <div className="flex items-center">
         <div className="flex items-center gap-phi-3">
-          <div className="h-10 w-10 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-14 w-14 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
           <div className="space-y-1.5">
             <div className="h-3.5 w-24 rounded bg-gray-200 dark:bg-gray-700" />
             <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-2.5 w-28 rounded bg-gray-200 dark:bg-gray-700" />
           </div>
         </div>
         <div className="flex-1" />

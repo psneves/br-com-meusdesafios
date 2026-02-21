@@ -49,12 +49,12 @@ Not allowed:
 
 ## Leaderboard scopes
 
-1. `following`
-Compare user with accepted users they follow.
-2. `followers`
-Compare user with accepted users who follow them.
+1. `friends`
+Compare user with all accepted mutual friends (accepted `follow_edges` in either direction).
+2. `nearby`
+Compare user with nearby users within a configurable radius (50/100/500 km).
 
-Both scopes are derived from accepted `follow_edges`.
+Social scope is derived from accepted `follow_edges` using a UNION query (requester OR target).
 
 ---
 
@@ -92,7 +92,7 @@ When cohort is sufficient:
 
 ```json
 {
-  "scope": "following",
+  "scope": "friends",
   "rank": 42,
   "score": 1880,
   "cohortSize": 315,
@@ -105,7 +105,7 @@ When cohort is too small:
 
 ```json
 {
-  "scope": "following",
+  "scope": "friends",
   "rank": null,
   "score": 1880,
   "cohortSize": 3,

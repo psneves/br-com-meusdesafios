@@ -9,6 +9,7 @@ export interface SessionUser {
   lastName: string;
   displayName: string;
   avatarUrl: string | null;
+  friendsCount: number;
 }
 
 interface UseSessionResult {
