@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Trophy, Users, MapPin, Loader2, Info, UserMinus } from "lucide-react";
+import { Trophy, Users, MapPin, Loader2, Info } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
@@ -35,6 +35,8 @@ function LeaderboardSkeleton() {
 
 // ── Participant Row ──────────────────────────────────────
 
+const RANK_MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
+
 function ParticipantCard({
   row,
   me,
@@ -44,6 +46,8 @@ function ParticipantCard({
   me: boolean;
   onUnfriend?: () => void;
 }) {
+  const medal = RANK_MEDAL[row.rank];
+
   return (
     <div
       className={cn(
@@ -55,7 +59,7 @@ function ParticipantCard({
     >
       {/* Rank */}
       <span className="w-7 text-center text-sm font-bold tabular-nums text-gray-400 dark:text-gray-500">
-        {row.rank}º
+        {medal ?? `${row.rank}º`}
       </span>
 
       <DefaultAvatar
@@ -63,26 +67,24 @@ function ParticipantCard({
         avatarUrl={row.user.avatarUrl}
       />
 
-      {/* Name + handle + active challenges */}
+      {/* Name + handle + challenges + unfriend */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <p className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900 dark:text-white">
-            {row.user.displayName}
-          </p>
-          {!me && onUnfriend && (
-            <button
-              onClick={onUnfriend}
-              aria-label={`Desfazer amizade com ${row.user.displayName}`}
-              className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-            >
-              <UserMinus className="h-3 w-3" />
-              Remover
-            </button>
+        {/* Row 1: Name + handle inline */}
+        <p className="truncate text-sm text-gray-900 dark:text-white">
+          <span className="font-medium">{row.user.displayName}</span>
+          {row.user.handle && (
+            <span className="ml-1 text-[11px] text-gray-400 dark:text-gray-500">
+              @{row.user.handle}
+            </span>
           )}
-        </div>
-        {row.user.handle && (
-          <p className="truncate text-[11px] text-gray-400 dark:text-gray-500">@{row.user.handle}</p>
-        )}
+          {me && (
+            <span className="ml-1 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400">
+              você
+            </span>
+          )}
+        </p>
+
+        {/* Row 2: Challenge icons + accomplished + unfriend */}
         <div className="mt-0.5 flex items-center gap-1">
           {row.goals.targets.map((goal) => {
             const cfg = getCategoryConfig(goal.category);
@@ -95,9 +97,21 @@ function ParticipantCard({
               />
             );
           })}
-          <span className="ml-0.5 text-[10px] tabular-nums text-gray-400 dark:text-gray-500">
+          <span className="text-[10px] tabular-nums text-gray-400 dark:text-gray-500">
             {row.accomplishedTotal} concluída{row.accomplishedTotal !== 1 ? "s" : ""}
           </span>
+          {!me && onUnfriend && (
+            <>
+              <span className="text-[10px] text-gray-300 dark:text-gray-600">·</span>
+              <button
+                onClick={onUnfriend}
+                aria-label={`Desfazer amizade com ${row.user.displayName}`}
+                className="text-[10px] font-medium text-gray-400 transition-colors hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+              >
+                Remover
+              </button>
+            </>
+          )}
         </div>
       </div>
 
