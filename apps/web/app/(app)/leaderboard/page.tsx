@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Trophy, Users, MapPin, Loader2 } from "lucide-react";
+import { Trophy, Users, MapPin, Loader2, Info } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 import { getCategoryConfig } from "@/lib/category-config";
 import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
@@ -100,6 +101,7 @@ export default function LeaderboardPage() {
   const session = useSession();
   const [isActivatingLocation, setIsActivatingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [showPointsInfo, setShowPointsInfo] = useState(false);
 
   const activateLocation = useCallback(async () => {
     if (!navigator.geolocation) {
@@ -346,11 +348,20 @@ export default function LeaderboardPage() {
                   {session.user?.handle ? `@${session.user.handle}` : ""}
                 </p>
               </div>
-              <div className="text-right">
-                <span className="text-3xl font-extrabold tabular-nums text-indigo-600 dark:text-indigo-400">
-                  {rankData?.score ?? 0}
-                </span>
-                <span className="ml-1 text-sm font-bold text-indigo-500/70 dark:text-indigo-400/60">XP</span>
+              <div className="flex items-center gap-1.5">
+                <div className="text-right">
+                  <span className="text-3xl font-extrabold tabular-nums text-indigo-600 dark:text-indigo-400">
+                    {rankData?.score ?? 0}
+                  </span>
+                  <span className="ml-1 text-sm font-bold text-indigo-500/70 dark:text-indigo-400/60">XP</span>
+                </div>
+                <button
+                  onClick={() => setShowPointsInfo(true)}
+                  aria-label="Como funciona o XP"
+                  className="rounded-full p-1 text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-400"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
@@ -511,6 +522,62 @@ export default function LeaderboardPage() {
           </section>
         </>
       )}
+
+      {/* XP rules modal */}
+      <Modal
+        isOpen={showPointsInfo}
+        onClose={() => setShowPointsInfo(false)}
+        title="Como funciona o XP"
+      >
+        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              XP diário
+            </h3>
+            <p>
+              Cada meta diária atingida em qualquer desafio vale{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Dia perfeito
+            </h3>
+            <p>
+              Cumprir <em>todos</em> os 4 desafios no mesmo dia rende{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              extra.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Meta semanal
+            </h3>
+            <p>
+              Completar 7/7 dias de um desafio (Seg–Dom) vale{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              por desafio.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
+              Semana perfeita
+            </h3>
+            <p>
+              Bater <em>todas</em> as metas em <em>todos</em> os 7 dias da semana rende mais{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400">+10 XP</strong>{" "}
+              de bônus.
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            A semana conta de segunda a domingo. Os XP acumulados determinam a posição no ranking.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
