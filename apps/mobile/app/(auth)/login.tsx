@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   View,
   Text,
+  Image,
   Pressable,
   StyleSheet,
   Alert,
@@ -97,7 +98,11 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Ionicons name="trophy" size={80} color={colors.primary[500]} accessible={false} />
+          <Image
+            source={require("../../assets/icon.png")}
+            style={styles.logo}
+            accessible={false}
+          />
           <Text style={styles.title}>Meus Desafios</Text>
           <Text style={styles.tagline}>Consistência vira resultado</Text>
         </View>
@@ -156,6 +161,11 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: "center",
     marginBottom: spacing.phi7,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    borderRadius: 24,
   },
   title: {
     ...typography.h1,

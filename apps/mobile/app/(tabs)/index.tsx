@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
-  View,
-  Text,
   ScrollView,
   RefreshControl,
   Pressable,
+  Text,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,6 +11,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useToday } from "../../src/hooks/use-today";
 import { useAuthStore } from "../../src/stores/auth.store";
 import { haptics } from "../../src/utils/haptics";
+import { TodayHeader } from "../../src/components/TodayHeader";
+import { XpSummaryBar } from "../../src/components/XpSummaryBar";
 import { ChallengeCard } from "../../src/components/ChallengeCard";
 import { FeedbackModal } from "../../src/components/FeedbackModal";
 import { WeeklySummaryCard } from "../../src/components/WeeklySummaryCard";
@@ -20,10 +21,58 @@ import { ChallengeSettingsSheet } from "../../src/components/ChallengeSettingsSh
 import { TodayScreenSkeleton } from "../../src/components/skeletons/TodayScreenSkeleton";
 import { colors } from "../../src/theme/colors";
 import { spacing } from "../../src/theme/spacing";
-import { typography } from "../../src/theme/typography";
+
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getDayLabel(selected: Date): string {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sel = new Date(
+    selected.getFullYear(),
+    selected.getMonth(),
+    selected.getDate()
+  );
+  const diffMs = today.getTime() - sel.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Hoje";
+  if (diffDays === 1) return "Ontem";
+  if (diffDays <= 6) {
+    const wd = sel.toLocaleDateString("pt-BR", { weekday: "long" });
+    return wd.charAt(0).toUpperCase() + wd.slice(1).split("-")[0];
+  }
+  return `${sel.getDate()}/${sel.getMonth() + 1}`;
+}
 
 export default function TodayScreen() {
   const user = useAuthStore((s) => s.user);
+
+  // Day navigation
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const isToday = selectedDate.getTime() === today.getTime();
+
+  const handlePrevDay = useCallback(() => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 1);
+      return d;
+    });
+  }, []);
+
+  const handleNextDay = useCallback(() => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 1);
+      if (d > today) return prev;
+      return d;
+    });
+  }, [today]);
+
   const {
     data,
     weekSummary,
@@ -33,7 +82,7 @@ export default function TodayScreen() {
     logQuickAction,
     clearFeedback,
     refresh,
-  } = useToday();
+  } = useToday(selectedDate);
 
   const [refreshing, setRefreshing] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -45,6 +94,16 @@ export default function TodayScreen() {
     await refresh();
     setRefreshing(false);
   };
+
+  // Card action: trigger the first quick action
+  const handleRegister = useCallback(
+    (cardId: string) => {
+      const card = data?.cards.find((c) => c.userTrackableId === cardId);
+      if (!card || card.quickActions.length === 0) return;
+      logQuickAction(cardId, card.quickActions[0].id);
+    },
+    [data, logQuickAction]
+  );
 
   if (isLoading) {
     return <TodayScreenSkeleton />;
@@ -63,33 +122,33 @@ export default function TodayScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>
-              {data?.greeting || `Olá, ${user?.firstName || ""}!`}
-            </Text>
-            <View style={styles.pointsRow}>
-              <PointPill label="Hoje" value={data?.totalPoints ?? 0} />
-              <PointPill label="Semana" value={data?.pointsWeek ?? 0} />
-              <PointPill label="Mês" value={data?.pointsMonth ?? 0} />
-            </View>
-          </View>
-          <Pressable onPress={() => setSettingsVisible(true)} accessibilityLabel="Abrir configurações" accessibilityRole="button">
-            <Ionicons
-              name="settings-outline"
-              size={24}
-              color={colors.gray[600]}
-            />
-          </Pressable>
-        </View>
+        {/* Header: user profile + day nav + settings */}
+        <TodayHeader
+          userName={user?.displayName ?? user?.firstName ?? ""}
+          userHandle={user?.handle ?? ""}
+          avatarUrl={user?.avatarUrl ?? null}
+          friendsCount={user?.friendsCount ?? 0}
+          selectedDate={selectedDate}
+          isToday={isToday}
+          onPrevDay={handlePrevDay}
+          onNextDay={handleNextDay}
+          onOpenSettings={() => setSettingsVisible(true)}
+        />
+
+        {/* XP Summary Bar */}
+        <XpSummaryBar
+          totalPoints={data?.totalPoints ?? 0}
+          pointsWeek={data?.pointsWeek ?? 0}
+          pointsMonth={data?.pointsMonth ?? 0}
+          dayLabel={getDayLabel(selectedDate)}
+        />
 
         {/* Challenge Cards */}
         {data?.cards.map((card) => (
           <ChallengeCard
             key={card.userTrackableId}
             card={card}
-            onQuickAction={logQuickAction}
+            onRegister={handleRegister}
           />
         ))}
 
@@ -129,15 +188,6 @@ export default function TodayScreen() {
   );
 }
 
-function PointPill({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.pointPill}>
-      <Text style={styles.pointValue}>{value}</Text>
-      <Text style={styles.pointLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -150,38 +200,6 @@ const styles = StyleSheet.create({
     padding: spacing.phi4,
     paddingBottom: spacing.phi7,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.phi4,
-  },
-  greeting: {
-    ...typography.h2,
-    color: colors.gray[900],
-  },
-  pointsRow: {
-    flexDirection: "row",
-    gap: spacing.phi3,
-    marginTop: spacing.phi2,
-  },
-  pointPill: {
-    backgroundColor: colors.primary[50],
-    paddingHorizontal: spacing.phi3,
-    paddingVertical: spacing.phi1,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  pointValue: {
-    ...typography.bodySmall,
-    fontWeight: "700",
-    color: colors.primary[600],
-  },
-  pointLabel: {
-    ...typography.caption,
-    color: colors.primary[400],
-    fontSize: 10,
-  },
   summaryToggle: {
     flexDirection: "row",
     alignItems: "center",
@@ -190,8 +208,8 @@ const styles = StyleSheet.create({
     gap: spacing.phi1,
   },
   summaryToggleText: {
-    ...typography.bodySmall,
-    color: colors.primary[500],
+    fontSize: 14,
     fontWeight: "600",
+    color: colors.primary[500],
   },
 });
