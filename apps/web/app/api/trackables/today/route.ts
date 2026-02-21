@@ -1,14 +1,12 @@
 import { NextRequest } from "next/server";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { buildTodayResponse } from "@/lib/services/trackable.service";
 import { successResponse, errors } from "@/lib/api/response";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const searchParams = request.nextUrl.searchParams;
     const dateParam = searchParams.get("date");
@@ -23,7 +21,7 @@ export async function GET(request: NextRequest) {
       date = new Date();
     }
 
-    const todayResponse = await buildTodayResponse(session.id, date);
+    const todayResponse = await buildTodayResponse(auth.userId, date);
     return successResponse(todayResponse);
   } catch (err) {
     console.error("[GET /api/trackables/today]", err);

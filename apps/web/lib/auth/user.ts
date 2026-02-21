@@ -1,5 +1,6 @@
 import { getDataSource, User } from "@meusdesafios/db";
 import type { GoogleProfile } from "./oauth";
+import type { AppleProfile } from "./apple";
 
 export async function findOrCreateGoogleUser(
   profile: GoogleProfile
@@ -39,6 +40,55 @@ export async function findOrCreateGoogleUser(
     googleId: profile.id,
     provider: "google",
     avatarUrl: profile.picture || null,
+    passwordHash: null,
+    lastLoginAt: new Date(),
+  });
+
+  return repo.save(newUser);
+}
+
+export async function findOrCreateAppleUser(
+  profile: AppleProfile
+): Promise<User> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(User);
+
+  // 1. Find by appleId
+  let user = await repo.findOneBy({ appleId: profile.id });
+  if (user) {
+    user.lastLoginAt = new Date();
+    await repo.save(user);
+    return user;
+  }
+
+  // 2. Find by email — link Apple account
+  if (profile.email) {
+    user = await repo.findOneBy({ email: profile.email.toLowerCase() });
+    if (user) {
+      user.appleId = profile.id;
+      user.provider = "apple";
+      user.lastLoginAt = new Date();
+      await repo.save(user);
+      return user;
+    }
+  }
+
+  // 3. Create new user
+  const email =
+    profile.email?.toLowerCase() ||
+    `apple_${profile.id}@privaterelay.appleid.com`;
+  const handle = await generateUniqueHandle(repo, email);
+  const { firstName, lastName } = splitName(profile.name);
+
+  const newUser = repo.create({
+    email,
+    firstName,
+    lastName,
+    displayName: profile.name || "Usuário",
+    handle,
+    appleId: profile.id,
+    provider: "apple",
+    avatarUrl: null,
     passwordHash: null,
     lastLoginAt: new Date(),
   });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateBody } from "@/lib/api/validate";
 import { sendFollowRequest } from "@/lib/services/social.service";
@@ -11,12 +11,10 @@ const followRequestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const limited = rateLimit(`follow:${session.id}`, 20); // 20 requests/min
+    const limited = rateLimit(`follow:${auth.userId}`, 20); // 20 requests/min
     if (limited) return limited;
 
     const validation = await validateBody(request, followRequestSchema);
@@ -25,7 +23,7 @@ export async function POST(request: Request) {
     }
 
     const result = await sendFollowRequest(
-      session.id,
+      auth.userId,
       validation.data.targetHandle
     );
     return successResponse(result, 201);

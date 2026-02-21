@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateBody } from "@/lib/api/validate";
 import { clearLocation, getLocation, updateLocation } from "@/lib/services/user.service";
@@ -16,14 +16,12 @@ const locationSchema = z.object({
     ),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const location = await getLocation(session.id);
+    const location = await getLocation(auth.userId);
     return successResponse(location);
   } catch (err) {
     console.error("[GET /api/profile/location]", err);
@@ -33,16 +31,14 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const validated = await validateBody(request, locationSchema);
     if ("error" in validated) return validated.error;
 
     const location = await updateLocation(
-      session.id,
+      auth.userId,
       validated.data.cellId
     );
 
@@ -53,14 +49,12 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const location = await clearLocation(session.id);
+    const location = await clearLocation(auth.userId);
     return successResponse(location);
   } catch (err) {
     console.error("[DELETE /api/profile/location]", err);

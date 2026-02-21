@@ -10,20 +10,27 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // CSRF protection: verify Origin on API mutation requests
+  // Skip for Bearer-token requests (mobile clients don't send Origin;
+  // the token itself is CSRF protection since browsers can't auto-attach it)
   if (
     pathname.startsWith("/api/") &&
     ["POST", "PUT", "PATCH", "DELETE"].includes(request.method)
   ) {
-    const origin = request.headers.get("origin");
-    if (origin) {
-      const host = request.headers.get("host") ?? "";
-      const proto = request.headers.get("x-forwarded-proto") ?? "https";
-      const allowedOrigin = `${proto}://${host}`;
-      if (origin !== allowedOrigin) {
-        return NextResponse.json(
-          { success: false, error: { code: "FORBIDDEN", message: "Invalid origin" } },
-          { status: 403 }
-        );
+    const authHeader = request.headers.get("authorization");
+    const hasBearerToken = authHeader?.startsWith("Bearer ");
+
+    if (!hasBearerToken) {
+      const origin = request.headers.get("origin");
+      if (origin) {
+        const host = request.headers.get("host") ?? "";
+        const proto = request.headers.get("x-forwarded-proto") ?? "https";
+        const allowedOrigin = `${proto}://${host}`;
+        if (origin !== allowedOrigin) {
+          return NextResponse.json(
+            { success: false, error: { code: "FORBIDDEN", message: "Invalid origin" } },
+            { status: 403 }
+          );
+        }
       }
     }
   }

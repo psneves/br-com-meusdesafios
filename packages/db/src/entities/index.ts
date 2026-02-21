@@ -7,3 +7,6 @@ export { Streak } from "./streak.entity";
 export { PointsLedger } from "./points-ledger.entity";
 export { FollowEdge } from "./follow-edge.entity";
 export { LeaderboardSnapshot } from "./leaderboard-snapshot.entity";
+export { MobileAuthSession } from "./mobile-auth-session.entity";
+export { MobileDevice } from "./mobile-device.entity";
+export { UserNotificationPreference } from "./user-notification-preference.entity";

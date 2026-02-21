@@ -1,13 +1,11 @@
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { buildWeeklySummary, buildMonthlySummary } from "@/lib/services/trackable.service";
 import { successResponse, errors } from "@/lib/api/response";
 
 export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get("date");
@@ -22,8 +20,8 @@ export async function GET(request: Request) {
     }
 
     const [weekSummary, monthSummary] = await Promise.all([
-      buildWeeklySummary(session.id, date),
-      buildMonthlySummary(session.id, date),
+      buildWeeklySummary(auth.userId, date),
+      buildMonthlySummary(auth.userId, date),
     ]);
 
     return successResponse({ weekSummary, monthSummary });

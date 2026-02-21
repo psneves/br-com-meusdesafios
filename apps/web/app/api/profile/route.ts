@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { getSession } from "@/lib/auth/session";
 import { successResponse, errors } from "@/lib/api/response";
 import { validateBody } from "@/lib/api/validate";
@@ -29,14 +30,12 @@ const updateProfileSchema = z.object({
     ),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const profile = await getProfile(session.id);
+    const profile = await getProfile(auth.userId);
     if (!profile) return errors.notFound("User");
 
     return successResponse(profile);
@@ -48,22 +47,23 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
     const validated = await validateBody(request, updateProfileSchema);
     if ("error" in validated) return validated.error;
 
-    const updated = await updateProfile(session.id, validated.data);
+    const updated = await updateProfile(auth.userId, validated.data);
 
-    // Update session with new values
-    session.handle = updated.handle;
-    session.firstName = updated.firstName;
-    session.lastName = updated.lastName;
-    session.displayName = updated.displayName;
-    await session.save();
+    // Update cookie session with new values (web clients only)
+    if (auth.authType === "cookie") {
+      const session = await getSession();
+      session.handle = updated.handle;
+      session.firstName = updated.firstName;
+      session.lastName = updated.lastName;
+      session.displayName = updated.displayName;
+      await session.save();
+    }
 
     return successResponse(updated);
   } catch (err) {

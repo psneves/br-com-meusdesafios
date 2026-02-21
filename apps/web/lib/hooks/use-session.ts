@@ -1,16 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { SessionUser } from "@meusdesafios/shared";
 
-export interface SessionUser {
-  id: string;
-  handle: string;
-  firstName: string;
-  lastName: string;
-  displayName: string;
-  avatarUrl: string | null;
-  friendsCount: number;
-}
+export type { SessionUser } from "@meusdesafios/shared";
 
 interface UseSessionResult {
   user: SessionUser | null;

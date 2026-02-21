@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAuthContext } from "@/lib/auth/auth-context";
 import { createLog } from "@/lib/services/trackable.service";
 import { validateBody } from "@/lib/api/validate";
 import { successResponse, errors } from "@/lib/api/response";
@@ -14,12 +14,10 @@ const logSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    if (!session.isLoggedIn || !session.id) {
-      return errors.unauthorized();
-    }
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
 
-    const limited = rateLimit(`log:${session.id}`, 30); // 30 logs/min
+    const limited = rateLimit(`log:${auth.userId}`, 30); // 30 logs/min
     if (limited) return limited;
 
     const validation = await validateBody(request, logSchema);
@@ -27,7 +25,7 @@ export async function POST(request: Request) {
       return validation.error;
     }
 
-    const feedback = await createLog(session.id, validation.data);
+    const feedback = await createLog(auth.userId, validation.data);
     return successResponse({ feedback });
   } catch (err) {
     console.error("[POST /api/trackables/log]", err);

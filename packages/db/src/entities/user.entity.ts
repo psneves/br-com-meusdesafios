@@ -35,6 +35,9 @@ export class User {
   @Column({ name: "google_id", type: "varchar", unique: true, nullable: true })
   googleId!: string | null;
 
+  @Column({ name: "apple_id", type: "varchar", unique: true, nullable: true })
+  appleId!: string | null;
+
   @Column({ type: "varchar", nullable: true, length: 20 })
   provider!: string | null;
 
