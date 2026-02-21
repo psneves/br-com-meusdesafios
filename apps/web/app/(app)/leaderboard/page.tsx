@@ -125,7 +125,7 @@ export default function LeaderboardPage() {
 
   const percentileLabel =
     rankData?.percentile != null
-      ? `Top ${Math.round((1 - rankData.percentile) * 100)}%`
+      ? `Top ${Math.max(1, Math.round((1 - rankData.percentile) * 100))}%`
       : null;
 
   const scopePillClass = (active: boolean) =>
@@ -339,7 +339,7 @@ export default function LeaderboardPage() {
                 const Icon = cfg.icon;
                 const pctLabel =
                   ch.percentile != null
-                    ? `Top ${Math.round((1 - ch.percentile) * 100)}%`
+                    ? `Top ${Math.max(1, Math.round((1 - ch.percentile) * 100))}%`
                     : "—";
 
                 return (
