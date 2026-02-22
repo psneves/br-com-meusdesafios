@@ -337,7 +337,7 @@ test("2 – login page renders branding and Google button", async ({ browser }) 
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto("/login");
-  await expect(page.getByText("Bem-vindo")).toBeVisible();
+  await expect(page.getByText("Bem-vindo(a)")).toBeVisible();
   await expect(page.getByText("Consistência vira resultado.")).toBeVisible();
   await expect(page.getByRole("button", { name: /Continuar com Google/i })).toBeVisible();
   await context.close();

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import {
   ScrollView,
   RefreshControl,
@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useToday } from "../../src/hooks/use-today";
+import { useSummary } from "../../src/hooks/use-summary";
 import { useAuthStore } from "../../src/stores/auth.store";
 import { haptics } from "../../src/utils/haptics";
 import { TodayHeader } from "../../src/components/TodayHeader";
@@ -17,6 +18,7 @@ import { ChallengeCard } from "../../src/components/ChallengeCard";
 import { FeedbackModal } from "../../src/components/FeedbackModal";
 import { WeeklySummaryCard } from "../../src/components/WeeklySummaryCard";
 import { MonthlySummaryCard } from "../../src/components/MonthlySummaryCard";
+import { SwipeSummaryContainer } from "../../src/components/SwipeSummaryContainer";
 import { ChallengeSettingsSheet } from "../../src/components/ChallengeSettingsSheet";
 import { TodayScreenSkeleton } from "../../src/components/skeletons/TodayScreenSkeleton";
 import { WaterLoggerSheet } from "../../src/components/logging/WaterLoggerSheet";
@@ -80,14 +82,45 @@ export default function TodayScreen() {
 
   const {
     data,
-    weekSummary,
-    monthSummary,
+    weekSummary: baseWeekSummary,
+    monthSummary: baseMonthSummary,
     isLoading,
     feedback,
     logValue,
     clearFeedback,
     refresh,
   } = useToday(selectedDate);
+
+  // ── Week/month offset navigation ───────────────────────────
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+
+  // Reset offsets when the selected day changes
+  const selectedDateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+  const prevDateKey = useRef(selectedDateKey);
+  if (prevDateKey.current !== selectedDateKey) {
+    prevDateKey.current = selectedDateKey;
+    if (weekOffset !== 0) setWeekOffset(0);
+    if (monthOffset !== 0) setMonthOffset(0);
+  }
+
+  const weekDate = useMemo(() => {
+    if (weekOffset === 0) return selectedDate;
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + weekOffset * 7);
+    return d;
+  }, [selectedDate, weekOffset]);
+
+  const monthDate = useMemo(() => {
+    if (monthOffset === 0) return selectedDate;
+    return new Date(selectedDate.getFullYear(), selectedDate.getMonth() + monthOffset, 1);
+  }, [selectedDate, monthOffset]);
+
+  const weekOffsetData = useSummary(weekDate);
+  const monthOffsetData = useSummary(monthDate);
+
+  const weekSummary = weekOffset === 0 ? baseWeekSummary : weekOffsetData.weekSummary;
+  const monthSummary = monthOffset === 0 ? baseMonthSummary : monthOffsetData.monthSummary;
 
   const [refreshing, setRefreshing] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -225,8 +258,30 @@ export default function TodayScreen() {
 
         {showSummary && (
           <>
-            {weekSummary && <WeeklySummaryCard summary={weekSummary} />}
-            {monthSummary && <MonthlySummaryCard summary={monthSummary} />}
+            {weekSummary && (
+              <SwipeSummaryContainer
+                onSwipeRight={() => setWeekOffset((o) => o - 1)}
+                onSwipeLeft={weekOffset < 0 ? () => setWeekOffset((o) => o + 1) : undefined}
+              >
+                <WeeklySummaryCard
+                  summary={weekSummary}
+                  onPrev={() => setWeekOffset((o) => o - 1)}
+                  onNext={weekOffset < 0 ? () => setWeekOffset((o) => o + 1) : undefined}
+                />
+              </SwipeSummaryContainer>
+            )}
+            {monthSummary && (
+              <SwipeSummaryContainer
+                onSwipeRight={() => setMonthOffset((o) => o - 1)}
+                onSwipeLeft={monthOffset < 0 ? () => setMonthOffset((o) => o + 1) : undefined}
+              >
+                <MonthlySummaryCard
+                  summary={monthSummary}
+                  onPrev={() => setMonthOffset((o) => o - 1)}
+                  onNext={monthOffset < 0 ? () => setMonthOffset((o) => o + 1) : undefined}
+                />
+              </SwipeSummaryContainer>
+            )}
           </>
         )}
       </ScrollView>

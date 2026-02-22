@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +24,13 @@ GoogleSignin.configure({
   webClientId: Constants.expoConfig?.extra?.googleWebClientId,
   iosClientId: Constants.expoConfig?.extra?.googleIosClientId,
 });
+
+const PRIVACY_URL =
+  Constants.expoConfig?.extra?.privacyPolicyUrl ??
+  "https://meusdesafios.com.br/privacy";
+const TERMS_URL =
+  Constants.expoConfig?.extra?.termsOfUseUrl ??
+  "https://meusdesafios.com.br/terms";
 
 export default function LoginScreen() {
   const { loginWithGoogle, loginWithApple } = useAuthStore();
@@ -97,51 +105,92 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        <View style={styles.topSpacer} />
+
         <View style={styles.hero}>
           <Image
             source={require("../../assets/icon.png")}
             style={styles.logo}
             accessible={false}
           />
-          <Text style={styles.title}>Meus Desafios</Text>
-          <Text style={styles.tagline}>Consistência vira resultado</Text>
+          <Text style={styles.title}>Bem-vindo(a)</Text>
+          <Text style={styles.tagline}>Consistência vira resultado.</Text>
         </View>
+
+        <View style={styles.bottomSpacer} />
 
         <View style={styles.buttons}>
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.button,
               styles.googleButton,
               isSigningIn && styles.buttonDisabled,
+              pressed && !isSigningIn && styles.buttonPressed,
             ]}
             onPress={handleGoogleSignIn}
             disabled={isSigningIn}
             accessibilityRole="button"
-            accessibilityLabel="Entrar com Google"
+            accessibilityLabel="Continuar com Google"
           >
             {isSigningIn ? (
               <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <>
                 <Ionicons name="logo-google" size={20} color={colors.white} />
-                <Text style={styles.buttonText}>Entrar com Google</Text>
+                <Text style={styles.googleButtonText}>
+                  Continuar com Google
+                </Text>
               </>
             )}
           </Pressable>
 
           {Platform.OS === "ios" && (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-              }
-              cornerRadius={12}
-              style={styles.appleButton}
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                styles.appleButton,
+                isSigningIn && styles.buttonDisabled,
+                pressed && !isSigningIn && styles.buttonPressed,
+              ]}
               onPress={handleAppleSignIn}
-            />
+              disabled={isSigningIn}
+              accessibilityRole="button"
+              accessibilityLabel="Continuar com Apple"
+            >
+              {isSigningIn ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={22} color={colors.white} />
+                  <Text style={styles.appleButtonText}>
+                    Continuar com Apple
+                  </Text>
+                </>
+              )}
+            </Pressable>
           )}
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Ao continuar, você concorda com nossos{" "}
+            <Text
+              style={styles.footerLink}
+              onPress={() => Linking.openURL(TERMS_URL)}
+              accessibilityRole="link"
+            >
+              Termos de Uso
+            </Text>{" "}
+            e{" "}
+            <Text
+              style={styles.footerLink}
+              onPress={() => Linking.openURL(PRIVACY_URL)}
+              accessibilityRole="link"
+            >
+              Política de Privacidade
+            </Text>
+            .
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -151,31 +200,35 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.gray[50],
   },
   content: {
     flex: 1,
-    justifyContent: "center",
     paddingHorizontal: spacing.phi5,
+  },
+  topSpacer: {
+    flex: 1.5,
   },
   hero: {
     alignItems: "center",
-    marginBottom: spacing.phi7,
   },
   logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
+    width: 100,
+    height: 100,
+    borderRadius: 22,
   },
   title: {
     ...typography.h1,
-    color: colors.primary[500],
+    color: colors.gray[900],
     marginTop: spacing.phi4,
   },
   tagline: {
     ...typography.body,
     color: colors.gray[500],
     marginTop: spacing.phi2,
+  },
+  bottomSpacer: {
+    flex: 2,
   },
   buttons: {
     gap: spacing.phi3,
@@ -184,22 +237,45 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.phi4,
+    height: 52,
     borderRadius: 12,
     gap: spacing.phi3,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
+  buttonPressed: {
+    opacity: 0.85,
+  },
   googleButton: {
     backgroundColor: colors.primary[500],
   },
   appleButton: {
-    height: 52,
+    backgroundColor: colors.black,
   },
-  buttonText: {
+  googleButtonText: {
     ...typography.body,
     color: colors.white,
     fontWeight: "600",
+  },
+  appleButtonText: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: "600",
+  },
+  footer: {
+    paddingTop: spacing.phi5,
+    paddingBottom: spacing.phi4,
+    paddingHorizontal: spacing.phi3,
+  },
+  footerText: {
+    ...typography.caption,
+    color: colors.gray[400],
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  footerLink: {
+    textDecorationLine: "underline",
+    color: colors.gray[500],
   },
 });

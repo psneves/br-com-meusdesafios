@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MonthlySummary } from "@meusdesafios/shared";
 import { getCategoryStyle } from "../theme/category";
@@ -8,6 +8,8 @@ import { typography } from "../theme/typography";
 
 interface MonthlySummaryCardProps {
   summary: MonthlySummary;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 const MONTH_NAMES = [
@@ -15,12 +17,42 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-export function MonthlySummaryCard({ summary }: MonthlySummaryCardProps) {
+export function MonthlySummaryCard({ summary, onPrev, onNext }: MonthlySummaryCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        {MONTH_NAMES[summary.month]} {summary.year}
-      </Text>
+      <View style={styles.titleRow}>
+        <Pressable
+          onPress={onPrev}
+          hitSlop={12}
+          accessibilityLabel="Mês anterior"
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.navArrow,
+            pressed && styles.navArrowPressed,
+          ]}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.gray[400]} />
+        </Pressable>
+        <Text style={styles.title}>
+          {MONTH_NAMES[summary.month]} {summary.year}
+        </Text>
+        {onNext ? (
+          <Pressable
+            onPress={onNext}
+            hitSlop={12}
+            accessibilityLabel="Próximo mês"
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.navArrow,
+              pressed && styles.navArrowPressed,
+            ]}
+          >
+            <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
+          </Pressable>
+        ) : (
+          <View style={styles.navArrow} />
+        )}
+      </View>
 
       {/* Per-challenge rows */}
       {summary.challenges.map((ch) => {
@@ -82,10 +114,25 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.phi3,
+  },
   title: {
     ...typography.h3,
     color: colors.gray[900],
-    marginBottom: spacing.phi3,
+  },
+  navArrow: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+  },
+  navArrowPressed: {
+    backgroundColor: colors.gray[100],
   },
   challengeRow: {
     flexDirection: "row",
