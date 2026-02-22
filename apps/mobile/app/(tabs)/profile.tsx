@@ -37,6 +37,7 @@ export default function ProfileScreen() {
     checkHandle,
     handleAvailable,
     isCheckingHandle,
+    refresh,
   } = useProfile();
 
   const logout = useAuthStore((s) => s.logout);
@@ -92,6 +93,7 @@ export default function ProfileScreen() {
     try {
       await api.post("/api/profile/dob", { dateOfBirth: dob });
       setDateOfBirth(dob);
+      await refresh();
       setShowDobPicker(false);
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 403) {
