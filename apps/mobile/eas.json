@@ -31,7 +31,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "API_BASE_URL": "https://www.meusdesafios.com.br",
+        "API_BASE_URL": "https://preview.meusdesafios.com.br",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true",
         "GOOGLE_WEB_CLIENT_ID": "476769682629-94pv8es04sg263un345b56icaho64g12.apps.googleusercontent.com",
         "GOOGLE_IOS_CLIENT_ID": "476769682629-sm97alogqsmuerbcl94id637687kdd6s.apps.googleusercontent.com",
