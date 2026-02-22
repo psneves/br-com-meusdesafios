@@ -28,6 +28,7 @@ export interface ProfileData {
   displayName: string;
   email: string;
   avatarUrl: string | null;
+  dateOfBirth: string | null;
 }
 
 export interface UpdateProfileInput {
@@ -49,6 +50,7 @@ export async function getProfile(userId: string): Promise<ProfileData | null> {
     displayName: user.displayName,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    dateOfBirth: user.dateOfBirth ?? null,
   };
 }
 
@@ -86,6 +88,7 @@ export async function updateProfile(
     displayName: user.displayName,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    dateOfBirth: user.dateOfBirth ?? null,
   };
 }
 
@@ -214,9 +217,26 @@ export async function deleteAccount(userId: string): Promise<void> {
   });
 }
 
+export async function updateDateOfBirth(
+  userId: string,
+  dateOfBirth: string
+): Promise<{ dateOfBirth: string }> {
+  const ds = await getDataSource();
+  const repo = ds.getRepository(User);
+
+  const user = await repo.findOneBy({ id: userId });
+  if (!user) throw new Error("User not found");
+
+  user.dateOfBirth = dateOfBirth;
+  await repo.save(user);
+
+  return { dateOfBirth: user.dateOfBirth };
+}
+
 export class HandleTakenError extends Error {
   constructor() {
     super("Handle already taken");
     this.name = "HandleTakenError";
   }
 }
+
