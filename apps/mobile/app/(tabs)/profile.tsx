@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useProfile } from "../../src/hooks/use-profile";
 import { useAuthStore } from "../../src/stores/auth.store";
+import { api } from "../../src/api/client";
 import { AvatarPicker } from "../../src/components/AvatarPicker";
 import { NotificationSettings } from "../../src/components/NotificationSettings";
 import { ProfileScreenSkeleton } from "../../src/components/skeletons/ProfileScreenSkeleton";
@@ -70,6 +71,28 @@ export default function ProfileScreen() {
       { text: "Cancelar", style: "cancel" },
       { text: "Sair", style: "destructive", onPress: logout },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Excluir conta",
+      "Tem certeza que deseja excluir sua conta? Todos os seus dados serão apagados permanentemente. Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete("/api/profile");
+              await logout();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir a conta. Tente novamente.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -193,6 +216,16 @@ export default function ProfileScreen() {
             color={colors.error}
           />
           <Text style={styles.logoutText}>Sair</Text>
+        </Pressable>
+
+        {/* Delete Account */}
+        <Pressable style={styles.deleteButton} onPress={handleDeleteAccount} accessibilityRole="button" accessibilityLabel="Excluir conta">
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={colors.gray[400]}
+          />
+          <Text style={styles.deleteText}>Excluir conta</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -325,5 +358,17 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.error,
     fontWeight: "600",
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.phi2,
+    paddingVertical: spacing.phi3,
+    marginTop: spacing.phi2,
+  },
+  deleteText: {
+    ...typography.bodySmall,
+    color: colors.gray[400],
   },
 });
