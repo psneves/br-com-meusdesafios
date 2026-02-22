@@ -32,7 +32,7 @@ function AuthGate() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const unsubscribe = startQueueFlushListener();
-    registerForPushNotifications();
+    registerForPushNotifications().catch(() => {});
     return unsubscribe;
   }, [isAuthenticated]);
 

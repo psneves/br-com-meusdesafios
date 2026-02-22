@@ -5,14 +5,19 @@ import Constants from "expo-constants";
 import { api } from "../api/client";
 
 // Show notifications when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+} catch {
+  // Notifications not available (e.g., missing aps-environment entitlement)
+  console.warn("[PushNotifications] Failed to set notification handler:", "Notifications may not be available on this device/environment");
+}
 
 /**
  * Register for push notifications: check permission, request if needed,
@@ -50,11 +55,16 @@ export async function registerForPushNotifications(): Promise<string | null> {
     Constants.expoConfig?.extra?.eas?.projectId ??
     Constants.easConfig?.projectId;
 
+  // Get native APNs device token (for Apple Push Notifications Console testing)
+  const nativeToken = await Notifications.getDevicePushTokenAsync();
+  console.log("[PushNotifications] APNs device token:", nativeToken.data);
+
   const tokenData = await Notifications.getExpoPushTokenAsync({
     projectId,
   });
 
   const pushToken = tokenData.data;
+  console.log("[PushNotifications] Expo push token:", pushToken);
 
   // Build a stable device ID
   const deviceId = `${Platform.OS}-${Device.modelName ?? "unknown"}-${Device.osVersion ?? "0"}`;

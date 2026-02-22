@@ -3,7 +3,17 @@
     "allow": [
       "Bash(npx expo prebuild:*)",
       "Bash(npx expo run:ios:*)",
-      "Bash(xcodebuild:*)"
+      "Bash(xcodebuild:*)",
+      "Bash(pod install:*)",
+      "Bash(xcrun devicectl list devices:*)",
+      "Bash(xcrun xctrace:*)",
+      "Bash(tee:*)",
+      "Read(//private/tmp/**)",
+      "Bash(open:*)",
+      "Bash(SENTRY_DISABLE_AUTO_UPLOAD=true xcodebuild:*)",
+      "Bash(node --print:*)",
+      "Bash(xcrun devicectl device install app:*)",
+      "Bash(xcrun devicectl device process launch:*)"
     ],
     "additionalDirectories": [
       "/Users/psneves/Library/Developer/Xcode/DerivedData"

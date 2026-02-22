@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { ExploreUser, PendingFollowRequest, SentFollowRequest } from "../types/social";
+import type { ExploreUser, FriendSummary, PendingFollowRequest, SentFollowRequest } from "../types/social";
 
 interface FeedbackData {
   message: string;
@@ -12,6 +12,7 @@ interface UseExploreResult {
   pendingRequests: PendingFollowRequest[];
   sentRequests: SentFollowRequest[];
   suggestedUsers: ExploreUser[];
+  friends: FriendSummary[];
   searchResults: ExploreUser[] | null;
   isLoading: boolean;
   isSearching: boolean;
@@ -22,6 +23,7 @@ interface UseExploreResult {
   acceptRequest: (edgeId: string) => Promise<void>;
   denyRequest: (edgeId: string) => Promise<void>;
   cancelRequest: (edgeId: string) => Promise<void>;
+  unfriend: (userId: string) => Promise<void>;
   feedback: FeedbackData | null;
   clearFeedback: () => void;
   refresh: () => void;
@@ -31,6 +33,7 @@ export function useExplore(): UseExploreResult {
   const [pendingRequests, setPendingRequests] = useState<PendingFollowRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<SentFollowRequest[]>([]);
   const [suggestedUsers, setSuggestedUsers] = useState<ExploreUser[]>([]);
+  const [friends, setFriends] = useState<FriendSummary[]>([]);
   const [searchResults, setSearchResults] = useState<ExploreUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -49,13 +52,22 @@ export function useExplore(): UseExploreResult {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/social/explore");
-        if (!res.ok) throw new Error("Failed to fetch");
-        const json = await res.json();
+        const [exploreRes, friendsRes] = await Promise.all([
+          fetch("/api/social/explore"),
+          fetch("/api/social/friends").catch(() => null),
+        ]);
+        if (!exploreRes.ok) throw new Error("Failed to fetch");
+        const exploreJson = await exploreRes.json();
         if (!cancelled) {
-          setPendingRequests(json.data.pendingRequests);
-          setSentRequests(json.data.sentRequests ?? []);
-          setSuggestedUsers(json.data.suggestedUsers);
+          setPendingRequests(exploreJson.data.pendingRequests);
+          setSentRequests(exploreJson.data.sentRequests ?? []);
+          setSuggestedUsers(exploreJson.data.suggestedUsers);
+        }
+        if (friendsRes?.ok) {
+          const friendsJson = await friendsRes.json();
+          if (!cancelled) {
+            setFriends(friendsJson.data.friends);
+          }
         }
       } catch {
         if (!cancelled) setError("Erro ao carregar dados");
@@ -204,12 +216,27 @@ export function useExplore(): UseExploreResult {
     }
   }, []);
 
+  const unfriendUser = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`/api/social/friends/${userId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) return;
+
+      setFriends((prev) => prev.filter((f) => f.id !== userId));
+      setFeedback({ message: "Amizade desfeita", variant: "neutral" });
+    } catch {
+      setFeedback({ message: "Erro ao desfazer amizade", variant: "neutral" });
+    }
+  }, []);
+
   const clearFeedback = useCallback(() => setFeedback(null), []);
 
   return {
     pendingRequests,
     sentRequests,
     suggestedUsers,
+    friends,
     searchResults,
     isLoading,
     isSearching,
@@ -220,6 +247,7 @@ export function useExplore(): UseExploreResult {
     acceptRequest,
     denyRequest,
     cancelRequest,
+    unfriend: unfriendUser,
     feedback,
     clearFeedback,
     refresh,
