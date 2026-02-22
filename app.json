@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "65d0a940-d800-429a-99db-500230eecbf5"
+      }
+    },
+    "android": {
+      "package": "com.psneves.meusdesafios"
+    },
+    "ios": {
+      "bundleIdentifier": "br.com.meusdesafios",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
