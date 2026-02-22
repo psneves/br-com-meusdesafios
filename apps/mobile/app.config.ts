@@ -21,7 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: "br.com.meusdesafios",
     usesAppleSignIn: true,
     infoPlist: {
-      UIBackgroundModes: ["remote-notification"],
+     UIBackgroundModes: ["remote-notification"],
     },
   },
   android: {

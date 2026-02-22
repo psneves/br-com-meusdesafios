@@ -398,29 +398,6 @@ export default function LeaderboardScreen() {
             participant={row}
             isMe={isMe}
             isNearby={isNearby}
-            onUnfriend={
-              !isMe && !isNearby
-                ? () => {
-                    Alert.alert(
-                      "Desfazer amizade",
-                      `Deseja desfazer a amizade com ${row.user.displayName}?`,
-                      [
-                        { text: "Cancelar", style: "cancel" },
-                        {
-                          text: "Desfazer",
-                          style: "destructive",
-                          onPress: async () => {
-                            try {
-                              await api.delete(`/api/social/friends/${row.user.id}`);
-                              refresh();
-                            } catch {}
-                          },
-                        },
-                      ]
-                    );
-                  }
-                : undefined
-            }
           />
         );
       }}
@@ -505,14 +482,6 @@ function ParticipantCard({
           <Text style={s.pAccomplished}>
             {accomplishedTotal} concluída{accomplishedTotal !== 1 ? "s" : ""}
           </Text>
-          {onUnfriend && (
-            <>
-              <Text style={s.pDot}>·</Text>
-              <Pressable onPress={onUnfriend} hitSlop={8}>
-                <Text style={s.pRemove}>Remover</Text>
-              </Pressable>
-            </>
-          )}
         </View>
       </View>
 

@@ -39,3 +39,6 @@ test-results/
 
 # Drizzle
 drizzle/*.sql
+
+# Secrets
+/secrets/**
