@@ -20,7 +20,7 @@ if (sentryDsn) {
 }
 
 function AuthGate() {
-  const { isLoading, isAuthenticated, restoreSession } = useAuthStore();
+  const { isLoading, isAuthenticated, user, restoreSession } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -40,13 +40,16 @@ function AuthGate() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inOnboardingGroup = segments[0] === "(onboarding)";
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if (isAuthenticated && inAuthGroup) {
+    } else if (isAuthenticated && !user?.dateOfBirth && !inOnboardingGroup) {
+      router.replace("/(onboarding)/dob");
+    } else if (isAuthenticated && user?.dateOfBirth && (inAuthGroup || inOnboardingGroup)) {
       router.replace("/(tabs)");
     }
-  }, [isLoading, isAuthenticated, segments, router]);
+  }, [isLoading, isAuthenticated, user?.dateOfBirth, segments, router]);
 
   if (isLoading) {
     return (

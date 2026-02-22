@@ -29,6 +29,7 @@ interface AuthState {
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   restoreSession: () => Promise<void>;
+  setDateOfBirth: (dob: string) => void;
 }
 
 interface AuthResponse {
@@ -113,5 +114,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null, isAuthenticated: false, isLoading: false });
       }
     }
+  },
+
+  setDateOfBirth: (dob: string) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, dateOfBirth: dob } : null,
+    }));
   },
 }));

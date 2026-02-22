@@ -6,6 +6,7 @@ export interface ProfileData {
   displayName: string;
   email: string;
   avatarUrl: string | null;
+  dateOfBirth: string | null;
 }
 
 export interface UpdateProfileInput {
@@ -22,4 +23,5 @@ export interface SessionUser {
   displayName: string;
   avatarUrl: string | null;
   friendsCount: number;
+  dateOfBirth: string | null;
 }

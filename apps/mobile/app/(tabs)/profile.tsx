@@ -8,12 +8,16 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { useProfile } from "../../src/hooks/use-profile";
 import { useAuthStore } from "../../src/stores/auth.store";
-import { api } from "../../src/api/client";
+import { api, ApiError } from "../../src/api/client";
 import { AvatarPicker } from "../../src/components/AvatarPicker";
 import { NotificationSettings } from "../../src/components/NotificationSettings";
 import { ProfileScreenSkeleton } from "../../src/components/skeletons/ProfileScreenSkeleton";
@@ -36,11 +40,15 @@ export default function ProfileScreen() {
   } = useProfile();
 
   const logout = useAuthStore((s) => s.logout);
+  const setDateOfBirth = useAuthStore((s) => s.setDateOfBirth);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [handle, setHandle] = useState("");
   const [editing, setEditing] = useState(false);
+
+  const [showDobPicker, setShowDobPicker] = useState(false);
+  const [isSavingDob, setIsSavingDob] = useState(false);
 
   const startEditing = () => {
     if (!profile) return;
@@ -64,6 +72,36 @@ export default function ProfileScreen() {
   const handleHandleChange = (text: string) => {
     setHandle(text);
     checkHandle(text);
+  };
+
+  const handleDobChange = async (
+    _event: DateTimePickerEvent,
+    selectedDate?: Date
+  ) => {
+    if (Platform.OS === "android") {
+      setShowDobPicker(false);
+    }
+    if (!selectedDate) return;
+
+    const y = selectedDate.getFullYear();
+    const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const d = String(selectedDate.getDate()).padStart(2, "0");
+    const dob = `${y}-${m}-${d}`;
+
+    setIsSavingDob(true);
+    try {
+      await api.post("/api/profile/dob", { dateOfBirth: dob });
+      setDateOfBirth(dob);
+      setShowDobPicker(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 403) {
+        Alert.alert("Erro", "Data de nascimento inválida.");
+      } else {
+        Alert.alert("Erro", "Não foi possível salvar. Tente novamente.");
+      }
+    } finally {
+      setIsSavingDob(false);
+    }
   };
 
   const handleLogout = () => {
@@ -203,6 +241,48 @@ export default function ProfileScreen() {
             />
             <Text style={styles.editButtonText}>Editar perfil</Text>
           </Pressable>
+        )}
+
+        {/* Date of Birth */}
+        {profile?.dateOfBirth && (
+          <View style={styles.dobSection}>
+            <Text style={styles.dobLabel}>Data de nascimento</Text>
+            <Pressable
+              style={styles.dobRow}
+              onPress={() => setShowDobPicker(true)}
+              disabled={isSavingDob}
+              accessibilityRole="button"
+              accessibilityLabel="Alterar data de nascimento"
+            >
+              <Text style={styles.dobValue}>
+                {new Date(
+                  profile.dateOfBirth + "T00:00:00"
+                ).toLocaleDateString("pt-BR")}
+              </Text>
+              {isSavingDob ? (
+                <ActivityIndicator size="small" color={colors.primary[500]} />
+              ) : (
+                <Ionicons
+                  name="create-outline"
+                  size={16}
+                  color={colors.gray[400]}
+                />
+              )}
+            </Pressable>
+            {showDobPicker && (
+              <DateTimePicker
+                value={
+                  new Date(profile.dateOfBirth + "T00:00:00")
+                }
+                mode="date"
+                display="spinner"
+                onChange={handleDobChange}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+                locale="pt-BR"
+              />
+            )}
+          </View>
         )}
 
         {/* Notification Preferences */}
@@ -345,6 +425,26 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.primary[500],
     fontWeight: "600",
+  },
+  dobSection: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: spacing.phi4,
+    marginBottom: spacing.phi4,
+  },
+  dobLabel: {
+    ...typography.label,
+    color: colors.gray[600],
+    marginBottom: spacing.phi1,
+  },
+  dobRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dobValue: {
+    ...typography.body,
+    color: colors.gray[900],
   },
   logoutButton: {
     flexDirection: "row",

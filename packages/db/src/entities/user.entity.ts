@@ -50,6 +50,9 @@ export class User {
   @Column({ name: "location_updated_at", type: "timestamptz", nullable: true })
   locationUpdatedAt!: Date | null;
 
+  @Column({ name: "date_of_birth", type: "date", nullable: true })
+  dateOfBirth!: string | null;
+
   @Column({ name: "is_active", default: true })
   isActive!: boolean;
 

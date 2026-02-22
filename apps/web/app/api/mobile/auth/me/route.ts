@@ -23,6 +23,7 @@ export async function GET(request: Request) {
       displayName: profile.displayName || "",
       avatarUrl: profile.avatarUrl ?? null,
       friendsCount: friendCountResult.friendsCount,
+      dateOfBirth: profile.dateOfBirth ?? null,
     });
   } catch (err) {
     console.error("[GET /api/mobile/auth/me]", err);

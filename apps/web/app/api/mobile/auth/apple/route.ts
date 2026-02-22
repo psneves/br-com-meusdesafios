@@ -48,6 +48,7 @@ export async function POST(request: Request) {
         handle: user.handle,
         displayName: user.displayName,
         avatarUrl: user.avatarUrl,
+        dateOfBirth: user.dateOfBirth ?? null,
       },
     });
   } catch (err) {
