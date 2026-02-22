@@ -7,11 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { api } from "../../src/api/client";
 import { useLeaderboard } from "../../src/hooks/use-leaderboard";
 import { useLocation } from "../../src/hooks/use-location";
+import { useAuthStore } from "../../src/stores/auth.store";
 import { haptics } from "../../src/utils/haptics";
 import { UserAvatar } from "../../src/components/UserAvatar";
 import { getCategoryStyle } from "../../src/theme/category";
@@ -23,12 +25,13 @@ import type {
   Period,
   Scope,
   Radius,
-  LeaderboardView,
-  ChallengeRank,
   ParticipantRow,
 } from "@meusdesafios/shared";
 
+const RANK_MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
+
 export default function LeaderboardScreen() {
+  const user = useAuthStore((s) => s.user);
   const {
     data,
     isLoading,
@@ -47,8 +50,7 @@ export default function LeaderboardScreen() {
     loadMore,
   } = useLeaderboard();
 
-  const { hasPermission, isRequesting, requestAndSendLocation } =
-    useLocation();
+  const { isRequesting, requestAndSendLocation } = useLocation();
   const [locationSent, setLocationSent] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -78,6 +80,15 @@ export default function LeaderboardScreen() {
     return <LeaderboardScreenSkeleton />;
   }
 
+  const rankData = data?.overall;
+  const challengeRanks = data?.challengeRanks ?? [];
+  const isNearby = scope === "nearby";
+  const noLocation = rankData?.rankStatus === "no_location";
+
+  const percentileLabel = rankData?.percentile != null
+    ? `Top ${Math.max(1, Math.round((1 - rankData.percentile) * 100))}%`
+    : null;
+
   const participants =
     view === "all"
       ? data?.participantsPage?.items ?? []
@@ -86,7 +97,6 @@ export default function LeaderboardScreen() {
           ...(data?.participantsStandard?.aroundMe ?? []),
         ];
 
-  // Dedup (aroundMe might overlap with top)
   const seen = new Set<string>();
   const dedupedParticipants = participants.filter((p) => {
     if (seen.has(p.user.id)) return false;
@@ -94,48 +104,96 @@ export default function LeaderboardScreen() {
     return true;
   });
 
-  return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Filters */}
-      <View style={styles.filters}>
-        <SegmentedControl<Period>
-          options={[
-            { label: "Semana", value: "week" },
-            { label: "Mês", value: "month" },
-          ]}
-          selected={period}
-          onSelect={setPeriod}
-        />
-        <SegmentedControl<Scope>
-          options={[
-            { label: "Amigos", value: "friends" },
-            { label: "Perto", value: "nearby" },
-          ]}
-          selected={scope}
-          onSelect={handleScopeChange}
-        />
+  // Split standard view into top + aroundMe for section headers
+  const topParticipants = view === "standard"
+    ? (data?.participantsStandard?.top ?? [])
+    : [];
+  const aroundMeParticipants = view === "standard"
+    ? (data?.participantsStandard?.aroundMe ?? []).filter(
+        (p) => !topParticipants.some((t) => t.user.id === p.user.id)
+      )
+    : [];
+
+  const renderHeader = () => (
+    <View>
+      {/* Page title */}
+      <View style={s.pageTitle}>
+        <View style={s.pageTitleIcon}>
+          <Ionicons name="trophy" size={20} color="#f59e0b" />
+        </View>
+        <View>
+          <Text style={s.pageTitleText}>Ranking</Text>
+          <Text style={s.pageTitleSub}>Compare seu desempenho com o grupo</Text>
+        </View>
       </View>
 
-      {scope === "nearby" && (
-        <View style={styles.radiusRow}>
+      {/* Period toggle */}
+      <View style={s.periodToggle}>
+        {(["week", "month"] as Period[]).map((p) => (
+          <Pressable
+            key={p}
+            style={[s.periodBtn, period === p && s.periodBtnActive]}
+            onPress={() => setPeriod(p)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: period === p }}
+          >
+            <Text style={[s.periodBtnText, period === p && s.periodBtnTextActive]}>
+              {p === "week" ? "Semana" : "Mês"}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Scope pills */}
+      <View style={s.scopeRow}>
+        <Pressable
+          style={[s.scopePill, scope === "friends" && s.scopePillActive]}
+          onPress={() => handleScopeChange("friends")}
+          accessibilityRole="button"
+          accessibilityState={{ selected: scope === "friends" }}
+        >
+          <Ionicons
+            name="people-outline"
+            size={14}
+            color={scope === "friends" ? colors.white : colors.gray[500]}
+          />
+          <Text style={[s.scopePillText, scope === "friends" && s.scopePillTextActive]}>
+            Amigos
+          </Text>
+          <Text style={[s.scopePillCount, scope === "friends" && s.scopePillCountActive]}>
+            {user?.friendsCount ?? 0}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[s.scopePill, isNearby && s.scopePillActive]}
+          onPress={() => handleScopeChange("nearby")}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isNearby }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={isNearby ? colors.white : colors.gray[500]}
+          />
+          <Text style={[s.scopePillText, isNearby && s.scopePillTextActive]}>
+            Perto de mim
+          </Text>
+        </Pressable>
+      </View>
+
+      {/* Radius sub-pills */}
+      {isNearby && !noLocation && (
+        <View style={s.radiusRow}>
           {([50, 100, 500] as Radius[]).map((r) => (
             <Pressable
               key={r}
-              style={[
-                styles.radiusPill,
-                radius === r && styles.radiusPillActive,
-              ]}
+              style={[s.radiusPill, radius === r && s.radiusPillActive]}
               onPress={() => setRadius(r)}
               accessibilityRole="button"
-              accessibilityLabel={`Raio de ${r} quilômetros`}
               accessibilityState={{ selected: radius === r }}
             >
-              <Text
-                style={[
-                  styles.radiusPillText,
-                  radius === r && styles.radiusPillTextActive,
-                ]}
-              >
+              <Text style={[s.radiusPillText, radius === r && s.radiusPillTextActive]}>
                 {r} km
               </Text>
             </Pressable>
@@ -143,30 +201,18 @@ export default function LeaderboardScreen() {
         </View>
       )}
 
-      <View style={styles.viewToggle}>
-        <SegmentedControl<LeaderboardView>
-          options={[
-            { label: "Padrão", value: "standard" },
-            { label: "Todos", value: "all" },
-          ]}
-          selected={view}
-          onSelect={setView}
-        />
-      </View>
-
-      {scope === "nearby" && !locationSent && hasPermission === false && (
-        <View style={styles.locationPrompt}>
-          <Ionicons
-            name="location-outline"
-            size={40}
-            color={colors.gray[400]}
-          />
-          <Text style={styles.locationPromptText}>
-            Para ver o ranking perto de você, permita o acesso à sua
-            localização.
+      {/* Location prompt */}
+      {isNearby && noLocation && (
+        <View style={s.locationCard}>
+          <View style={s.locationIconCircle}>
+            <Ionicons name="location" size={24} color={colors.primary[500]} />
+          </View>
+          <Text style={s.locationTitle}>Ative sua localização</Text>
+          <Text style={s.locationSub}>
+            Usamos apenas localização aproximada (~5 km), sem salvar coordenadas precisas.
           </Text>
           <Pressable
-            style={styles.locationButton}
+            style={s.locationBtn}
             onPress={async () => {
               const ok = await requestAndSendLocation();
               if (ok) {
@@ -175,275 +221,733 @@ export default function LeaderboardScreen() {
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Permitir localização"
+            accessibilityLabel="Ativar localização"
           >
-            <Text style={styles.locationButtonText}>
-              Permitir localização
-            </Text>
+            {isRequesting ? (
+              <ActivityIndicator size="small" color={colors.white} />
+            ) : (
+              <Text style={s.locationBtnText}>Ativar localização</Text>
+            )}
           </Pressable>
         </View>
       )}
 
-      {isRequesting && (
-        <View style={styles.locationLoading}>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
-          <Text style={styles.locationLoadingText}>
-            Obtendo localização...
-          </Text>
+      {/* Main rank card */}
+      {!noLocation && rankData && (
+        <View style={s.rankCard}>
+          {/* User row */}
+          <View style={s.rankUserRow}>
+            <UserAvatar
+              avatarUrl={user?.avatarUrl ?? null}
+              displayName={user?.displayName ?? "?"}
+              size="md"
+            />
+            <View style={s.rankUserInfo}>
+              <Text style={s.rankUserName} numberOfLines={1}>
+                {user?.displayName ?? "—"}
+              </Text>
+              <Text style={s.rankUserHandle}>
+                {user?.handle ? `@${user.handle}` : ""}
+              </Text>
+            </View>
+            <View style={s.rankScoreBlock}>
+              <Text style={s.rankScoreNumber}>{rankData.score}</Text>
+              <Text style={s.rankScoreUnit}> XP</Text>
+            </View>
+          </View>
+
+          {/* 3-stat grid */}
+          <View style={s.statGrid}>
+            <View style={s.statCell}>
+              <Text style={s.statValue}>{rankData.rank ?? 1}º</Text>
+              <Text style={s.statLabel}>Posição</Text>
+            </View>
+            <View style={[s.statCell, s.statCellBorder]}>
+              <Text style={s.statValueHighlight}>
+                {percentileLabel ?? "—"}
+              </Text>
+              <Text style={s.statLabel}>Percentil</Text>
+            </View>
+            <View style={s.statCell}>
+              <Text style={s.statValue}>{rankData.cohortSize}</Text>
+              <Text style={s.statLabel}>Participantes</Text>
+            </View>
+          </View>
         </View>
       )}
 
-      {error && <Text style={styles.error}>{error.message}</Text>}
-
-      <FlatList
-        data={dedupedParticipants}
-        keyExtractor={(item) => item.user.id}
-        renderItem={({ item }) => <ParticipantCard participant={item} />}
-        ListHeaderComponent={
-          data ? (
-            <MyRankCard
-              rank={data.overall.rank}
-              score={data.overall.score}
-              cohortSize={data.overall.cohortSize}
-              challengeRanks={data.challengeRanks}
-            />
-          ) : null
-        }
-        ListEmptyComponent={
-          data?.overall.rankStatus === "no_location" ? (
-            <Text style={styles.emptyText}>
-              Ative sua localização para ver o ranking perto de você.
-            </Text>
-          ) : (
-            <Text style={styles.emptyText}>
-              Nenhum participante encontrado
-            </Text>
-          )
-        }
-        ListFooterComponent={
-          isLoadingMore ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary[500]}
-              style={styles.footerLoader}
-            />
-          ) : null
-        }
-        onEndReached={hasNextPage ? loadMore : undefined}
-        onEndReachedThreshold={0.3}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary[500]}
-          />
-        }
-      />
-    </SafeAreaView>
-  );
-}
-
-function MyRankCard({
-  rank,
-  score,
-  cohortSize,
-  challengeRanks,
-}: {
-  rank: number | null;
-  score: number;
-  cohortSize: number;
-  challengeRanks: ChallengeRank[];
-}) {
-  return (
-    <View style={styles.rankCard}>
-      <View style={styles.rankHeader}>
-        <View style={styles.rankPosition}>
-          <Ionicons name="trophy" size={20} color={colors.primary[500]} />
-          <Text style={styles.rankNumber}>
-            {rank != null ? `#${rank}` : "-"}
-          </Text>
-        </View>
-        <View style={styles.rankStats}>
-          <Text style={styles.rankScore}>{score} pts</Text>
-          <Text style={styles.rankCohort}>de {cohortSize}</Text>
-        </View>
-      </View>
-
-      {challengeRanks.length > 0 && (
-        <View style={styles.challengeBreakdown}>
-          {challengeRanks.map((cr) => {
+      {/* Per-challenge ranks */}
+      {!noLocation && challengeRanks.length > 0 && (
+        <View style={s.challengeCard}>
+          <Text style={s.challengeCardTitle}>POR DESAFIO</Text>
+          {challengeRanks.map((cr, i) => {
             const catStyle = getCategoryStyle(cr.category);
+            const pctLabel =
+              cr.percentile != null
+                ? `Top ${Math.max(1, Math.round((1 - cr.percentile) * 100))}%`
+                : "—";
             return (
-              <View key={cr.category} style={styles.challengeRankRow}>
-                <Ionicons
-                  name={catStyle.icon as keyof typeof Ionicons.glyphMap}
-                  size={14}
-                  color={catStyle.color}
-                />
-                <Text style={styles.challengeRankName}>{cr.name}</Text>
-                <Text style={styles.challengeRankValue}>
-                  {cr.rank != null ? `#${cr.rank}` : "-"} ({cr.score} pts)
-                </Text>
+              <View
+                key={cr.category}
+                style={[
+                  s.challengeRankRow,
+                  i < challengeRanks.length - 1 && s.challengeRankRowBorder,
+                ]}
+              >
+                <View style={[s.challengeIconBox, { backgroundColor: catStyle.lightBg }]}>
+                  <Ionicons
+                    name={catStyle.icon as keyof typeof Ionicons.glyphMap}
+                    size={16}
+                    color={catStyle.color}
+                  />
+                </View>
+                <View style={s.challengeRankInfo}>
+                  <Text style={s.challengeRankName}>{cr.name}</Text>
+                  <Text style={s.challengeRankXP}>{cr.score} XP</Text>
+                </View>
+                <View style={s.challengeRankRight}>
+                  <Text style={s.challengeRankPosition}>
+                    {cr.rank != null ? `${cr.rank}º` : "—"}
+                  </Text>
+                  <Text style={s.challengeRankPct}>{pctLabel}</Text>
+                </View>
               </View>
             );
           })}
         </View>
       )}
+
+      {/* View tabs */}
+      {!noLocation && (
+        <View style={s.viewTabs}>
+          <Pressable
+            style={[s.viewTab, view === "standard" && s.viewTabActive]}
+            onPress={() => setView("standard")}
+            accessibilityRole="button"
+            accessibilityState={{ selected: view === "standard" }}
+          >
+            <Text style={[s.viewTabText, view === "standard" && s.viewTabTextActive]}>
+              Destaques
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[s.viewTab, view === "all" && s.viewTabActive]}
+            onPress={() => setView("all")}
+            accessibilityRole="button"
+            accessibilityState={{ selected: view === "all" }}
+          >
+            <Text style={[s.viewTabText, view === "all" && s.viewTabTextActive]}>
+              Ranking completo
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Section header for standard view */}
+      {!noLocation && view === "standard" && topParticipants.length > 0 && (
+        <Text style={s.sectionHeader}>MELHORES</Text>
+      )}
+
+      {/* Section header for all view */}
+      {!noLocation && view === "all" && (
+        <View style={s.allHeader}>
+          <Text style={s.sectionHeader}>TODOS OS PARTICIPANTES</Text>
+          {data?.participantsPage && (
+            <Text style={s.allHeaderCount}>
+              {data.participantsPage.items.length} de {data.participantsPage.totalItems}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {error && <Text style={s.error}>{error.message}</Text>}
     </View>
+  );
+
+  type ListItem =
+    | { type: "participant"; data: ParticipantRow }
+    | { type: "divider" };
+
+  const listData: ListItem[] = view === "standard"
+    ? [
+        ...topParticipants.map((p): ListItem => ({ type: "participant", data: p })),
+        ...(aroundMeParticipants.length > 0
+          ? [{ type: "divider" } as ListItem]
+          : []),
+        ...aroundMeParticipants.map((p): ListItem => ({ type: "participant", data: p })),
+      ]
+    : dedupedParticipants.map((p): ListItem => ({ type: "participant", data: p }));
+
+  return (
+    <FlatList
+      data={listData}
+      keyExtractor={(item, index) => {
+        if (item.type === "participant") return item.data.user.id;
+        return `divider-${index}`;
+      }}
+      renderItem={({ item }) => {
+        if (item.type === "divider") {
+          return (
+            <Text style={s.sectionHeader}>SUA REGIÃO NO RANKING</Text>
+          );
+        }
+        const row = item.data;
+        const isMe = row.user.id === user?.id;
+        return (
+          <ParticipantCard
+            participant={row}
+            isMe={isMe}
+            isNearby={isNearby}
+            onUnfriend={
+              !isMe && !isNearby
+                ? () => {
+                    Alert.alert(
+                      "Desfazer amizade",
+                      `Deseja desfazer a amizade com ${row.user.displayName}?`,
+                      [
+                        { text: "Cancelar", style: "cancel" },
+                        {
+                          text: "Desfazer",
+                          style: "destructive",
+                          onPress: async () => {
+                            try {
+                              await api.delete(`/api/social/friends/${row.user.id}`);
+                              refresh();
+                            } catch {}
+                          },
+                        },
+                      ]
+                    );
+                  }
+                : undefined
+            }
+          />
+        );
+      }}
+      ListHeaderComponent={renderHeader}
+      ListEmptyComponent={
+        noLocation ? null : (
+          <Text style={s.emptyText}>Nenhum participante encontrado</Text>
+        )
+      }
+      ListFooterComponent={
+        isLoadingMore ? (
+          <ActivityIndicator
+            size="small"
+            color={colors.primary[500]}
+            style={s.footerLoader}
+          />
+        ) : null
+      }
+      onEndReached={hasNextPage ? loadMore : undefined}
+      onEndReachedThreshold={0.3}
+      contentContainerStyle={s.listContent}
+      style={s.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary[500]}
+        />
+      }
+    />
   );
 }
 
-function ParticipantCard({ participant }: { participant: ParticipantRow }) {
-  const { user, rank, score } = participant;
-  const medal =
-    rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null;
+// ── Participant Card ──────────────────────────────────────
+
+function ParticipantCard({
+  participant,
+  isMe,
+  isNearby,
+  onUnfriend,
+}: {
+  participant: ParticipantRow;
+  isMe: boolean;
+  isNearby: boolean;
+  onUnfriend?: () => void;
+}) {
+  const { user: pUser, rank, score, goals, accomplishedTotal } = participant;
+  const medal = RANK_MEDAL[rank];
 
   return (
-    <View style={styles.participantRow}>
-      <Text style={styles.participantRank}>
-        {medal ?? `${rank}`}
-      </Text>
+    <View style={[s.pCard, isMe && s.pCardMe]}>
+      {/* Rank */}
+      <Text style={s.pRank}>{medal ?? `${rank}º`}</Text>
+
       <UserAvatar
-        avatarUrl={user.avatarUrl}
-        displayName={user.displayName}
+        avatarUrl={pUser.avatarUrl}
+        displayName={pUser.displayName}
         size="sm"
       />
-      <View style={styles.participantInfo}>
-        <Text style={styles.participantName} numberOfLines={1}>
-          {user.displayName}
+
+      {/* Info */}
+      <View style={s.pInfo}>
+        <Text style={s.pName} numberOfLines={1}>
+          {pUser.displayName}
+          {pUser.handle ? (
+            <Text style={s.pHandle}> @{pUser.handle}</Text>
+          ) : null}
+          {isMe ? <Text style={s.pMeTag}> você</Text> : null}
         </Text>
-        <Text style={styles.participantHandle}>@{user.handle}</Text>
-      </View>
-      <Text style={styles.participantScore}>{score} pts</Text>
-    </View>
-  );
-}
-
-function SegmentedControl<T extends string>({
-  options,
-  selected,
-  onSelect,
-}: {
-  options: { label: string; value: T }[];
-  selected: T;
-  onSelect: (value: T) => void;
-}) {
-  return (
-    <View style={styles.segmented}>
-      {options.map((opt) => (
-        <Pressable
-          key={opt.value}
-          style={[
-            styles.segmentedItem,
-            selected === opt.value && styles.segmentedItemActive,
-          ]}
-          onPress={() => onSelect(opt.value)}
-          accessibilityRole="button"
-          accessibilityState={{ selected: selected === opt.value }}
-        >
-          <Text
-            style={[
-              styles.segmentedText,
-              selected === opt.value && styles.segmentedTextActive,
-            ]}
-          >
-            {opt.label}
+        <View style={s.pMeta}>
+          {goals.targets.map((goal) => {
+            const catStyle = getCategoryStyle(goal.category);
+            return (
+              <Ionicons
+                key={goal.category}
+                name={catStyle.icon as keyof typeof Ionicons.glyphMap}
+                size={12}
+                color={catStyle.color}
+              />
+            );
+          })}
+          <Text style={s.pAccomplished}>
+            {accomplishedTotal} concluída{accomplishedTotal !== 1 ? "s" : ""}
           </Text>
-        </Pressable>
-      ))}
+          {onUnfriend && (
+            <>
+              <Text style={s.pDot}>·</Text>
+              <Pressable onPress={onUnfriend} hitSlop={8}>
+                <Text style={s.pRemove}>Remover</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </View>
+
+      {/* Score */}
+      <View style={s.pScoreBlock}>
+        <Text style={s.pScore}>{score}</Text>
+        <Text style={s.pScoreUnit}> XP</Text>
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+// ── Styles ────────────────────────────────────────────────
+
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.gray[50],
   },
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.gray[50],
+  listContent: {
+    padding: spacing.phi4,
+    paddingBottom: spacing.phi7,
   },
-  filters: {
+
+  // Page title
+  pageTitle: {
     flexDirection: "row",
+    alignItems: "center",
     gap: spacing.phi3,
-    paddingHorizontal: spacing.phi4,
-    paddingTop: spacing.phi3,
+    marginBottom: spacing.phi4,
   },
-  viewToggle: {
-    paddingHorizontal: spacing.phi4,
-    paddingTop: spacing.phi2,
-    paddingBottom: spacing.phi3,
+  pageTitleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#fffbeb",
+    alignItems: "center",
+    justifyContent: "center",
   },
+  pageTitleText: {
+    ...typography.h3,
+    color: colors.gray[900],
+  },
+  pageTitleSub: {
+    fontSize: 12,
+    color: colors.gray[400],
+    marginTop: 1,
+  },
+
+  // Period toggle
+  periodToggle: {
+    flexDirection: "row",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    overflow: "hidden",
+    marginBottom: spacing.phi3,
+  },
+  periodBtn: {
+    flex: 1,
+    paddingVertical: spacing.phi3,
+    alignItems: "center",
+  },
+  periodBtnActive: {
+    backgroundColor: colors.gray[100],
+  },
+  periodBtnText: {
+    ...typography.bodySmall,
+    fontWeight: "500",
+    color: colors.gray[500],
+  },
+  periodBtnTextActive: {
+    color: colors.gray[900],
+    fontWeight: "600",
+  },
+
+  // Scope pills
+  scopeRow: {
+    flexDirection: "row",
+    gap: spacing.phi2,
+    marginBottom: spacing.phi3,
+  },
+  scopePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.gray[100],
+  },
+  scopePillActive: {
+    backgroundColor: colors.gray[900],
+  },
+  scopePillText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.gray[500],
+  },
+  scopePillTextActive: {
+    color: colors.white,
+  },
+  scopePillCount: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.gray[400],
+  },
+  scopePillCountActive: {
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  // Radius sub-pills
   radiusRow: {
     flexDirection: "row",
     gap: spacing.phi2,
-    paddingHorizontal: spacing.phi4,
-    paddingTop: spacing.phi2,
+    marginBottom: spacing.phi3,
   },
   radiusPill: {
-    paddingHorizontal: spacing.phi3,
-    paddingVertical: spacing.phi1,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
     backgroundColor: colors.gray[100],
   },
   radiusPillActive: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: "#e0e7ff",
   },
   radiusPillText: {
-    ...typography.caption,
-    color: colors.gray[600],
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.gray[400],
   },
   radiusPillTextActive: {
-    color: colors.white,
+    color: "#4338ca",
   },
-  locationPrompt: {
+
+  // Location prompt
+  locationCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: spacing.phi5,
     alignItems: "center",
-    paddingVertical: spacing.phi5,
-    paddingHorizontal: spacing.phi5,
     gap: spacing.phi3,
+    marginBottom: spacing.phi4,
   },
-  locationPromptText: {
-    ...typography.body,
-    color: colors.gray[500],
+  locationIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primary[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationTitle: {
+    ...typography.bodySmall,
+    fontWeight: "600",
+    color: colors.gray[900],
+  },
+  locationSub: {
+    fontSize: 12,
+    color: colors.gray[400],
     textAlign: "center",
   },
-  locationButton: {
-    backgroundColor: colors.primary[500],
-    paddingHorizontal: spacing.phi4,
-    paddingVertical: spacing.phi3,
-    borderRadius: 10,
+  locationBtn: {
+    backgroundColor: colors.primary[600],
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
-  locationButtonText: {
-    ...typography.body,
+  locationBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
     color: colors.white,
+  },
+
+  // Rank card
+  rankCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: spacing.phi3,
+  },
+  rankUserRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: spacing.phi4,
+    gap: spacing.phi3,
+  },
+  rankUserInfo: {
+    flex: 1,
+  },
+  rankUserName: {
+    ...typography.bodySmall,
+    fontWeight: "600",
+    color: colors.gray[900],
+  },
+  rankUserHandle: {
+    fontSize: 12,
+    color: colors.gray[400],
+  },
+  rankScoreBlock: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  rankScoreNumber: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#4f46e5",
+  },
+  rankScoreUnit: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "rgba(79,70,229,0.7)",
+  },
+
+  // 3-stat grid
+  statGrid: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[100],
+  },
+  statCell: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: spacing.phi4,
+  },
+  statCellBorder: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.gray[100],
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.gray[900],
+  },
+  statValueHighlight: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#f59e0b",
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.gray[400],
+    marginTop: 2,
+  },
+
+  // Challenge ranks card
+  challengeCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: spacing.phi4,
+    marginBottom: spacing.phi3,
+  },
+  challengeCardTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    color: colors.gray[500],
+    marginBottom: spacing.phi3,
+  },
+  challengeRankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.phi3,
+    gap: spacing.phi3,
+  },
+  challengeRankRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
+  },
+  challengeIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  challengeRankInfo: {
+    flex: 1,
+  },
+  challengeRankName: {
+    ...typography.bodySmall,
+    fontWeight: "500",
+    color: colors.gray[900],
+  },
+  challengeRankXP: {
+    fontSize: 11,
+    color: colors.gray[400],
+  },
+  challengeRankRight: {
+    alignItems: "flex-end",
+  },
+  challengeRankPosition: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.gray[900],
+  },
+  challengeRankPct: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: colors.gray[400],
+  },
+
+  // View tabs
+  viewTabs: {
+    flexDirection: "row",
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginBottom: spacing.phi3,
+  },
+  viewTab: {
+    flex: 1,
+    paddingVertical: spacing.phi3,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  viewTabActive: {
+    borderBottomColor: "#4f46e5",
+  },
+  viewTabText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.gray[400],
+  },
+  viewTabTextActive: {
+    color: "#4f46e5",
     fontWeight: "600",
   },
-  locationLoading: {
+
+  // Section headers
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.8,
+    color: colors.gray[400],
+    marginBottom: spacing.phi2,
+    marginTop: spacing.phi2,
+  },
+  allHeader: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.phi2,
+    marginBottom: spacing.phi2,
+    marginTop: spacing.phi2,
+  },
+  allHeaderCount: {
+    fontSize: 11,
+    color: colors.gray[400],
+  },
+
+  // Participant card
+  pCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.gray[50],
+    borderRadius: 10,
+    paddingHorizontal: spacing.phi3,
     paddingVertical: spacing.phi3,
+    marginBottom: 6,
+    gap: spacing.phi3,
   },
-  locationLoadingText: {
-    ...typography.caption,
-    color: colors.gray[500],
+  pCardMe: {
+    backgroundColor: "#eef2ff",
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
   },
+  pRank: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.gray[400],
+    width: 28,
+    textAlign: "center",
+  },
+  pInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  pName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.gray[900],
+  },
+  pHandle: {
+    fontSize: 11,
+    fontWeight: "400",
+    color: colors.gray[400],
+  },
+  pMeTag: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#6366f1",
+  },
+  pMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  pAccomplished: {
+    fontSize: 10,
+    color: colors.gray[400],
+  },
+  pDot: {
+    fontSize: 10,
+    color: colors.gray[300],
+  },
+  pRemove: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: colors.gray[400],
+  },
+  pScoreBlock: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  pScore: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#4f46e5",
+  },
+  pScoreUnit: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "rgba(79,70,229,0.6)",
+  },
+
+  // Misc
   error: {
     ...typography.bodySmall,
     color: colors.error,
     textAlign: "center",
-    paddingHorizontal: spacing.phi4,
     marginBottom: spacing.phi3,
-  },
-  listContent: {
-    paddingHorizontal: spacing.phi4,
-    paddingBottom: spacing.phi7,
   },
   emptyText: {
     ...typography.body,
@@ -453,117 +957,5 @@ const styles = StyleSheet.create({
   },
   footerLoader: {
     paddingVertical: spacing.phi4,
-  },
-  // My rank card
-  rankCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: spacing.phi4,
-    marginBottom: spacing.phi4,
-  },
-  rankHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  rankPosition: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.phi2,
-  },
-  rankNumber: {
-    ...typography.h2,
-    color: colors.primary[600],
-  },
-  rankStats: {
-    alignItems: "flex-end",
-  },
-  rankScore: {
-    ...typography.h3,
-    color: colors.gray[900],
-  },
-  rankCohort: {
-    ...typography.caption,
-    color: colors.gray[500],
-  },
-  challengeBreakdown: {
-    marginTop: spacing.phi3,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[100],
-    paddingTop: spacing.phi3,
-    gap: spacing.phi2,
-  },
-  challengeRankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.phi2,
-  },
-  challengeRankName: {
-    ...typography.caption,
-    color: colors.gray[700],
-    flex: 1,
-  },
-  challengeRankValue: {
-    ...typography.caption,
-    color: colors.gray[500],
-  },
-  // Participant row
-  participantRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: spacing.phi3,
-    marginBottom: spacing.phi2,
-    gap: spacing.phi3,
-  },
-  participantRank: {
-    ...typography.body,
-    color: colors.gray[600],
-    fontWeight: "700",
-    width: 28,
-    textAlign: "center",
-  },
-  participantInfo: {
-    flex: 1,
-  },
-  participantName: {
-    ...typography.body,
-    color: colors.gray[900],
-    fontWeight: "600",
-  },
-  participantHandle: {
-    ...typography.caption,
-    color: colors.gray[500],
-  },
-  participantScore: {
-    ...typography.body,
-    color: colors.primary[600],
-    fontWeight: "700",
-  },
-  // Segmented control
-  segmented: {
-    flexDirection: "row",
-    backgroundColor: colors.gray[100],
-    borderRadius: 8,
-    padding: 2,
-    flex: 1,
-  },
-  segmentedItem: {
-    flex: 1,
-    paddingVertical: spacing.phi2,
-    alignItems: "center",
-    borderRadius: 6,
-  },
-  segmentedItemActive: {
-    backgroundColor: colors.white,
-  },
-  segmentedText: {
-    ...typography.caption,
-    color: colors.gray[500],
-    fontWeight: "600",
-  },
-  segmentedTextActive: {
-    color: colors.primary[600],
   },
 });

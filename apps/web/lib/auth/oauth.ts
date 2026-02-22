@@ -2,11 +2,16 @@ import { OAuth2Client } from "google-auth-library";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_IOS_CLIENT_ID = process.env.GOOGLE_IOS_CLIENT_ID;
 
 const googleClient =
   GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
     ? new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
     : null;
+
+const validAudiences = [GOOGLE_CLIENT_ID, GOOGLE_IOS_CLIENT_ID].filter(
+  Boolean
+) as string[];
 
 export interface GoogleProfile {
   id: string;
@@ -24,7 +29,7 @@ export async function verifyGoogleToken(
 
   const ticket = await googleClient.verifyIdToken({
     idToken,
-    audience: GOOGLE_CLIENT_ID,
+    audience: validAudiences,
   });
 
   const payload = ticket.getPayload();

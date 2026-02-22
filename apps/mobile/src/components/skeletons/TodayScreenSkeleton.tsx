@@ -6,46 +6,50 @@ import { spacing } from "../../theme/spacing";
 
 export function TodayScreenSkeleton() {
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.content}>
-        {/* Header: greeting + settings icon */}
+        {/* Header: avatar + user info + settings gear */}
         <View style={styles.header}>
-          <View>
-            <Skeleton width={180} height={24} borderRadius={6} />
-            <View style={styles.pillsRow}>
-              <Skeleton width={60} height={32} borderRadius={12} />
-              <Skeleton width={60} height={32} borderRadius={12} />
-              <Skeleton width={60} height={32} borderRadius={12} />
+          <View style={styles.userSection}>
+            <Skeleton width={44} height={44} borderRadius={22} />
+            <View style={{ gap: 4 }}>
+              <Skeleton width={130} height={16} borderRadius={4} />
+              <Skeleton width={80} height={12} borderRadius={4} />
+              <Skeleton width={100} height={12} borderRadius={4} />
             </View>
           </View>
-          <Skeleton width={24} height={24} borderRadius={12} />
+          <Skeleton width={20} height={20} borderRadius={10} />
         </View>
 
-        {/* Challenge card placeholders */}
-        {[1, 2, 3].map((i) => (
+        {/* Day nav pill */}
+        <View style={styles.dayNavRow}>
+          <Skeleton width={160} height={36} borderRadius={18} />
+        </View>
+
+        {/* XP Summary Bar */}
+        <View style={styles.xpBar}>
+          <View style={{ flex: 1.618 }}>
+            <Skeleton width="100%" height={64} borderRadius={14} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Skeleton width="100%" height={64} borderRadius={14} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Skeleton width="100%" height={64} borderRadius={14} />
+          </View>
+        </View>
+
+        {/* Challenge card placeholders (3-column layout) */}
+        {[1, 2, 3, 4].map((i) => (
           <View key={i} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Skeleton width={36} height={36} borderRadius={8} />
-              <View style={{ flex: 1, marginLeft: spacing.phi3 }}>
-                <Skeleton width={120} height={18} borderRadius={4} />
-                <Skeleton
-                  width={80}
-                  height={12}
-                  borderRadius={4}
-                  style={{ marginTop: 4 }}
-                />
+            <View style={styles.cardRow}>
+              <Skeleton width={40} height={40} borderRadius={10} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <Skeleton width={140} height={14} borderRadius={4} />
+                <Skeleton width={100} height={10} borderRadius={3} />
+                <Skeleton width="100%" height={6} borderRadius={3} />
               </View>
-            </View>
-            <Skeleton
-              width="100%"
-              height={8}
-              borderRadius={4}
-              style={{ marginVertical: spacing.phi3 }}
-            />
-            <View style={styles.actionsRow}>
-              <Skeleton width={70} height={28} borderRadius={20} />
-              <Skeleton width={70} height={28} borderRadius={20} />
-              <Skeleton width={70} height={28} borderRadius={20} />
+              <Skeleton width={40} height={40} borderRadius={20} />
             </View>
           </View>
         ))}
@@ -61,21 +65,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: spacing.phi4,
   },
-  pillsRow: {
+  userSection: {
     flexDirection: "row",
+    alignItems: "center",
     gap: spacing.phi3,
-    marginTop: spacing.phi2,
+  },
+  dayNavRow: {
+    alignItems: "center",
+    marginTop: spacing.phi3,
+    marginBottom: spacing.phi3,
+  },
+  xpBar: {
+    flexDirection: "row",
+    backgroundColor: colors.gray[100],
+    borderRadius: 16,
+    padding: spacing.phi2,
+    gap: spacing.phi2,
+    marginBottom: spacing.phi4,
   },
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
     borderLeftWidth: 4,
     borderLeftColor: colors.gray[200],
-    padding: spacing.phi4,
+    padding: spacing.phi3,
     marginBottom: spacing.phi3,
   },
-  cardHeader: { flexDirection: "row", alignItems: "center" },
-  actionsRow: { flexDirection: "row", gap: spacing.phi2 },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.phi3,
+  },
 });

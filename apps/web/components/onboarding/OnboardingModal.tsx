@@ -298,7 +298,7 @@ export function OnboardingModal({ onComplete }: OnboardingModalProps) {
               <HeartPulse className="h-6 w-6 text-rose-500" />
             </div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Bem-vindo ao Meus Desafios!
+              Bem-vindo(a) ao Meus Desafios!
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
               Vamos personalizar os seus 4 desafios para que se adaptem ao seu estilo de vida.

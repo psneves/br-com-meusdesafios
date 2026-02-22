@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo prebuild:*)",
+      "Bash(npx expo run:ios:*)",
+      "Bash(xcodebuild:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/psneves/Library/Developer/Xcode/DerivedData"
+    ]
+  }
+}

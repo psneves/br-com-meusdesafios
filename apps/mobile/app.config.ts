@@ -14,11 +14,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#0ea5e9",
+    backgroundColor: "#ffffff",
   },
   ios: {
     supportsTablet: false,
-    bundleIdentifier: "com.meusdesafios.app",
+    bundleIdentifier: "br.com.meusdesafios",
     usesAppleSignIn: true,
     infoPlist: {
       UIBackgroundModes: ["remote-notification"],
@@ -29,7 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#0ea5e9",
     },
-    package: "com.meusdesafios.app",
+    package: "br.com.meusdesafios",
   },
   plugins: [
     "expo-router",
@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     "expo-notifications",
+    "@react-native-community/datetimepicker",
     [
       "@react-native-google-signin/google-signin",
       {

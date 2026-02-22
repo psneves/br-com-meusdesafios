@@ -97,6 +97,13 @@ const CATEGORY_NAMES: Record<TrackableCategory, string> = {
   SLEEP: "Sono",
 };
 
+const CATEGORY_ORDER: Record<TrackableCategory, number> = {
+  WATER: 0,
+  DIET_CONTROL: 1,
+  PHYSICAL_EXERCISE: 2,
+  SLEEP: 3,
+};
+
 const CATEGORY_QUICK_ACTIONS: Record<TrackableCategory, QuickAction[]> = {
   WATER: [
     { id: "water-250", type: "add", label: "+250 ml", amount: 250, unit: "ml" },
@@ -204,7 +211,9 @@ export async function buildTodayResponse(
   const streakRepo = ds.getRepository(StreakEntity);
   const ledgerRepo = ds.getRepository(PointsLedger);
 
-  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+  const activeUTs = userTrackables
+    .filter((ut) => ut.isActive)
+    .sort((a, b) => CATEGORY_ORDER[a.template.category] - CATEGORY_ORDER[b.template.category]);
   const utIds = activeUTs.map((ut) => ut.id);
 
   // Batch fetch: 3 queries instead of 3 × N (N+1 fix)
@@ -314,8 +323,14 @@ export async function buildTodayResponse(
     cards.push(card);
   }
 
-  // Compute aggregate points
-  const totalPoints = cards.reduce((sum, c) => sum + c.pointsToday, 0);
+  // Compute aggregate points from ledger (includes perfect day bonus)
+  const totalPoints = await ledgerRepo
+    .createQueryBuilder("pl")
+    .select("COALESCE(SUM(pl.points), 0)", "total")
+    .where("pl.user_id = :userId", { userId })
+    .andWhere("pl.day = :day", { day: dayString(dayStart) })
+    .getRawOne()
+    .then((r) => Number(r?.total ?? 0));
 
   // Week points: sum of PointsLedger entries for the ISO week
   const dayOfWeek = dayStart.getDay(); // 0=Sun
@@ -768,7 +783,9 @@ export async function buildWeeklySummary(
   const statsRepo = ds.getRepository(ComputedDailyStats);
   const ledgerRepo = ds.getRepository(PointsLedger);
   const userTrackables = await ensureUserTrackables(userId);
-  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+  const activeUTs = userTrackables
+    .filter((ut) => ut.isActive)
+    .sort((a, b) => CATEGORY_ORDER[a.template.category] - CATEGORY_ORDER[b.template.category]);
 
   const selected = startOfDay(date);
   const today = startOfDay(new Date());
@@ -914,7 +931,9 @@ export async function buildMonthlySummary(
   const statsRepo = ds.getRepository(ComputedDailyStats);
   const ledgerRepo = ds.getRepository(PointsLedger);
   const userTrackables = await ensureUserTrackables(userId);
-  const activeUTs = userTrackables.filter((ut) => ut.isActive);
+  const activeUTs = userTrackables
+    .filter((ut) => ut.isActive)
+    .sort((a, b) => CATEGORY_ORDER[a.template.category] - CATEGORY_ORDER[b.template.category]);
 
   const selected = startOfDay(date);
   const today = startOfDay(new Date());
