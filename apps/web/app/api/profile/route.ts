@@ -6,6 +6,7 @@ import { validateBody } from "@/lib/api/validate";
 import {
   getProfile,
   updateProfile,
+  deleteAccount,
   HandleTakenError,
 } from "@/lib/services/user.service";
 
@@ -71,6 +72,26 @@ export async function PATCH(request: Request) {
       return errors.validationError("Este username já está em uso");
     }
     console.error("[PATCH /api/profile]", err);
+    return errors.serverError();
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = await getAuthContext(request);
+    if (!auth) return errors.unauthorized();
+
+    await deleteAccount(auth.userId);
+
+    // Destroy web session if cookie-based auth
+    if (auth.authType === "cookie") {
+      const session = await getSession();
+      session.destroy();
+    }
+
+    return successResponse({ deleted: true });
+  } catch (err) {
+    console.error("[DELETE /api/profile]", err);
     return errors.serverError();
   }
 }

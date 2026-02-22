@@ -5,7 +5,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "Meus Desafios",
   slug: "meusdesafios",
   scheme: "meusdesafios",
-  owner: "meusdesafios",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -34,12 +33,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-secure-store",
-    "expo-image-picker",
+    "expo-font",
+    [
+      "expo-image-picker",
+      {
+        photosPermission:
+          "Permitir que $(PRODUCT_NAME) acesse suas fotos para alterar sua foto de perfil.",
+        cameraPermission: false,
+      },
+    ],
     [
       "expo-location",
       {
         locationWhenInUsePermission:
           "Permitir que $(PRODUCT_NAME) use sua localização para o ranking perto de você.",
+        isIosBackgroundLocationEnabled: false,
       },
     ],
     "expo-notifications",
@@ -68,7 +76,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     privacyPolicyUrl: "https://meusdesafios.com.br/privacy",
     termsOfUseUrl: "https://meusdesafios.com.br/terms",
     eas: {
-      projectId: "YOUR_EAS_PROJECT_ID",
+      projectId: "65d0a940-d800-429a-99db-500230eecbf5",
     },
   },
 });

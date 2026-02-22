@@ -55,16 +55,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
     Constants.expoConfig?.extra?.eas?.projectId ??
     Constants.easConfig?.projectId;
 
-  // Get native APNs device token (for Apple Push Notifications Console testing)
-  const nativeToken = await Notifications.getDevicePushTokenAsync();
-  console.log("[PushNotifications] APNs device token:", nativeToken.data);
+  // Get native APNs device token
+  await Notifications.getDevicePushTokenAsync();
 
   const tokenData = await Notifications.getExpoPushTokenAsync({
     projectId,
   });
 
   const pushToken = tokenData.data;
-  console.log("[PushNotifications] Expo push token:", pushToken);
 
   // Build a stable device ID
   const deviceId = `${Platform.OS}-${Device.modelName ?? "unknown"}-${Device.osVersion ?? "0"}`;

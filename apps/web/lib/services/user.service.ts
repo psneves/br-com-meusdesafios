@@ -1,4 +1,19 @@
-import { getDataSource, User, ILike, Not } from "@meusdesafios/db";
+import {
+  getDataSource,
+  User,
+  UserTrackable,
+  TrackableLog,
+  ComputedDailyStats,
+  Streak,
+  PointsLedger,
+  FollowEdge,
+  LeaderboardSnapshot,
+  MobileAuthSession,
+  MobileDevice,
+  UserNotificationPreference,
+  ILike,
+  Not,
+} from "@meusdesafios/db";
 import {
   LOCATION_CELL_APPROX_KM,
   LOCATION_CELL_PRECISION,
@@ -173,6 +188,30 @@ export async function clearLocation(userId: string): Promise<UserLocation> {
     precisionKm: LOCATION_CELL_APPROX_KM,
     updatedAt: user.locationUpdatedAt.toISOString(),
   };
+}
+
+export async function deleteAccount(userId: string): Promise<void> {
+  const ds = await getDataSource();
+
+  await ds.transaction(async (manager) => {
+    // Delete in FK-safe order
+    await manager.delete(PointsLedger, { userId });
+    await manager.delete(ComputedDailyStats, { userId });
+    await manager.delete(Streak, { userId });
+    await manager.delete(TrackableLog, { userId });
+    await manager.delete(UserTrackable, { userId });
+    await manager
+      .createQueryBuilder()
+      .delete()
+      .from(FollowEdge)
+      .where("requester_id = :userId OR target_id = :userId", { userId })
+      .execute();
+    await manager.delete(LeaderboardSnapshot, { scopeUserId: userId });
+    await manager.delete(MobileAuthSession, { userId });
+    await manager.delete(MobileDevice, { userId });
+    await manager.delete(UserNotificationPreference, { userId });
+    await manager.delete(User, { id: userId });
+  });
 }
 
 export class HandleTakenError extends Error {

@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import {
-  Sun, Moon, Minus, Plus, LogOut, FileText, Shield, ChevronRight,
+  Sun, Moon, Minus, Plus, LogOut, Trash2, FileText, Shield, ChevronRight,
   Pencil, Check, X, Loader2, Camera, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -667,6 +667,25 @@ export default function ProfilePage() {
         >
           <LogOut className="h-4 w-4" />
           Sair
+        </button>
+        <button
+          onClick={async () => {
+            if (!window.confirm("Tem certeza que deseja excluir sua conta? Todos os seus dados serão apagados permanentemente. Esta ação não pode ser desfeita.")) return;
+            try {
+              const res = await fetch("/api/profile", { method: "DELETE" });
+              if (res.ok) {
+                window.location.href = "/";
+              } else {
+                alert("Não foi possível excluir a conta. Tente novamente.");
+              }
+            } catch {
+              alert("Não foi possível excluir a conta. Tente novamente.");
+            }
+          }}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-500 dark:hover:bg-red-950/20 dark:hover:text-red-400"
+        >
+          <Trash2 className="h-4 w-4" />
+          Excluir conta
         </button>
       </section>
     </div>
