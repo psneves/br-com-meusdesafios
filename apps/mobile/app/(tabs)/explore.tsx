@@ -113,7 +113,7 @@ export default function ExploreScreen() {
             style={styles.searchInput}
             value={searchText}
             onChangeText={handleSearch}
-            placeholder="Buscar por nome ou @handle"
+            placeholder="Buscar por nome ou arroba @"
             placeholderTextColor={colors.gray[400]}
             autoCapitalize="none"
             autoCorrect={false}

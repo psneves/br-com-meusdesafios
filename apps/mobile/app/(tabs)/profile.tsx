@@ -8,7 +8,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -49,6 +48,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
 
   const [showDobPicker, setShowDobPicker] = useState(false);
+  const [pendingDob, setPendingDob] = useState<Date | null>(null);
   const [isSavingDob, setIsSavingDob] = useState(false);
 
   const startEditing = () => {
@@ -75,18 +75,32 @@ export default function ProfileScreen() {
     checkHandle(text);
   };
 
-  const handleDobChange = async (
+  const openDobPicker = () => {
+    if (!profile?.dateOfBirth) return;
+    setPendingDob(new Date(profile.dateOfBirth + "T00:00:00"));
+    setShowDobPicker(true);
+  };
+
+  const handleDobPickerChange = (
     _event: DateTimePickerEvent,
     selectedDate?: Date
   ) => {
-    if (Platform.OS === "android") {
-      setShowDobPicker(false);
+    if (selectedDate) {
+      setPendingDob(selectedDate);
     }
-    if (!selectedDate) return;
+  };
 
-    const y = selectedDate.getFullYear();
-    const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
-    const d = String(selectedDate.getDate()).padStart(2, "0");
+  const cancelDobChange = () => {
+    setShowDobPicker(false);
+    setPendingDob(null);
+  };
+
+  const saveDob = async () => {
+    if (!pendingDob) return;
+
+    const y = pendingDob.getFullYear();
+    const m = String(pendingDob.getMonth() + 1).padStart(2, "0");
+    const d = String(pendingDob.getDate()).padStart(2, "0");
     const dob = `${y}-${m}-${d}`;
 
     setIsSavingDob(true);
@@ -95,6 +109,7 @@ export default function ProfileScreen() {
       setDateOfBirth(dob);
       await refresh();
       setShowDobPicker(false);
+      setPendingDob(null);
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 403) {
         Alert.alert("Erro", "Data de nascimento inválida.");
@@ -251,8 +266,8 @@ export default function ProfileScreen() {
             <Text style={styles.dobLabel}>Data de nascimento</Text>
             <Pressable
               style={styles.dobRow}
-              onPress={() => setShowDobPicker(true)}
-              disabled={isSavingDob}
+              onPress={openDobPicker}
+              disabled={isSavingDob || showDobPicker}
               accessibilityRole="button"
               accessibilityLabel="Alterar data de nascimento"
             >
@@ -271,18 +286,41 @@ export default function ProfileScreen() {
                 />
               )}
             </Pressable>
-            {showDobPicker && (
-              <DateTimePicker
-                value={
-                  new Date(profile.dateOfBirth + "T00:00:00")
-                }
-                mode="date"
-                display="spinner"
-                onChange={handleDobChange}
-                maximumDate={new Date()}
-                minimumDate={new Date(1900, 0, 1)}
-                locale="pt-BR"
-              />
+            {showDobPicker && pendingDob && (
+              <>
+                <DateTimePicker
+                  value={pendingDob}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDobPickerChange}
+                  maximumDate={new Date()}
+                  minimumDate={new Date(1900, 0, 1)}
+                  locale="pt-BR"
+                />
+                <View style={styles.dobButtons}>
+                  <Pressable
+                    style={styles.dobCancelButton}
+                    onPress={cancelDobChange}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancelar alteração"
+                  >
+                    <Text style={styles.dobCancelButtonText}>Cancelar</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.dobSaveButton, isSavingDob && styles.saveButtonDisabled]}
+                    onPress={saveDob}
+                    disabled={isSavingDob}
+                    accessibilityRole="button"
+                    accessibilityLabel="Salvar data de nascimento"
+                  >
+                    {isSavingDob ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <Text style={styles.dobSaveButtonText}>Salvar</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </>
             )}
           </View>
         )}
@@ -447,6 +485,36 @@ const styles = StyleSheet.create({
   dobValue: {
     ...typography.body,
     color: colors.gray[900],
+  },
+  dobButtons: {
+    flexDirection: "row",
+    gap: spacing.phi3,
+    marginTop: spacing.phi3,
+  },
+  dobCancelButton: {
+    flex: 1,
+    paddingVertical: spacing.phi3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    alignItems: "center",
+  },
+  dobCancelButtonText: {
+    ...typography.body,
+    color: colors.gray[600],
+    fontWeight: "600",
+  },
+  dobSaveButton: {
+    flex: 1,
+    paddingVertical: spacing.phi3,
+    borderRadius: 8,
+    backgroundColor: colors.primary[500],
+    alignItems: "center",
+  },
+  dobSaveButtonText: {
+    ...typography.body,
+    color: colors.white,
+    fontWeight: "600",
   },
   logoutButton: {
     flexDirection: "row",

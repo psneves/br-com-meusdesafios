@@ -31,6 +31,7 @@ function dateToTimeString(d: Date): string {
 export function NotificationSettings() {
   const { prefs, isLoading, update } = useNotificationPreferences();
   const [showPicker, setShowPicker] = useState(false);
+  const [pendingTime, setPendingTime] = useState<Date | null>(null);
 
   if (isLoading || !prefs) return null;
 
@@ -38,13 +39,28 @@ export function NotificationSettings() {
     ? prefs.reminderTimeLocal.slice(0, 5) // strip seconds if present
     : "18:00";
 
+  const openPicker = () => {
+    setPendingTime(timeStringToDate(prefs.reminderTimeLocal));
+    setShowPicker(true);
+  };
+
   const handleTimeChange = (_event: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === "android") {
-      setShowPicker(false);
-    }
     if (date) {
-      update({ reminderTimeLocal: dateToTimeString(date) });
+      setPendingTime(date);
     }
+  };
+
+  const confirmTime = () => {
+    if (pendingTime) {
+      update({ reminderTimeLocal: dateToTimeString(pendingTime) });
+    }
+    setShowPicker(false);
+    setPendingTime(null);
+  };
+
+  const cancelTime = () => {
+    setShowPicker(false);
+    setPendingTime(null);
   };
 
   return (
@@ -80,7 +96,8 @@ export function NotificationSettings() {
         <>
           <Pressable
             style={styles.row}
-            onPress={() => setShowPicker(!showPicker)}
+            onPress={showPicker ? undefined : openPicker}
+            disabled={showPicker}
           >
             <View style={styles.rowLabel}>
               <Ionicons
@@ -93,10 +110,10 @@ export function NotificationSettings() {
             <Text style={styles.timeValue}>{displayTime}</Text>
           </Pressable>
 
-          {showPicker && (
+          {showPicker && pendingTime && (
             <View style={styles.pickerContainer}>
               <DateTimePicker
-                value={timeStringToDate(prefs.reminderTimeLocal)}
+                value={pendingTime}
                 mode="time"
                 is24Hour
                 display={Platform.OS === "ios" ? "spinner" : "default"}
@@ -105,14 +122,20 @@ export function NotificationSettings() {
                 locale="pt-BR"
                 style={Platform.OS === "ios" ? styles.iosPicker : undefined}
               />
-              {Platform.OS === "ios" && (
+              <View style={styles.pickerButtons}>
+                <Pressable
+                  style={styles.cancelButton}
+                  onPress={cancelTime}
+                >
+                  <Text style={styles.cancelButtonText}>Cancelar</Text>
+                </Pressable>
                 <Pressable
                   style={styles.doneButton}
-                  onPress={() => setShowPicker(false)}
+                  onPress={confirmTime}
                 >
-                  <Text style={styles.doneButtonText}>OK</Text>
+                  <Text style={styles.doneButtonText}>Salvar</Text>
                 </Pressable>
-              )}
+              </View>
             </View>
           )}
         </>
@@ -164,12 +187,31 @@ const styles = StyleSheet.create({
     height: 150,
     width: "100%",
   },
-  doneButton: {
+  pickerButtons: {
+    flexDirection: "row",
+    gap: spacing.phi3,
     marginTop: spacing.phi2,
-    paddingHorizontal: spacing.phi4,
+    width: "100%",
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: spacing.phi2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    ...typography.body,
+    color: colors.gray[600],
+    fontWeight: "600",
+  },
+  doneButton: {
+    flex: 1,
     paddingVertical: spacing.phi2,
     backgroundColor: colors.primary[500],
     borderRadius: 8,
+    alignItems: "center",
   },
   doneButtonText: {
     ...typography.body,

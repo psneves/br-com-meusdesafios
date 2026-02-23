@@ -48,7 +48,7 @@ export default async function PrivacyPage() {
             </li>
             <li>
               <strong>Dados de perfil:</strong> nome de exibição, nome de
-              usuário (@handle) e foto de perfil (que pode ser a foto do Google
+              usuário @ (arroba) e foto de perfil (que pode ser a foto do Google
               ou uma imagem enviada por você)
             </li>
             <li>
@@ -144,7 +144,7 @@ export default async function PrivacyPage() {
           <ul className="list-disc space-y-1 pl-5">
             <li>
               <strong>Perfil público:</strong> seu nome de exibição, nome de
-              usuário (@handle) e foto de perfil são visíveis para outros
+              usuário (arroba) e foto de perfil são visíveis para outros
               usuários que buscam amigos
             </li>
             <li>

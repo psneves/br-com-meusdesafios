@@ -163,7 +163,7 @@ export default function ExplorePage() {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
-          placeholder="Buscar por nome ou @handle"
+          placeholder="Buscar por nome ou arroba @"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder-gray-500 dark:focus:border-indigo-500"
