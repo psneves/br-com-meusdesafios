@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       return errors.badRequest("Data de nascimento inválida");
     }
 
-    // Age validation: must be >= 13
+    // Age validation: must be >= 10
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
     if (
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       age--;
     }
 
-    if (age < 13) {
+    if (age < 10) {
       return errors.forbidden();
     }
 
