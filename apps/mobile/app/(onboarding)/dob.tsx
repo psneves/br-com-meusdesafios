@@ -59,7 +59,7 @@ export default function DobScreen() {
     setError(null);
 
     const age = calculateAge(date);
-    if (age < 13) {
+    if (age < 10) {
       setBlocked(true);
       return;
     }
