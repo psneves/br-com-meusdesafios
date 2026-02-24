@@ -36,20 +36,22 @@ export function AvatarPicker({
       accessibilityRole="button"
       accessibilityLabel="Alterar foto de perfil"
     >
-      <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
-          />
-        ) : (
-          <Ionicons name="person" size={size * 0.5} color={colors.gray[400]} />
-        )}
-        {isUploading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color={colors.white} />
-          </View>
-        )}
+      <View style={[styles.wrapper, { width: size, height: size }]}>
+        <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
+          {avatarUrl ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
+            />
+          ) : (
+            <Ionicons name="person" size={size * 0.5} color={colors.gray[400]} />
+          )}
+          {isUploading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator color={colors.white} />
+            </View>
+          )}
+        </View>
         <View style={styles.editBadge}>
           <Ionicons name="camera" size={14} color={colors.white} />
         </View>
@@ -59,6 +61,9 @@ export function AvatarPicker({
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    position: "relative",
+  },
   container: {
     backgroundColor: colors.gray[100],
     alignItems: "center",
@@ -76,8 +81,8 @@ const styles = StyleSheet.create({
   },
   editBadge: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
+    bottom: 4,
+    right: 4,
     width: 28,
     height: 28,
     borderRadius: 14,

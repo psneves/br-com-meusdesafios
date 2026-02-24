@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		03C9FBF2CFF067EF4A118214 /* libPods-MeusDesafios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 540739616200BBBBFAC24492 /* libPods-MeusDesafios.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		666A38B05F019287A68CA27D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EBEB8DD6180BA0FD0E225A8 /* ExpoModulesProvider.swift */; };
-		9A95A60F746329E60B508C65 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BBA0470B49A3FAE4975E5D4D /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		BBECFA3BB084149D153483C6 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831D125BED8A75D034675864 /* ExpoModulesProvider.swift */; };
+		C4EAAB50F1E724D23FC4EA95 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 890BCD0DF0E9DEDA16F276F6 /* PrivacyInfo.xcprivacy */; };
+		C799B6D9A0693FD4708CE217 /* libPods-MeusDesafios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1705DB2B6A9635B18FE85605 /* libPods-MeusDesafios.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0EBEB8DD6180BA0FD0E225A8 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-MeusDesafios/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		062CF32C2C7B4143E160234F /* Pods-MeusDesafios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MeusDesafios.debug.xcconfig"; path = "Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* MeusDesafios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeusDesafios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = MeusDesafios/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = MeusDesafios/Info.plist; sourceTree = "<group>"; };
-		540739616200BBBBFAC24492 /* libPods-MeusDesafios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MeusDesafios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A7A62C05A0A870D2FE978781 /* Pods-MeusDesafios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MeusDesafios.debug.xcconfig"; path = "Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios.debug.xcconfig"; sourceTree = "<group>"; };
+		1705DB2B6A9635B18FE85605 /* libPods-MeusDesafios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MeusDesafios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		27704DAF6161A456F1084A0E /* Pods-MeusDesafios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MeusDesafios.release.xcconfig"; path = "Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios.release.xcconfig"; sourceTree = "<group>"; };
+		831D125BED8A75D034675864 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-MeusDesafios/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		890BCD0DF0E9DEDA16F276F6 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = MeusDesafios/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = MeusDesafios/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		BBA0470B49A3FAE4975E5D4D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = MeusDesafios/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		D785779E486E2DC0FABEDF8B /* Pods-MeusDesafios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MeusDesafios.release.xcconfig"; path = "Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = MeusDesafios/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* MeusDesafios-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "MeusDesafios-Bridging-Header.h"; path = "MeusDesafios/MeusDesafios-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,13 +37,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03C9FBF2CFF067EF4A118214 /* libPods-MeusDesafios.a in Frameworks */,
+				C799B6D9A0693FD4708CE217 /* libPods-MeusDesafios.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		06A36602E7A101969C745446 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				1D2C89A62AC8C121E1B02810 /* MeusDesafios */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* MeusDesafios */ = {
 			isa = PBXGroup;
 			children = (
@@ -53,7 +61,15 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				BBA0470B49A3FAE4975E5D4D /* PrivacyInfo.xcprivacy */,
+				890BCD0DF0E9DEDA16F276F6 /* PrivacyInfo.xcprivacy */,
+			);
+			name = MeusDesafios;
+			sourceTree = "<group>";
+		};
+		1D2C89A62AC8C121E1B02810 /* MeusDesafios */ = {
+			isa = PBXGroup;
+			children = (
+				831D125BED8A75D034675864 /* ExpoModulesProvider.swift */,
 			);
 			name = MeusDesafios;
 			sourceTree = "<group>";
@@ -62,27 +78,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				540739616200BBBBFAC24492 /* libPods-MeusDesafios.a */,
+				1705DB2B6A9635B18FE85605 /* libPods-MeusDesafios.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		39780B2892247B2053D8A563 /* MeusDesafios */ = {
-			isa = PBXGroup;
-			children = (
-				0EBEB8DD6180BA0FD0E225A8 /* ExpoModulesProvider.swift */,
-			);
-			name = MeusDesafios;
-			sourceTree = "<group>";
-		};
-		789DA219DCEAEBD14E7C2665 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				A7A62C05A0A870D2FE978781 /* Pods-MeusDesafios.debug.xcconfig */,
-				D785779E486E2DC0FABEDF8B /* Pods-MeusDesafios.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -99,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				789DA219DCEAEBD14E7C2665 /* Pods */,
-				94A9FDB197101DDB3A393F96 /* ExpoModulesProviders */,
+				E5D77AAA6DD380494D33B6E2 /* Pods */,
+				06A36602E7A101969C745446 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -115,14 +113,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		94A9FDB197101DDB3A393F96 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				39780B2892247B2053D8A563 /* MeusDesafios */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +120,16 @@
 			);
 			name = Supporting;
 			path = MeusDesafios/Supporting;
+			sourceTree = "<group>";
+		};
+		E5D77AAA6DD380494D33B6E2 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				062CF32C2C7B4143E160234F /* Pods-MeusDesafios.debug.xcconfig */,
+				27704DAF6161A456F1084A0E /* Pods-MeusDesafios.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,14 +140,14 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "MeusDesafios" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				281AD9F88EEFF319D382B2EA /* [Expo] Configure project */,
+				F73DFF281394C89FC31FC231 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				21CB6071F41D4BB78DF7C9C6 /* Upload Debug Symbols to Sentry */,
-				0A318E6FAD184BB160F80FB8 /* [CP] Embed Pods Frameworks */,
+				A94E5BC41A3D47A68B88397D /* Upload Debug Symbols to Sentry */,
+				583D8EDD6C7FCA1AAFB7FCA7 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -199,7 +199,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				9A95A60F746329E60B508C65 /* PrivacyInfo.xcprivacy in Resources */,
+				C4EAAB50F1E724D23FC4EA95 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,7 +245,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		0A318E6FAD184BB160F80FB8 /* [CP] Embed Pods Frameworks */ = {
+		583D8EDD6C7FCA1AAFB7FCA7 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,44 +266,6 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
-		};
-		21CB6071F41D4BB78DF7C9C6 /* Upload Debug Symbols to Sentry */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Upload Debug Symbols to Sentry";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/sh `${NODE_BINARY:-node} --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode-debug-files.sh'\"`";
-		};
-		281AD9F88EEFF319D382B2EA /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/MeusDesafios/MeusDesafios.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-MeusDesafios/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-MeusDesafios/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-MeusDesafios/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -355,6 +317,44 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-MeusDesafios/Pods-MeusDesafios-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		A94E5BC41A3D47A68B88397D /* Upload Debug Symbols to Sentry */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Upload Debug Symbols to Sentry";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh `${NODE_BINARY:-node} --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode-debug-files.sh'\"`";
+		};
+		F73DFF281394C89FC31FC231 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/MeusDesafios/MeusDesafios.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-MeusDesafios/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-MeusDesafios/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-MeusDesafios/expo-configure-project.sh\"\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -363,7 +363,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				666A38B05F019287A68CA27D /* ExpoModulesProvider.swift in Sources */,
+				BBECFA3BB084149D153483C6 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -372,7 +372,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A7A62C05A0A870D2FE978781 /* Pods-MeusDesafios.debug.xcconfig */;
+			baseConfigurationReference = 062CF32C2C7B4143E160234F /* Pods-MeusDesafios.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -411,7 +411,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D785779E486E2DC0FABEDF8B /* Pods-MeusDesafios.release.xcconfig */;
+			baseConfigurationReference = 27704DAF6161A456F1084A0E /* Pods-MeusDesafios.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
